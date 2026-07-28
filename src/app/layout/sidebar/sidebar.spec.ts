@@ -1,8 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
+import { MockNotificationService } from '../../mocks/services/mock-notification.service';
 import { Sidebar } from './sidebar';
 
 describe('Sidebar', () => {
@@ -11,7 +13,10 @@ describe('Sidebar', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, Sidebar],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: MockNotificationService, useValue: { getUnreadCount: () => of(4) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Sidebar);
@@ -37,7 +42,13 @@ describe('Sidebar', () => {
     expect(content).toContain('Notificaciones');
     expect(content).toContain('Reportes');
     expect(content).toContain('Ajustes');
-    expect(content).not.toContain('📦');
+    expect(content).not.toContain('ðŸ“¦');
+  });
+
+  it('should render unread notifications counter', () => {
+    const content = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(content).toContain('4');
   });
 
   it('should emit logout from the embedded user menu', () => {

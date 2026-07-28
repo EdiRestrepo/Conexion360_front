@@ -93,3 +93,4 @@
     display: none;
   }
 }
+.sidebar__link-label{min-width:0;flex:1}.sidebar__badge{display:inline-grid;min-width:22px;height:22px;place-items:center;padding:0 6px;border-radius:999px;background:var(--color-alert);color:#fff;font-size:12px;font-weight:900;line-height:1}

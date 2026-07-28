@@ -1,11 +1,28 @@
-import { ShipmentStatus } from './shipment.model';
+﻿import { ShipmentStatus } from './shipment.model';
+
+export type NotificationType =
+  | 'DELAY'
+  | 'STATUS_CHANGE'
+  | 'IN_TRANSIT'
+  | 'CUSTOMS'
+  | 'DELIVERY'
+  | 'DOCUMENT'
+  | 'CONTAINER_EXPIRING';
 
 export interface Notification {
   id: string;
+  type: NotificationType;
+  shipmentId: string;
+  shipmentDocument: string;
   title: string;
-  message: string;
-  read: boolean;
+  description: string;
   createdAt: string;
-  shipmentId?: string;
+  location: string | null;
+  read: boolean;
   status?: ShipmentStatus;
+}
+
+export interface NotificationPreference {
+  type: NotificationType;
+  enabled: boolean;
 }
