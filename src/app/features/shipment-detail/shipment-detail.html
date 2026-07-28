@@ -1,4 +1,4 @@
-﻿<section class="page detail-page">
+<section class="page detail-page">
   @if (viewModel$ | async; as viewModel) {
     @if (viewModel.state === 'loading') {
       <div class="surface-card loading-state">
@@ -440,8 +440,8 @@
         }
         @default {
           <section class="surface-card empty-section">
-            <strong>Sección pendiente de implementación.</strong>
-            <p>Esta pestaña queda preparada para la siguiente fase.</p>
+            <strong>Sección no disponible.</strong>
+            <p>Selecciona una pestaña válida del detalle del envío.</p>
           </section>
         }
       }
