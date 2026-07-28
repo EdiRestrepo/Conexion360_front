@@ -1,4 +1,4 @@
-﻿.shipments-page {
+.shipments-page {
   max-width: 100%;
 }
 
@@ -275,5 +275,18 @@
 
   .shipments-pagination__buttons button {
     flex: 1 1 128px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shipments-toolbar,
+  .summary-card,
+  .shipment-mobile-card,
+  .shipments-pagination {
+    padding: 16px;
+  }
+
+  .shipment-mobile-card__meta {
+    padding-left: 0;
   }
 }

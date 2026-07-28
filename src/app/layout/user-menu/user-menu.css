@@ -19,7 +19,7 @@
   place-items: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: var(--font-size-label);
   font-weight: 800;
   object-fit: cover;
@@ -93,4 +93,9 @@
     grid-template-columns: 1fr;
     width: 100%;
   }
+}
+
+.user-menu__logout:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
 }

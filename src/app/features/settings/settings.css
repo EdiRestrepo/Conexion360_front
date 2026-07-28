@@ -1,4 +1,4 @@
-﻿.settings-page {
+.settings-page {
   max-width: 100%;
 }
 
@@ -41,7 +41,7 @@
 .settings-card:focus-visible {
   border-color: var(--color-secondary);
   outline: none;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-card);
 }
 
 .settings-card mat-icon {

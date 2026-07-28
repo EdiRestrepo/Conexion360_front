@@ -21,7 +21,7 @@
   gap: 22px;
   padding: 48px 38px;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .auth-shell__brand {
@@ -38,7 +38,7 @@
 
 .auth-shell p {
   margin: 0;
-  color: #dbeafe;
+  color: var(--color-primary-soft);
 }
 
 .auth-shell ul {
@@ -98,5 +98,26 @@ mat-card-actions a {
   .auth-shell__intro,
   .auth-card {
     padding: 28px 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .auth-shell {
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .auth-shell__intro,
+  .auth-card {
+    padding: 24px 18px;
+  }
+
+  .auth-shell h1 {
+    overflow-wrap: anywhere;
   }
 }

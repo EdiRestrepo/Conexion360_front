@@ -21,7 +21,7 @@
   gap: 22px;
   padding: 48px 38px;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .register-shell__brand {
@@ -38,7 +38,7 @@
 
 .register-shell__intro p {
   margin: 0;
-  color: #dbeafe;
+  color: var(--color-primary-soft);
 }
 
 .register-shell__intro ul {
@@ -119,5 +119,26 @@ mat-card-actions a {
   .register-shell__intro,
   .register-card {
     padding: 28px 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .register-shell {
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .register-shell__intro,
+  .register-card {
+    padding: 24px 18px;
+  }
+
+  .register-shell__intro h1 {
+    overflow-wrap: anywhere;
   }
 }

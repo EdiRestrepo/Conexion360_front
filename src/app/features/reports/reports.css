@@ -149,3 +149,15 @@
     min-height: 260px;
   }
 }
+@media (max-width: 480px) {
+  .report-card,
+  .financial-summary,
+  .chart-card {
+    padding: 16px;
+  }
+
+  .chart-card__canvas {
+    height: 220px;
+    min-height: 220px;
+  }
+}

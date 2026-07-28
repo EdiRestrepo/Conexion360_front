@@ -1,4 +1,4 @@
-﻿<article class="surface-card settings-users">
+<article class="surface-card settings-users">
   <header class="settings-users__header">
     <div>
       <h2>Gestión de usuarios</h2>
@@ -10,11 +10,11 @@
   <section class="settings-users__filters" aria-label="Filtros de usuarios">
     <label>
       Buscar
-      <input type="search" [formControl]="queryControl" placeholder="nombre, correo o empresa" />
+      <input type="search" [formControl]="queryControl" placeholder="nombre, correo o empresa" aria-label="Buscar usuarios por nombre, correo o empresa" />
     </label>
     <label>
       Rol
-      <select [formControl]="roleControl">
+      <select [formControl]="roleControl" aria-label="Filtrar usuarios por rol">
         @for (role of roles; track role) {
           <option [value]="role">{{ getRoleLabel(role) }}</option>
         }
