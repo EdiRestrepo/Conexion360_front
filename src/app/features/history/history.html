@@ -1,7 +1,166 @@
-<section class="page">
+﻿<section class="page history-page">
   <header class="page__header">
     <h1 class="page__title">Historial</h1>
-    <p class="page__subtitle">Eventos consolidados de envíos internacionales.</p>
+    <p class="page__subtitle">Consulta el historial de tus envíos completados.</p>
   </header>
-  <div class="surface-card placeholder">Módulo base pendiente para la siguiente fase.</div>
+
+  <section class="surface-card history-toolbar" aria-label="Filtros de historial">
+    <label class="history-toolbar__search">
+      <span>Buscar</span>
+      <input
+        type="search"
+        [formControl]="searchControl"
+        placeholder="Guía, documento, cliente, origen o destino"
+        aria-label="Buscar envíos completados"
+      />
+    </label>
+
+    <label>
+      <span>Operación</span>
+      <select [formControl]="operationControl" aria-label="Filtrar por operación">
+        <option value="">IMPO + EXPO</option>
+        <option value="IMPO">Importaciones</option>
+        <option value="EXPO">Exportaciones</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Modalidad</span>
+      <select [formControl]="modeControl" aria-label="Filtrar por modalidad">
+        <option value="">AIR + SEA</option>
+        <option value="AIR">Aéreo</option>
+        <option value="SEA">Marítimo</option>
+      </select>
+    </label>
+  </section>
+
+  @if (viewModel$ | async; as viewModel) {
+    <section class="history-summary" aria-label="Resumen de envíos completados">
+      <article class="surface-card summary-card">
+        <span>Total entregados</span>
+        <strong>{{ viewModel.summary.total }}</strong>
+      </article>
+      <article class="surface-card summary-card">
+        <span>Aéreos</span>
+        <strong>{{ viewModel.summary.air }}</strong>
+      </article>
+      <article class="surface-card summary-card">
+        <span>Marítimos</span>
+        <strong>{{ viewModel.summary.sea }}</strong>
+      </article>
+    </section>
+
+    <div class="surface-card history-card">
+      @if (viewModel.state === 'loading') {
+        <div class="loading-state">
+          <strong>Cargando historial...</strong>
+          <p>Consultando envíos completados.</p>
+        </div>
+      } @else if (viewModel.state === 'error') {
+        <div class="error-state">
+          <strong>No se pudo cargar el historial</strong>
+          <p>{{ viewModel.message }}</p>
+          <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (viewModel.state === 'empty') {
+        <div class="empty-state">
+          <strong>No hay envíos completados para mostrar</strong>
+          <p>{{ viewModel.message }}</p>
+          <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
+        </div>
+      } @else {
+        <div class="history-table-wrap">
+          <div class="history-table" role="table" aria-label="Historial de envíos completados">
+            <div class="history-table__row history-table__row--head" role="row">
+              <span role="columnheader">Modalidad</span>
+              <span role="columnheader">Documento o guía</span>
+              <span role="columnheader">Cliente</span>
+              <span role="columnheader">Origen</span>
+              <span role="columnheader">Destino</span>
+              <span role="columnheader">Fecha real de entrega</span>
+              <span role="columnheader">Bodega destino</span>
+              <span role="columnheader">Despacho</span>
+              <span role="columnheader">Ver</span>
+            </div>
+
+            @for (shipment of viewModel.shipments; track shipment.id) {
+              <div class="history-table__row" role="row">
+                <span role="cell" class="mode-icon" [title]="getTransportModeLabel(shipment.transportMode)">
+                  <mat-icon aria-hidden="true">{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
+                </span>
+                <strong role="cell">{{ shipment.documentNumber }}</strong>
+                <span role="cell">{{ shipment.client }}</span>
+                <span role="cell">{{ getLocationLabel(shipment, 'origin') }}</span>
+                <span role="cell">{{ getLocationLabel(shipment, 'destination') }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.delivery) }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.destinationWarehouse) }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.dispatch) }}</span>
+                <span role="cell" class="detail-action">
+                  <a
+                    mat-icon-button
+                    [routerLink]="['/shipments', shipment.id]"
+                    [queryParams]="viewModel.queryParams"
+                    [attr.aria-label]="'Ver detalle del envío completado ' + shipment.documentNumber"
+                    title="Ver detalle"
+                  >
+                    <mat-icon aria-hidden="true">visibility</mat-icon>
+                  </a>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="history-mobile-list" aria-label="Historial móvil de envíos completados">
+          @for (shipment of viewModel.shipments; track shipment.id) {
+            <article class="history-mobile-card">
+              <header>
+                <span class="mode-icon" aria-hidden="true"><mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon></span>
+                <div>
+                  <strong>{{ shipment.documentNumber }}</strong>
+                  <small>{{ getLocationLabel(shipment, 'origin') }} → {{ getLocationLabel(shipment, 'destination') }}</small>
+                </div>
+                <a
+                  mat-icon-button
+                  [routerLink]="['/shipments', shipment.id]"
+                  [queryParams]="viewModel.queryParams"
+                  [attr.aria-label]="'Ver detalle del envío completado ' + shipment.documentNumber"
+                  title="Ver detalle"
+                >
+                  <mat-icon aria-hidden="true">visibility</mat-icon>
+                </a>
+              </header>
+              <div class="history-mobile-card__meta">
+                <span>{{ getOperationTypeLabel(shipment.operationType) }} · {{ getTransportModeLabel(shipment.transportMode) }}</span>
+                <span>{{ shipment.client }}</span>
+                <span>Entrega {{ formatDate(shipment.logisticDates.delivery) }}</span>
+                <span>Bodega destino {{ formatDate(shipment.logisticDates.destinationWarehouse) }}</span>
+              </div>
+            </article>
+          }
+        </div>
+
+        <footer class="history-pagination" aria-label="Paginación de historial">
+          <p>
+            Mostrando {{ viewModel.rangeStart }}-{{ viewModel.rangeEnd }} de {{ viewModel.totalItems }} · Página
+            {{ viewModel.filters.page }} de {{ viewModel.totalPages }}
+          </p>
+          <label>
+            <span>Por página</span>
+            <select [formControl]="pageSizeControl" aria-label="Resultados por página">
+              @for (size of pageSizeOptions; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+          <div class="history-pagination__buttons">
+            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(1)">Primera</button>
+            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(viewModel.filters.page - 1)">Anterior</button>
+            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.filters.page + 1)">Siguiente</button>
+            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.totalPages)">Última</button>
+          </div>
+        </footer>
+      }
+    </div>
+  }
 </section>
