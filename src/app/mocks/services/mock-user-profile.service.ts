@@ -92,8 +92,12 @@ export class MockUserProfileService implements UserProfileDataSource {
       profileCompleted: true,
       notificationPreferences: {
         email: true,
+        inApp: true,
         shipmentStatusChanges: true,
         delays: true,
+        delivery: true,
+        documents: true,
+        containers: true,
       },
       acceptedDataPolicyAt: pendingProfile.createdAt,
       createdAt: new Date().toISOString(),

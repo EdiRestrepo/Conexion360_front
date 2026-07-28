@@ -2,8 +2,12 @@ import { UserRole } from './user.model';
 
 export interface NotificationPreference {
   email: boolean;
+  inApp: boolean;
   shipmentStatusChanges: boolean;
   delays: boolean;
+  delivery: boolean;
+  documents: boolean;
+  containers: boolean;
 }
 
 export interface Auth0Identity {

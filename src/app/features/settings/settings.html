@@ -1,13 +1,32 @@
-﻿<section class="page">
-  <header class="page__header">
-    <h1 class="page__title">Ajustes</h1>
-    <p class="page__subtitle">Preferencias, usuarios, roles y parámetros maestros.</p>
+﻿<section class="page settings-page">
+  <header class="page__header settings-header">
+    <div>
+      <h1 class="page__title">Ajustes</h1>
+      <p class="page__subtitle">Preferencias, usuarios, roles y parámetros maestros.</p>
+    </div>
+    @if (session(); as currentSession) {
+      <span class="settings-role">Rol: {{ getRoleLabel(currentSession.user.role) }}</span>
+    }
   </header>
+
+  <section class="settings-cards" aria-label="Opciones principales de ajustes">
+    @for (card of cards(); track card.route) {
+      <a class="surface-card settings-card" [routerLink]="card.route">
+        <mat-icon aria-hidden="true">{{ card.icon }}</mat-icon>
+        <span>{{ card.title }}</span>
+        <p>{{ card.description }}</p>
+      </a>
+    }
+  </section>
 
   <nav class="settings-tabs" aria-label="Secciones de ajustes">
     <a routerLink="/settings/notifications" routerLinkActive="settings-tabs__link--active">Notificaciones</a>
-    <a routerLink="/settings/users" routerLinkActive="settings-tabs__link--active">Usuarios</a>
-    <a routerLink="/settings/master-data" routerLinkActive="settings-tabs__link--active">Parámetros maestros</a>
+    @if (session(); as currentSession) {
+      @if (currentSession.user.role === 'ADMIN') {
+        <a routerLink="/settings/users" routerLinkActive="settings-tabs__link--active">Usuarios</a>
+        <a routerLink="/settings/master-data" routerLinkActive="settings-tabs__link--active">Parámetros maestros</a>
+      }
+    }
   </nav>
 
   <router-outlet />

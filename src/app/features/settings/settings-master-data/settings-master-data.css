@@ -1,19 +1,108 @@
-﻿.settings-placeholder {
+﻿.master-data {
   display: grid;
-  gap: 8px;
+  gap: 18px;
   padding: 24px;
 }
 
-.settings-placeholder h2,
-.settings-placeholder p {
+.master-data__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.master-data__header mat-icon {
+  color: var(--color-secondary);
+}
+
+.master-data h2,
+.master-data h3,
+.master-data p {
   margin: 0;
 }
 
-.settings-placeholder h2 {
-  color: var(--color-text);
+.master-data h2 {
+  color: var(--color-primary);
   font-size: var(--font-size-h3);
 }
 
-.settings-placeholder p {
+.master-data p {
   color: var(--color-text-muted);
+}
+
+.master-data__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.master-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-muted);
+}
+
+.master-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.master-card h3 {
+  color: var(--color-primary);
+  font-size: 18px;
+}
+
+.master-card ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.master-card li {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-label);
+  font-weight: 800;
+}
+
+.settings-message,
+.state-box {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-muted);
+}
+
+.settings-message {
+  border-color: var(--color-secondary);
+  background: var(--color-secondary-soft);
+  color: var(--color-primary);
+  font-size: var(--font-size-label);
+  font-weight: 900;
+}
+
+.state-box--error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+@media (max-width: 900px) {
+  .master-data__grid {
+    grid-template-columns: 1fr;
+  }
 }

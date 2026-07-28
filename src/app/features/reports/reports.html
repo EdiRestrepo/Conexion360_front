@@ -1,7 +1,85 @@
-<section class="page">
-  <header class="page__header">
-    <h1 class="page__title">Reportes</h1>
-    <p class="page__subtitle">Indicadores logísticos y financieros de Conexion360.</p>
+<section class="page reports-page">
+  <header class="page__header reports-header">
+    <div>
+      <h1 class="page__title">Reportes</h1>
+      <p class="page__subtitle">Indicadores logísticos y financieros de Conexion360.</p>
+    </div>
+    @if (viewModel$ | async; as headerViewModel) {
+      @if (headerViewModel.metrics) {
+        <button mat-stroked-button type="button" (click)="exportCsv(headerViewModel.metrics)">
+          <mat-icon aria-hidden="true">download</mat-icon>
+          Exportar CSV
+        </button>
+      }
+    }
   </header>
-  <div class="surface-card placeholder">Los reportes completos y gráficos se implementarán después.</div>
+
+  @if (viewModel$ | async; as viewModel) {
+    @if (exportMessage(); as message) {
+      <p class="surface-card export-message" role="status">{{ message }}</p>
+    }
+
+    @if (viewModel.state === 'loading') {
+      <div class="surface-card loading-state">
+        <strong>Cargando reportes...</strong>
+        <p>Calculando indicadores desde datos simulados.</p>
+      </div>
+    } @else if (viewModel.state === 'error') {
+      <div class="surface-card error-state">
+        <strong>No se pudieron cargar los reportes</strong>
+        <p>{{ viewModel.message }}</p>
+        <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+      </div>
+    } @else if (viewModel.state === 'empty') {
+      <div class="surface-card empty-state">
+        <strong>Sin datos para reportar</strong>
+        <p>{{ viewModel.message }}</p>
+        <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+      </div>
+    } @else if (viewModel.metrics; as metrics) {
+      <section class="reports-grid reports-grid--metrics" aria-label="Indicadores principales">
+        @for (indicator of viewModel.indicators; track indicator.label) {
+          <article class="surface-card report-card">
+            <mat-icon aria-hidden="true">{{ indicator.icon }}</mat-icon>
+            <span>{{ indicator.label }}</span>
+            <strong>{{ indicator.value }}</strong>
+          </article>
+        }
+      </section>
+
+      <section class="surface-card financial-summary" aria-label="Resúmenes financieros">
+        <h2>Resúmenes financieros</h2>
+        <div class="financial-summary__grid">
+          @for (financial of viewModel.financials; track financial.label) {
+            <article>
+              <mat-icon aria-hidden="true">{{ financial.icon }}</mat-icon>
+              <span>{{ financial.label }}</span>
+              <strong>{{ financial.value }}</strong>
+            </article>
+          }
+        </div>
+        <p>Valores agregados desde información simulada. No corresponde a reporte contable oficial.</p>
+      </section>
+
+      <section class="reports-grid" aria-label="Gráficos de análisis">
+        @for (chart of viewModel.charts; track chart.id) {
+          <article class="surface-card chart-card">
+            <h2>{{ chart.title }}</h2>
+            <div class="chart-card__canvas">
+              <canvas #chartCanvas [attr.aria-label]="chart.summary" role="img"></canvas>
+            </div>
+            <p class="chart-card__summary">{{ chart.summary }}</p>
+            <ul class="chart-values" [attr.aria-label]="'Valores de ' + chart.title">
+              @for (value of chart.values; track value.label) {
+                <li>
+                  <span>{{ value.label }}</span>
+                  <strong>{{ value.value }}</strong>
+                </li>
+              }
+            </ul>
+          </article>
+        }
+      </section>
+    }
+  }
 </section>

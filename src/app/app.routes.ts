@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 import { MainLayout } from './layout/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -60,11 +61,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
         children: [
           {
-            path: '',
-            pathMatch: 'full',
-            redirectTo: 'notifications',
-          },
-          {
             path: 'notifications',
             loadComponent: () =>
               import('./features/settings/settings-notifications/settings-notifications').then(
@@ -73,13 +69,15 @@ export const routes: Routes = [
           },
           {
             path: 'users',
+            canActivate: [roleGuard],
             data: { roles: ['ADMIN'] },
             loadComponent: () =>
               import('./features/settings/settings-users/settings-users').then((m) => m.SettingsUsers),
           },
           {
             path: 'master-data',
-            data: { roles: ['ADMIN', 'OPERATOR'] },
+            canActivate: [roleGuard],
+            data: { roles: ['ADMIN'] },
             loadComponent: () =>
               import('./features/settings/settings-master-data/settings-master-data').then(
                 (m) => m.SettingsMasterData,

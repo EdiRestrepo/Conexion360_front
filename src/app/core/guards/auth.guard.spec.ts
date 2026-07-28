@@ -117,8 +117,12 @@ function createProfile(identity: Auth0Identity): UserProfile {
     profileCompleted: true,
     notificationPreferences: {
       email: true,
+      inApp: true,
       shipmentStatusChanges: true,
       delays: true,
+      delivery: true,
+      documents: true,
+      containers: true,
     },
     acceptedDataPolicyAt: '2026-07-22T00:00:00.000Z',
     createdAt: '2026-07-22T00:00:00.000Z',

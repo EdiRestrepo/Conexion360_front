@@ -1,4 +1,64 @@
-﻿<article class="surface-card settings-placeholder">
-  <h2>Gestión de usuarios</h2>
-  <p>Base para administración de usuarios y roles internos de Conexion360.</p>
+﻿<article class="surface-card settings-users">
+  <header class="settings-users__header">
+    <div>
+      <h2>Gestión de usuarios</h2>
+      <p>Administra usuarios, roles y estados del prototipo.</p>
+    </div>
+    <mat-icon aria-hidden="true">manage_accounts</mat-icon>
+  </header>
+
+  <section class="settings-users__filters" aria-label="Filtros de usuarios">
+    <label>
+      Buscar
+      <input type="search" [formControl]="queryControl" placeholder="nombre, correo o empresa" />
+    </label>
+    <label>
+      Rol
+      <select [formControl]="roleControl">
+        @for (role of roles; track role) {
+          <option [value]="role">{{ getRoleLabel(role) }}</option>
+        }
+      </select>
+    </label>
+  </section>
+
+  @if (saveMessage(); as message) {
+    <p class="settings-message" role="status">{{ message }}</p>
+  }
+
+  @if (viewModel$ | async; as viewModel) {
+    @if (viewModel.state === 'loading') {
+      <div class="state-box"><strong>Cargando usuarios...</strong></div>
+    } @else if (viewModel.state === 'error') {
+      <div class="state-box state-box--error"><strong>{{ viewModel.message }}</strong></div>
+    } @else if (viewModel.state === 'empty') {
+      <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
+    } @else {
+      <div class="users-table" role="table" aria-label="Usuarios simulados">
+        <div class="users-table__row users-table__row--head" role="row">
+          <span role="columnheader">Nombre</span>
+          <span role="columnheader">Correo</span>
+          <span role="columnheader">Empresa</span>
+          <span role="columnheader">Rol</span>
+          <span role="columnheader">Estado</span>
+          <span role="columnheader">Acción</span>
+        </div>
+        @for (user of viewModel.users; track user.id) {
+          <div class="users-table__row" role="row">
+            <strong role="cell">{{ user.fullName }}</strong>
+            <span role="cell">{{ user.email }}</span>
+            <span role="cell">{{ user.company }}</span>
+            <span role="cell">{{ getRoleLabel(user.role) }}</span>
+            <span role="cell" class="status-chip" [class.status-chip--inactive]="user.status === 'INACTIVE'">{{ getStatusLabel(user) }}</span>
+            <span role="cell">
+              <button mat-stroked-button type="button" (click)="toggleUser(user)">
+                <mat-icon aria-hidden="true">{{ user.status === 'ACTIVE' ? 'person_off' : 'person_check' }}</mat-icon>
+                {{ user.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
+              </button>
+            </span>
+          </div>
+        }
+      </div>
+    }
+  }
 </article>

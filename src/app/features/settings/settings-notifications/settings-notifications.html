@@ -1,4 +1,38 @@
-﻿<article class="surface-card settings-placeholder">
-  <h2>Preferencias de notificación</h2>
-  <p>Base para configurar alertas, cambios de estado y novedades logísticas.</p>
+﻿<article class="surface-card settings-panel">
+  <header class="settings-panel__header">
+    <div>
+      <h2>Preferencias de notificación</h2>
+      <p>Configura cómo quieres recibir alertas operativas del prototipo.</p>
+    </div>
+    <mat-icon aria-hidden="true">notifications_active</mat-icon>
+  </header>
+
+  @if (viewModel$ | async; as viewModel) {
+    @if (saveMessage(); as message) {
+      <p class="settings-message" role="status">{{ message }}</p>
+    }
+
+    @if (viewModel.state === 'loading') {
+      <div class="state-box"><strong>Cargando preferencias...</strong></div>
+    } @else if (viewModel.state === 'error') {
+      <div class="state-box state-box--error"><strong>{{ viewModel.message }}</strong></div>
+    } @else if (viewModel.state === 'empty') {
+      <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
+    } @else {
+      <form [formGroup]="form" class="preferences-form" (ngSubmit)="savePreferences()">
+        <label><input type="checkbox" formControlName="email" /> Correo</label>
+        <label><input type="checkbox" formControlName="inApp" /> Dentro de la plataforma</label>
+        <label><input type="checkbox" formControlName="shipmentStatusChanges" /> Cambios de estado</label>
+        <label><input type="checkbox" formControlName="delays" /> Retrasos</label>
+        <label><input type="checkbox" formControlName="delivery" /> Entrega</label>
+        <label><input type="checkbox" formControlName="documents" /> Documentos</label>
+        <label><input type="checkbox" formControlName="containers" /> Contenedores</label>
+
+        <button mat-flat-button type="submit">
+          <mat-icon aria-hidden="true">save</mat-icon>
+          Guardar preferencias
+        </button>
+      </form>
+    }
+  }
 </article>

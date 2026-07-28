@@ -21,6 +21,7 @@
     "@angular/router": "^20.0.0",
     "@auth0/auth0-angular": "^2.10.1",
     "@types/leaflet": "^1.9.21",
+    "chart.js": "^4.5.1",
     "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
