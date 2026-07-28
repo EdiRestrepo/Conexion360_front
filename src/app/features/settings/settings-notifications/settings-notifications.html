@@ -1,10 +1,12 @@
-﻿<article class="surface-card settings-panel">
-  <header class="settings-panel__header">
+<section class="settings-subpage">
+  <header class="settings-subpage__header">
+    <a class="settings-back" routerLink="/settings" aria-label="Volver a ajustes">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    </a>
     <div>
-      <h2>Preferencias de notificación</h2>
-      <p>Configura cómo quieres recibir alertas operativas del prototipo.</p>
+      <h2>Ajuste de notificaciones</h2>
+      <p>Configura canales y eventos operativos.</p>
     </div>
-    <mat-icon aria-hidden="true">notifications_active</mat-icon>
   </header>
 
   @if (viewModel$ | async; as viewModel) {
@@ -19,20 +21,89 @@
     } @else if (viewModel.state === 'empty') {
       <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
     } @else {
-      <form [formGroup]="form" class="preferences-form" (ngSubmit)="savePreferences()">
-        <label><input type="checkbox" formControlName="email" /> Correo</label>
-        <label><input type="checkbox" formControlName="inApp" /> Dentro de la plataforma</label>
-        <label><input type="checkbox" formControlName="shipmentStatusChanges" /> Cambios de estado</label>
-        <label><input type="checkbox" formControlName="delays" /> Retrasos</label>
-        <label><input type="checkbox" formControlName="delivery" /> Entrega</label>
-        <label><input type="checkbox" formControlName="documents" /> Documentos</label>
-        <label><input type="checkbox" formControlName="containers" /> Contenedores</label>
+      <form [formGroup]="form" class="preferences-layout" (ngSubmit)="savePreferences()">
+        <article class="surface-card preferences-card" aria-labelledby="notification-channels-title">
+          <header>
+            <h3 id="notification-channels-title">Canales de notificación</h3>
+          </header>
 
-        <button mat-flat-button type="submit">
+          <label class="switch-row">
+            <span class="switch-row__icon"><mat-icon aria-hidden="true">notifications</mat-icon></span>
+            <span class="switch-row__content">
+              <strong>Notificaciones en la app</strong>
+              <small>Alertas dentro de Conexion360.</small>
+            </span>
+            <input type="checkbox" formControlName="inApp" aria-label="Activar notificaciones en la app" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+
+          <label class="switch-row">
+            <span class="switch-row__icon"><mat-icon aria-hidden="true">mail</mat-icon></span>
+            <span class="switch-row__content">
+              <strong>Correo electrónico</strong>
+              <small>Resumen y alertas enviadas al correo del perfil.</small>
+            </span>
+            <input type="checkbox" formControlName="email" aria-label="Activar notificaciones por correo" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+        </article>
+
+        <article class="surface-card preferences-card" aria-labelledby="notification-events-title">
+          <header>
+            <h3 id="notification-events-title">Eventos para notificar</h3>
+          </header>
+
+          <label class="switch-row">
+            <span class="switch-row__content">
+              <strong>Cambio de estado del envío</strong>
+              <small>Movimiento entre hitos logísticos.</small>
+            </span>
+            <input type="checkbox" formControlName="shipmentStatusChanges" aria-label="Activar cambios de estado" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+
+          <label class="switch-row">
+            <span class="switch-row__content">
+              <strong>Entrega exitosa</strong>
+              <small>Confirmación cuando el envío finaliza.</small>
+            </span>
+            <input type="checkbox" formControlName="delivery" aria-label="Activar notificaciones de entrega" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+
+          <label class="switch-row">
+            <span class="switch-row__content">
+              <strong>Novedades o incidencias</strong>
+              <small>Demoras, alertas operativas y eventos críticos.</small>
+            </span>
+            <input type="checkbox" formControlName="delays" aria-label="Activar novedades o incidencias" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+
+          <label class="switch-row">
+            <span class="switch-row__content">
+              <strong>Documentos</strong>
+              <small>Pendientes, vencidos o rechazados.</small>
+            </span>
+            <input type="checkbox" formControlName="documents" aria-label="Activar notificaciones de documentos" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+
+          <label class="switch-row">
+            <span class="switch-row__content">
+              <strong>Contenedores</strong>
+              <small>Días libres próximos a vencer y demoras.</small>
+            </span>
+            <input type="checkbox" formControlName="containers" aria-label="Activar notificaciones de contenedores" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+        </article>
+
+        <button mat-flat-button type="submit" class="settings-save-button">
           <mat-icon aria-hidden="true">save</mat-icon>
-          Guardar preferencias
+          Guardar cambios
         </button>
       </form>
     }
   }
-</article>
+</section>

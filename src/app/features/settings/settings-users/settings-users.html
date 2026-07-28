@@ -1,64 +1,94 @@
-<article class="surface-card settings-users">
-  <header class="settings-users__header">
+<section class="settings-subpage">
+  <header class="settings-subpage__header">
+    <a class="settings-back" routerLink="/settings" aria-label="Volver a ajustes">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    </a>
     <div>
       <h2>Gestión de usuarios</h2>
-      <p>Administra usuarios, roles y estados del prototipo.</p>
+      <p>Administra usuarios y roles.</p>
     </div>
-    <mat-icon aria-hidden="true">manage_accounts</mat-icon>
   </header>
 
-  <section class="settings-users__filters" aria-label="Filtros de usuarios">
-    <label>
-      Buscar
-      <input type="search" [formControl]="queryControl" placeholder="nombre, correo o empresa" aria-label="Buscar usuarios por nombre, correo o empresa" />
-    </label>
-    <label>
-      Rol
-      <select [formControl]="roleControl" aria-label="Filtrar usuarios por rol">
-        @for (role of roles; track role) {
-          <option [value]="role">{{ getRoleLabel(role) }}</option>
-        }
-      </select>
-    </label>
-  </section>
+  <article class="surface-card invite-panel" aria-labelledby="invite-user-title">
+    <header>
+      <h3 id="invite-user-title"><mat-icon aria-hidden="true">person_add</mat-icon> Invitar usuario</h3>
+    </header>
+    <div class="invite-panel__form">
+      <label>
+        <span>Correo electrónico</span>
+        <input type="email" [formControl]="inviteEmailControl" placeholder="correo@empresa.com" aria-label="Correo del usuario invitado" />
+      </label>
+      <label>
+        <span>Rol</span>
+        <select [formControl]="inviteRoleControl" aria-label="Rol del usuario invitado">
+          @for (role of inviteRoles; track role) {
+            <option [value]="role">{{ getRoleLabel(role) }}</option>
+          }
+        </select>
+      </label>
+      <button mat-flat-button type="button" (click)="sendInvitation()">
+        <mat-icon aria-hidden="true">send</mat-icon>
+        Enviar invitación
+      </button>
+    </div>
+    @if (inviteMessage(); as message) {
+      <p class="settings-message" role="status">{{ message }}</p>
+    }
+  </article>
 
-  @if (saveMessage(); as message) {
-    <p class="settings-message" role="status">{{ message }}</p>
-  }
+  <article class="surface-card users-panel">
+    <header class="users-panel__header">
+      <div>
+        <h3>Usuarios</h3>
+        <p>Consulta, busca y actualiza estados de acceso simulados.</p>
+      </div>
+      <div class="settings-users__filters" aria-label="Filtros de usuarios">
+        <label>
+          <span>Buscar usuario</span>
+          <input type="search" [formControl]="queryControl" placeholder="nombre, correo o empresa" aria-label="Buscar usuarios por nombre, correo o empresa" />
+        </label>
+        <label>
+          <span>Rol</span>
+          <select [formControl]="roleControl" aria-label="Filtrar usuarios por rol">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ getRoleLabel(role) }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </header>
 
-  @if (viewModel$ | async; as viewModel) {
-    @if (viewModel.state === 'loading') {
-      <div class="state-box"><strong>Cargando usuarios...</strong></div>
-    } @else if (viewModel.state === 'error') {
-      <div class="state-box state-box--error"><strong>{{ viewModel.message }}</strong></div>
-    } @else if (viewModel.state === 'empty') {
-      <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
-    } @else {
-      <div class="users-table" role="table" aria-label="Usuarios simulados">
-        <div class="users-table__row users-table__row--head" role="row">
-          <span role="columnheader">Nombre</span>
-          <span role="columnheader">Correo</span>
-          <span role="columnheader">Empresa</span>
-          <span role="columnheader">Rol</span>
-          <span role="columnheader">Estado</span>
-          <span role="columnheader">Acción</span>
-        </div>
-        @for (user of viewModel.users; track user.id) {
-          <div class="users-table__row" role="row">
-            <strong role="cell">{{ user.fullName }}</strong>
-            <span role="cell">{{ user.email }}</span>
-            <span role="cell">{{ user.company }}</span>
-            <span role="cell">{{ getRoleLabel(user.role) }}</span>
-            <span role="cell" class="status-chip" [class.status-chip--inactive]="user.status === 'INACTIVE'">{{ getStatusLabel(user) }}</span>
-            <span role="cell">
-              <button mat-stroked-button type="button" (click)="toggleUser(user)">
+    @if (saveMessage(); as message) {
+      <p class="settings-message" role="status">{{ message }}</p>
+    }
+
+    @if (viewModel$ | async; as viewModel) {
+      @if (viewModel.state === 'loading') {
+        <div class="state-box"><strong>Cargando usuarios...</strong></div>
+      } @else if (viewModel.state === 'error') {
+        <div class="state-box state-box--error"><strong>{{ viewModel.message }}</strong></div>
+      } @else if (viewModel.state === 'empty') {
+        <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
+      } @else {
+        <div class="users-list" aria-label="Usuarios simulados">
+          @for (user of viewModel.users; track user.id) {
+            <article class="user-row">
+              <span class="user-avatar" aria-hidden="true">{{ getInitials(user) }}</span>
+              <div class="user-main">
+                <strong>{{ user.fullName }}</strong>
+                <span>{{ user.email }}</span>
+              </div>
+              <span class="user-company">{{ user.company }}</span>
+              <span class="role-chip">{{ getRoleLabel(user.role) }}</span>
+              <span class="status-chip" [class.status-chip--inactive]="user.status === 'INACTIVE'">{{ getStatusLabel(user) }}</span>
+              <button mat-stroked-button type="button" [attr.aria-label]="(user.status === 'ACTIVE' ? 'Desactivar ' : 'Activar ') + user.fullName" (click)="toggleUser(user)">
                 <mat-icon aria-hidden="true">{{ user.status === 'ACTIVE' ? 'person_off' : 'person_check' }}</mat-icon>
                 {{ user.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
               </button>
-            </span>
-          </div>
-        }
-      </div>
+            </article>
+          }
+        </div>
+      }
     }
-  }
-</article>
+  </article>
+</section>

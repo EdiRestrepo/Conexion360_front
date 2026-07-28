@@ -1,9 +1,10 @@
-﻿import { AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, catchError, combineLatest, debounceTime, map, of, startWith, switchMap, take, tap } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { Observable, Subject, catchError, combineLatest, debounceTime, map, of, startWith, switchMap, take } from 'rxjs';
 
 import { SettingsViewState, SimulatedUser } from '../../../core/models/settings.model';
 import { UserRole } from '../../../core/models/user.model';
@@ -18,7 +19,7 @@ interface UsersViewModel {
 
 @Component({
   selector: 'app-settings-users',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, ReactiveFormsModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, ReactiveFormsModule, RouterLink],
   templateUrl: './settings-users.html',
   styleUrl: './settings-users.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,8 +30,12 @@ export class SettingsUsers {
 
   protected readonly queryControl = new FormControl('', { nonNullable: true });
   protected readonly roleControl = new FormControl<UserRole | 'ALL'>('ALL', { nonNullable: true });
+  protected readonly inviteEmailControl = new FormControl('', { nonNullable: true, validators: [Validators.email] });
+  protected readonly inviteRoleControl = new FormControl<UserRole>('CLIENT', { nonNullable: true });
   protected readonly saveMessage = signal<string | null>(null);
+  protected readonly inviteMessage = signal<string | null>(null);
   protected readonly roles: (UserRole | 'ALL')[] = ['ALL', 'CLIENT', 'OPERATOR', 'ADMIN'];
+  protected readonly inviteRoles: UserRole[] = ['CLIENT', 'OPERATOR', 'ADMIN'];
   protected readonly viewModel$: Observable<UsersViewModel> = combineLatest([
     this.queryControl.valueChanges.pipe(startWith(this.queryControl.value), debounceTime(250)),
     this.roleControl.valueChanges.pipe(startWith(this.roleControl.value)),
@@ -55,6 +60,29 @@ export class SettingsUsers {
 
   protected getStatusLabel(user: SimulatedUser): string {
     return user.status === 'ACTIVE' ? 'Activo' : 'Inactivo';
+  }
+
+  protected getInitials(user: SimulatedUser): string {
+    return user.fullName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((name) => name.charAt(0).toUpperCase())
+      .join('');
+  }
+
+  protected sendInvitation(): void {
+    const email = this.inviteEmailControl.value.trim();
+
+    if (!email || this.inviteEmailControl.invalid) {
+      this.inviteEmailControl.markAsTouched();
+      this.inviteMessage.set('Ingresa un correo válido para enviar la invitación simulada.');
+      return;
+    }
+
+    this.inviteMessage.set(`Invitación simulada enviada a ${email} con rol ${this.getRoleLabel(this.inviteRoleControl.value)}.`);
+    this.inviteEmailControl.setValue('');
+    this.inviteRoleControl.setValue('CLIENT');
   }
 
   protected toggleUser(user: SimulatedUser): void {

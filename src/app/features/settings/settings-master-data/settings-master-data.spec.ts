@@ -1,5 +1,6 @@
-﻿import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { MasterDataGroup } from '../../../core/models/settings.model';
@@ -17,7 +18,7 @@ describe('SettingsMasterData', () => {
 
     await TestBed.configureTestingModule({
       imports: [SettingsMasterData, NoopAnimationsModule],
-      providers: [{ provide: MockSettingsService, useValue: { getMasterData: getMasterDataSpy, simulateMasterDataSave: simulateMasterDataSaveSpy } }],
+      providers: [provideRouter([]), { provide: MockSettingsService, useValue: { getMasterData: getMasterDataSpy, simulateMasterDataSave: simulateMasterDataSaveSpy } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsMasterData);

@@ -1,45 +1,119 @@
-﻿<article class="surface-card master-data">
-  <header class="master-data__header">
+<section class="settings-subpage">
+  <header class="settings-subpage__header">
+    <a class="settings-back" routerLink="/settings" aria-label="Volver a ajustes">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    </a>
     <div>
       <h2>Ajustes maestros</h2>
-      <p>Catálogos operativos simulados para estados, modalidades y documentos.</p>
+      <p>Configuraciones globales del sistema.</p>
     </div>
-    <mat-icon aria-hidden="true">tune</mat-icon>
   </header>
 
   @if (saveMessage(); as message) {
     <p class="settings-message" role="status">{{ message }}</p>
   }
 
-  @if (viewModel$ | async; as viewModel) {
-    @if (viewModel.state === 'loading') {
-      <div class="state-box"><strong>Cargando catálogos...</strong></div>
-    } @else if (viewModel.state === 'error') {
-      <div class="state-box state-box--error">
-        <strong>{{ viewModel.message }}</strong>
-        <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+  <article class="surface-card master-section" aria-labelledby="general-parameters-title">
+    <header>
+      <h3 id="general-parameters-title"><mat-icon aria-hidden="true">tune</mat-icon> Parámetros generales</h3>
+    </header>
+    <div class="parameter-list">
+      <div class="parameter-row">
+        <div>
+          <strong>Actualización automática de seguimiento</strong>
+          <span>Refresca el estado de los envíos en intervalos simulados.</span>
+        </div>
+        <span class="static-switch static-switch--on" aria-label="Activado"></span>
       </div>
-    } @else if (viewModel.state === 'empty') {
-      <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
-    } @else {
-      <section class="master-data__grid" aria-label="Catálogos maestros simulados">
-        @for (group of viewModel.groups; track group.id) {
-          <article class="master-card">
-            <header>
-              <h3>{{ group.title }}</h3>
-              <button mat-stroked-button type="button" (click)="simulateSave(group)">
-                <mat-icon aria-hidden="true">save</mat-icon>
-                Guardar
-              </button>
-            </header>
-            <ul>
-              @for (item of group.items; track item) {
-                <li>{{ item }}</li>
-              }
-            </ul>
-          </article>
-        }
-      </section>
+      <div class="parameter-row">
+        <div>
+          <strong>Exigir carga de documentos</strong>
+          <span>Solicita adjuntos mínimos al crear envíos.</span>
+        </div>
+        <span class="static-switch" aria-label="Desactivado"></span>
+      </div>
+      <div class="parameter-row">
+        <div>
+          <strong>Seguimiento público</strong>
+          <span>Permite rastrear envíos sin iniciar sesión.</span>
+        </div>
+        <span class="static-switch static-switch--on" aria-label="Activado"></span>
+      </div>
+    </div>
+  </article>
+
+  <section class="master-config-grid" aria-label="Configuración local y del sistema">
+    <article class="surface-card master-section">
+      <h3><mat-icon aria-hidden="true">language</mat-icon> Localización</h3>
+      <label>
+        Moneda predeterminada
+        <select aria-label="Moneda predeterminada">
+          <option>USD - Dólar</option>
+          <option>COP - Peso colombiano</option>
+        </select>
+      </label>
+      <label>
+        Idioma
+        <select aria-label="Idioma">
+          <option>Español</option>
+        </select>
+      </label>
+    </article>
+
+    <article class="surface-card master-section">
+      <h3><mat-icon aria-hidden="true">schedule</mat-icon> Sistema</h3>
+      <label>
+        Zona horaria
+        <select aria-label="Zona horaria">
+          <option>America/Bogota (UTC-5)</option>
+        </select>
+      </label>
+      <label>
+        Retención de datos (días)
+        <input type="number" value="365" min="30" aria-label="Retención de datos en días" />
+      </label>
+    </article>
+  </section>
+
+  <article class="surface-card master-data">
+    <header class="master-data__header">
+      <div>
+        <h3>Catálogos operativos</h3>
+        <p>Valores usados por el prototipo para estados, modalidades, documentos e Incoterms.</p>
+      </div>
+      <mat-icon aria-hidden="true">inventory_2</mat-icon>
+    </header>
+
+    @if (viewModel$ | async; as viewModel) {
+      @if (viewModel.state === 'loading') {
+        <div class="state-box"><strong>Cargando catálogos...</strong></div>
+      } @else if (viewModel.state === 'error') {
+        <div class="state-box state-box--error">
+          <strong>{{ viewModel.message }}</strong>
+          <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (viewModel.state === 'empty') {
+        <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
+      } @else {
+        <section class="master-data__grid" aria-label="Catálogos maestros simulados">
+          @for (group of viewModel.groups; track group.id) {
+            <article class="master-card">
+              <header>
+                <h4>{{ group.title }}</h4>
+                <button mat-stroked-button type="button" (click)="simulateSave(group)">
+                  <mat-icon aria-hidden="true">save</mat-icon>
+                  Guardar
+                </button>
+              </header>
+              <ul>
+                @for (item of group.items; track item) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+            </article>
+          }
+        </section>
+      }
     }
-  }
-</article>
+  </article>
+</section>

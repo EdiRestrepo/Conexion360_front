@@ -1,4 +1,4 @@
-﻿import { signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -23,21 +23,23 @@ describe('Settings', () => {
     fixture = TestBed.createComponent(Settings);
   });
 
-  it('should render notification settings for CLIENT role only', () => {
+  it('should render settings cards and mark admin cards as locked for CLIENT role', () => {
     fixture.detectChanges();
 
     expect(getText()).toContain('Ajuste de notificaciones');
-    expect(getText()).not.toContain('Gestión de usuarios');
-    expect(getText()).not.toContain('Ajustes maestros');
+    expect(getText()).toContain('Gestión de usuarios');
+    expect(getText()).toContain('Ajustes maestros');
+    expect(getText()).toContain('Solo administradores');
   });
 
-  it('should render administrative cards for ADMIN role', () => {
+  it('should render administrative cards as links for ADMIN role', () => {
     sessionSignal.set(createSession('ADMIN'));
     fixture.detectChanges();
 
     expect(getText()).toContain('Gestión de usuarios');
     expect(getText()).toContain('Ajustes maestros');
     expect(getText()).toContain('Rol: Administrador');
+    expect(getText()).not.toContain('Solo administradores');
   });
 
   function getText(): string {

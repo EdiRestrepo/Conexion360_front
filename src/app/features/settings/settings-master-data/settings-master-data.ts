@@ -1,7 +1,8 @@
-﻿import { AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 import { Observable, Subject, catchError, map, of, startWith, switchMap, take } from 'rxjs';
 
 import { MasterDataGroup, SettingsViewState } from '../../../core/models/settings.model';
@@ -15,7 +16,7 @@ interface MasterDataViewModel {
 
 @Component({
   selector: 'app-settings-master-data',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, RouterLink],
   templateUrl: './settings-master-data.html',
   styleUrl: './settings-master-data.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

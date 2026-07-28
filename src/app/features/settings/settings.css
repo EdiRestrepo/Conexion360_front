@@ -30,7 +30,10 @@
 }
 
 .settings-card {
+  position: relative;
   display: grid;
+  min-height: 154px;
+  align-content: start;
   gap: 10px;
   padding: 20px;
   color: var(--color-text);
@@ -44,11 +47,31 @@
   box-shadow: var(--shadow-card);
 }
 
-.settings-card mat-icon {
+.settings-card--locked {
+  opacity: 0.78;
+}
+
+.settings-card__icon {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: var(--radius-card);
+  background: var(--color-secondary-soft);
   color: var(--color-secondary);
 }
 
-.settings-card span {
+.settings-card:nth-child(2) .settings-card__icon {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.settings-card:nth-child(3) .settings-card__icon {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.settings-card strong {
   color: var(--color-primary);
   font-size: 18px;
   font-weight: 900;
@@ -59,6 +82,28 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-label);
   line-height: 1.45;
+}
+
+.settings-card__action,
+.settings-card__locked {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-secondary);
+  font-size: var(--font-size-label);
+  font-weight: 900;
+}
+
+.settings-card__locked {
+  color: var(--color-text-muted);
+}
+
+.settings-card__action mat-icon,
+.settings-card__locked mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
 }
 
 .settings-tabs {
@@ -92,7 +137,6 @@
 }
 
 @media (max-width: 980px) {
-  .settings-header,
   .settings-cards {
     grid-template-columns: 1fr;
   }

@@ -1,5 +1,6 @@
-﻿import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { SimulatedUser } from '../../../core/models/settings.model';
@@ -20,7 +21,7 @@ describe('SettingsUsers', () => {
 
     await TestBed.configureTestingModule({
       imports: [SettingsUsers, NoopAnimationsModule],
-      providers: [{ provide: MockSettingsService, useValue: { searchUsers: searchUsersSpy, toggleUserStatus: toggleUserStatusSpy } }],
+      providers: [provideRouter([]), { provide: MockSettingsService, useValue: { searchUsers: searchUsersSpy, toggleUserStatus: toggleUserStatusSpy } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsUsers);
@@ -51,7 +52,7 @@ describe('SettingsUsers', () => {
   it('should filter users by role', fakeAsync(() => {
     render();
 
-    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    const select = (fixture.nativeElement.querySelectorAll('select') as NodeListOf<HTMLSelectElement>)[1];
     select.value = 'ADMIN';
     select.dispatchEvent(new Event('change'));
     tick(260);

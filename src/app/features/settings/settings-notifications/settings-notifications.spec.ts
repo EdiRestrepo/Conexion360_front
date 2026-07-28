@@ -1,5 +1,6 @@
-﻿import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { Auth0Identity, UserProfile } from '../../../core/models/user-profile.model';
@@ -18,7 +19,7 @@ describe('SettingsNotifications', () => {
 
     await TestBed.configureTestingModule({
       imports: [SettingsNotifications, NoopAnimationsModule],
-      providers: [
+      providers: [provideRouter([]), 
         { provide: Auth0FacadeService, useValue: { user$: of(createIdentity()) } },
         { provide: MockUserProfileService, useValue: { getProfileByAuth0Id: getProfileSpy, saveProfile: saveProfileSpy } },
       ],
@@ -31,7 +32,7 @@ describe('SettingsNotifications', () => {
     render();
 
     expect(getText()).toContain('Correo');
-    expect(getText()).toContain('Dentro de la plataforma');
+    expect(getText()).toContain('Notificaciones en la app');
     expect(getText()).toContain('Contenedores');
   }));
 
@@ -41,7 +42,7 @@ describe('SettingsNotifications', () => {
     const checkbox = fixture.nativeElement.querySelector('input[formcontrolname="email"]') as HTMLInputElement;
     checkbox.click();
     fixture.detectChanges();
-    clickButton('Guardar preferencias');
+    clickButton('Guardar cambios');
     tick();
     fixture.detectChanges();
 
@@ -70,7 +71,7 @@ describe('SettingsNotifications', () => {
   function clickButton(label: string): void {
     const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((item) => item.textContent?.includes(label));
     if (!button) {
-      throw new Error(`No se encontró el botón ${label}`);
+      throw new Error(`No se encontro el boton ${label}`);
     }
     button.click();
   }

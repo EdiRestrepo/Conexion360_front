@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
@@ -14,24 +14,28 @@ interface SettingsCard {
   roles: UserRole[];
 }
 
+interface SettingsCardView extends SettingsCard {
+  available: boolean;
+}
+
 const settingsCards: SettingsCard[] = [
   {
     title: 'Ajuste de notificaciones',
-    description: 'Define alertas por correo, plataforma y eventos logísticos.',
+    description: 'Configura canales y eventos para recibir alertas de tus envíos.',
     icon: 'notifications_active',
     route: '/settings/notifications',
     roles: ['CLIENT', 'OPERATOR', 'ADMIN'],
   },
   {
     title: 'Gestión de usuarios',
-    description: 'Administra usuarios, roles y estados de acceso simulados.',
-    icon: 'manage_accounts',
+    description: 'Administra usuarios, roles y estados de acceso a la plataforma.',
+    icon: 'group',
     route: '/settings/users',
     roles: ['ADMIN'],
   },
   {
     title: 'Ajustes maestros',
-    description: 'Consulta catálogos operativos usados por el prototipo.',
+    description: 'Parametriza catálogos y configuraciones globales del sistema.',
     icon: 'tune',
     route: '/settings/master-data',
     roles: ['ADMIN'],
@@ -49,9 +53,10 @@ export class Settings {
   private readonly authSession = inject(AuthSessionService);
 
   protected readonly session = this.authSession.currentSession;
-  protected readonly cards = computed(() => {
-    const role = this.session()?.user.role ?? 'CLIENT';
-    return settingsCards.filter((card) => card.roles.includes(role));
+  protected readonly currentRole = computed(() => this.session()?.user.role ?? 'CLIENT');
+  protected readonly cards = computed<SettingsCardView[]>(() => {
+    const role = this.currentRole();
+    return settingsCards.map((card) => ({ ...card, available: card.roles.includes(role) }));
   });
 
   protected getRoleLabel(role: UserRole): string {

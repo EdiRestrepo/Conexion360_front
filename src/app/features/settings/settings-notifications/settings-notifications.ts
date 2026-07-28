@@ -1,9 +1,10 @@
-﻿import { AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, catchError, map, of, startWith, switchMap, take, tap } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { Observable, catchError, map, of, startWith, switchMap, take } from 'rxjs';
 
 import { NotificationPreference, UserProfile } from '../../../core/models/user-profile.model';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
@@ -33,7 +34,7 @@ const defaultPreferences: NotificationPreference = {
 
 @Component({
   selector: 'app-settings-notifications',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, ReactiveFormsModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, ReactiveFormsModule, RouterLink],
   templateUrl: './settings-notifications.html',
   styleUrl: './settings-notifications.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

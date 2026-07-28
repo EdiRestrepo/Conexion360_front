@@ -1,8 +1,8 @@
-﻿<section class="page settings-page">
+<section class="page settings-page">
   <header class="page__header settings-header">
     <div>
       <h1 class="page__title">Ajustes</h1>
-      <p class="page__subtitle">Preferencias, usuarios, roles y parámetros maestros.</p>
+      <p class="page__subtitle">Administra la configuración de la plataforma.</p>
     </div>
     @if (session(); as currentSession) {
       <span class="settings-role">Rol: {{ getRoleLabel(currentSession.user.role) }}</span>
@@ -11,11 +11,21 @@
 
   <section class="settings-cards" aria-label="Opciones principales de ajustes">
     @for (card of cards(); track card.route) {
-      <a class="surface-card settings-card" [routerLink]="card.route">
-        <mat-icon aria-hidden="true">{{ card.icon }}</mat-icon>
-        <span>{{ card.title }}</span>
-        <p>{{ card.description }}</p>
-      </a>
+      @if (card.available) {
+        <a class="surface-card settings-card" [routerLink]="card.route">
+          <span class="settings-card__icon"><mat-icon aria-hidden="true">{{ card.icon }}</mat-icon></span>
+          <strong>{{ card.title }}</strong>
+          <p>{{ card.description }}</p>
+          <span class="settings-card__action">Configurar <mat-icon aria-hidden="true">chevron_right</mat-icon></span>
+        </a>
+      } @else {
+        <article class="surface-card settings-card settings-card--locked" aria-disabled="true">
+          <span class="settings-card__icon"><mat-icon aria-hidden="true">{{ card.icon }}</mat-icon></span>
+          <strong>{{ card.title }}</strong>
+          <p>{{ card.description }}</p>
+          <span class="settings-card__locked"><mat-icon aria-hidden="true">lock</mat-icon> Solo administradores</span>
+        </article>
+      }
     }
   </section>
 
