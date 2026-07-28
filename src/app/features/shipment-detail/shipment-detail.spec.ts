@@ -52,7 +52,7 @@ describe('ShipmentDetail', () => {
     expect(getByIdSpy).toHaveBeenCalledWith('shipment-001');
     expect(getText()).toContain('AWB-001');
     expect(getText()).toContain('Importación');
-    expect(getText()).toContain('México → Colombia');
+    expect(getText()).toContain('México ? Colombia');
   }));
 
   it('should render not found state', fakeAsync(() => {
@@ -231,6 +231,75 @@ describe('ShipmentDetail', () => {
     expect(getText()).toContain('Ubicación simulada para fines del prototipo.');
   }));
 
+  it('should render documents with status labels and size', fakeAsync(() => {
+    setQueryParams({ tab: 'documents' });
+    render();
+
+    expect(getText()).toContain('Documento de transporte AWB-001');
+    expect(getText()).toContain('Disponible');
+    expect(getText()).toContain('512 KB');
+    expect(getText()).toContain('Rechazado');
+  }));
+
+  it('should render empty documents state', fakeAsync(() => {
+    getByIdSpy.and.returnValue(of(createShipment({ documents: [] })));
+    setQueryParams({ tab: 'documents' });
+    fixture = TestBed.createComponent(ShipmentDetail);
+    render();
+
+    expect(getText()).toContain('Sin documentos registrados.');
+  }));
+
+  it('should open simulated document preview', fakeAsync(() => {
+    setQueryParams({ tab: 'documents' });
+    render();
+
+    const button = fixture.nativeElement.querySelector('button[title="Visualizar"]') as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('Vista de prototipo');
+    expect(getText()).toContain('No abre archivos reales ni consume endpoints');
+  }));
+
+  it('should generate a simulated document download', fakeAsync(() => {
+    const createUrlSpy = spyOn(globalThis.URL, 'createObjectURL').and.returnValue('blob:conexion360-mock');
+    const revokeUrlSpy = spyOn(globalThis.URL, 'revokeObjectURL');
+    setQueryParams({ tab: 'documents' });
+    render();
+
+    const button = fixture.nativeElement.querySelector('button[title="Descargar"]') as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+
+    expect(createUrlSpy).toHaveBeenCalled();
+    expect(revokeUrlSpy).toHaveBeenCalledWith('blob:conexion360-mock');
+    expect(getText()).toContain('Descarga simulada generada');
+  }));
+
+  it('should render history newest first and allow order change', fakeAsync(() => {
+    setQueryParams({ tab: 'history' });
+    render();
+
+    const initialText = getText();
+    expect(initialText.indexOf('Entrega final')).toBeLessThan(initialText.indexOf('Ingreso a bodega'));
+
+    clickButton('Cambiar orden');
+    fixture.detectChanges();
+
+    const updatedText = getText();
+    expect(updatedText).toContain('Más antiguo primero');
+    expect(updatedText.indexOf('Ingreso a bodega')).toBeLessThan(updatedText.indexOf('Entrega final'));
+  }));
+
+  it('should render empty history state', fakeAsync(() => {
+    getByIdSpy.and.returnValue(of(createShipment({ events: [] })));
+    setQueryParams({ tab: 'history' });
+    fixture = TestBed.createComponent(ShipmentDetail);
+    render();
+
+    expect(getText()).toContain('Sin eventos registrados.');
+  }));
   function render(): void {
     fixture.detectChanges();
     tick();
@@ -309,8 +378,44 @@ function createShipment(input: ShipmentInput = {}): Shipment {
         total: 2356.2,
       },
     },
-    documents: [],
-    events: [],
+    documents: [
+      {
+        id: 'shipment-001-doc-transport',
+        type: 'AWB',
+        name: 'Documento de transporte AWB-001',
+        date: '2026-01-02',
+        status: 'AVAILABLE',
+        sizeKb: 512,
+      },
+      {
+        id: 'shipment-001-doc-invoice',
+        type: 'Factura',
+        name: 'Factura comercial FAC-001',
+        date: null,
+        status: 'REJECTED',
+        sizeKb: null,
+      },
+    ],
+    events: [
+      {
+        id: 'shipment-001-event-1',
+        dateTime: '2026-01-01T08:30:00.000Z',
+        status: 'ORIGIN_WAREHOUSE',
+        location: { country: 'México', city: 'Ciudad de México' },
+        description: 'Ingreso a bodega de origen.',
+        source: 'Sistema mock Conexion360',
+        user: null,
+      },
+      {
+        id: 'shipment-001-event-2',
+        dateTime: '2026-01-05T09:30:00.000Z',
+        status: 'DELIVERED',
+        location: { country: 'Colombia', city: 'Bogotá' },
+        description: 'Entrega final completada.',
+        source: 'Sistema mock Conexion360',
+        user: 'Equipo operaciones',
+      },
+    ],
     issue: null,
     progress: 50,
     nextStop: 'Aduana destino',

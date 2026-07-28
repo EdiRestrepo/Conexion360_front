@@ -19,6 +19,9 @@ import {
   Container,
   Location,
   Shipment,
+  ShipmentDocument,
+  ShipmentDocumentStatus,
+  ShipmentEvent,
   ShipmentFinancialInfo,
   ShipmentIssue,
   ShipmentStatus,
@@ -26,6 +29,9 @@ import {
 } from '../../core/models/shipment.model';
 import {
   ShipmentChipType,
+  getDocumentStatusChipType,
+  getDocumentStatusIcon,
+  getDocumentStatusLabel,
   getOperationTypeLabel,
   getShipmentStatusChipType,
   getShipmentStatusIcon,
@@ -106,6 +112,9 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
 
   protected readonly copied = signal(false);
   protected readonly mapError = signal(false);
+  protected readonly selectedDocument = signal<ShipmentDocument | null>(null);
+  protected readonly downloadMessage = signal<string | null>(null);
+  protected readonly historyDescending = signal(true);
   protected readonly tabs: TabItem[] = [
     { id: 'summary', label: 'Resumen' },
     { id: 'tracking', label: 'Seguimiento' },
@@ -154,6 +163,8 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   protected readonly getTransportModeIcon = getTransportModeIcon;
   protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
+  protected readonly getDocumentStatusLabel = getDocumentStatusLabel;
+  protected readonly getDocumentStatusIcon = getDocumentStatusIcon;
 
   ngAfterViewChecked(): void {
     const viewModel = this.currentViewModel();
@@ -211,7 +222,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   }
 
   protected getRouteLabel(shipment: Shipment): string {
-    return `${shipment.origin.country} → ${shipment.destination.country}`;
+    return `${shipment.origin.country} ? ${shipment.destination.country}`;
   }
 
   protected getLocationLabel(location: Shipment['origin']): string {
@@ -222,7 +233,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     return shipment.transportMode === 'AIR' ? 'AWB' : 'HBL';
   }
 
-  protected getStatusChipClass(shipment: Shipment): string {
+  protected getStatusChipClass(shipment: { status: ShipmentStatus }): string {
     const classes: Record<ShipmentChipType, string> = {
       neutral: 'status-chip--neutral',
       info: 'status-chip--info',
@@ -342,6 +353,84 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     return Boolean(this.getCoordinates(shipment.origin) && this.getCoordinates(shipment.destination));
   }
 
+  protected getDocumentStatusChipClass(status: ShipmentDocumentStatus): string {
+    const classes: Record<ShipmentChipType, string> = {
+      neutral: 'status-chip--neutral',
+      info: 'status-chip--info',
+      success: 'status-chip--success',
+      warning: 'status-chip--issue',
+      danger: 'status-chip--issue',
+    };
+
+    return classes[getDocumentStatusChipType(status)];
+  }
+
+  protected getDocumentSizeLabel(sizeKb: number | null): string {
+    if (sizeKb === null) {
+      return '-';
+    }
+
+    if (sizeKb >= 1024) {
+      return `${(sizeKb / 1024).toLocaleString('es-CO', { maximumFractionDigits: 1 })} MB`;
+    }
+
+    return `${sizeKb.toLocaleString('es-CO')} KB`;
+  }
+
+  protected previewDocument(documentItem: ShipmentDocument): void {
+    this.selectedDocument.set(documentItem);
+  }
+
+  protected closeDocumentPreview(): void {
+    this.selectedDocument.set(null);
+  }
+
+  protected downloadDocument(documentItem: ShipmentDocument, shipment: Shipment): void {
+    const content = [
+      'Conexion360 - descarga simulada',
+      `Documento: ${documentItem.name}`,
+      `Tipo: ${documentItem.type}`,
+      `Envío: ${shipment.documentNumber}`,
+      'Este archivo fue generado localmente para el prototipo. No proviene de un endpoint real.',
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = globalThis.URL.createObjectURL(blob);
+    const link = globalThis.document.createElement('a');
+
+    link.href = url;
+    link.download = `${this.toSafeFileName(shipment.documentNumber)}-${this.toSafeFileName(documentItem.type)}.txt`;
+    link.click();
+    globalThis.URL.revokeObjectURL(url);
+    this.downloadMessage.set(`Descarga simulada generada para ${documentItem.name}.`);
+  }
+
+  protected getSortedEvents(shipment: Shipment): ShipmentEvent[] {
+    const direction = this.historyDescending() ? -1 : 1;
+
+    return [...shipment.events].sort((first, second) => direction * (new Date(first.dateTime).getTime() - new Date(second.dateTime).getTime()));
+  }
+
+  protected toggleHistoryOrder(): void {
+    this.historyDescending.update((value) => !value);
+  }
+
+  protected getHistoryOrderLabel(): string {
+    return this.historyDescending() ? 'Más reciente primero' : 'Más antiguo primero';
+  }
+
+  protected formatEventDate(value: string): string {
+    return this.formatDate(value);
+  }
+
+  protected formatEventTime(value: string): string {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+
+    return new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(date);
+  }
   protected getLogisticDateRows(shipment: Shipment): LogisticDateRow[] {
     const dates = shipment.logisticDates;
 
@@ -631,6 +720,14 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     }, {});
   }
 
+  private toSafeFileName(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9-]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase();
+  }
   private formatOptional(value: string | null | undefined): string {
     return value?.trim() ? value : '-';
   }

@@ -17,7 +17,7 @@ export type ShipmentStatus =
   | 'WITH_ISSUE'
   | 'CANCELLED';
 
-export type ShipmentDocumentStatus = 'PENDING' | 'AVAILABLE' | 'REJECTED';
+export type ShipmentDocumentStatus = 'AVAILABLE' | 'PENDING' | 'REJECTED' | 'EXPIRED';
 
 export type ShipmentIssueType = 'DELAY' | 'CUSTOMS_INSPECTION' | 'DOCUMENT_PENDING' | 'WEATHER' | 'NONE';
 
@@ -84,6 +84,7 @@ export interface ShipmentDocument {
   name: string;
   date: string | null;
   status: ShipmentDocumentStatus;
+  sizeKb: number | null;
 }
 
 export interface ShipmentIssue {
@@ -100,6 +101,7 @@ export interface ShipmentEvent {
   location: Location;
   description: string;
   source: string;
+  user?: string | null;
 }
 
 export interface Shipment {

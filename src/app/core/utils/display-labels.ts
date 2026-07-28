@@ -1,4 +1,4 @@
-﻿import { OperationType, ShipmentStatus, TransportMode } from '../models/shipment.model';
+﻿import { OperationType, ShipmentDocumentStatus, ShipmentStatus, TransportMode } from '../models/shipment.model';
 import { UserRole } from '../models/user.model';
 
 export type ShipmentChipType = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
@@ -69,6 +69,27 @@ const shipmentStatusOrder: Record<ShipmentStatus, number> = {
   CANCELLED: 9,
 };
 
+const documentStatusLabels: Record<ShipmentDocumentStatus, string> = {
+  AVAILABLE: 'Disponible',
+  PENDING: 'Pendiente',
+  REJECTED: 'Rechazado',
+  EXPIRED: 'Vencido',
+};
+
+const documentStatusChipTypes: Record<ShipmentDocumentStatus, ShipmentChipType> = {
+  AVAILABLE: 'success',
+  PENDING: 'info',
+  REJECTED: 'danger',
+  EXPIRED: 'warning',
+};
+
+const documentStatusIcons: Record<ShipmentDocumentStatus, string> = {
+  AVAILABLE: 'task_alt',
+  PENDING: 'hourglass_top',
+  REJECTED: 'block',
+  EXPIRED: 'event_busy',
+};
+
 const userRoleLabels: Record<UserRole, string> = {
   CLIENT: 'Cliente',
   OPERATOR: 'Operador',
@@ -111,6 +132,17 @@ export function isTerminalShipmentStatus(value: ShipmentStatus): boolean {
   return value === 'DELIVERED' || value === 'CANCELLED';
 }
 
+export function getDocumentStatusLabel(value: ShipmentDocumentStatus): string {
+  return documentStatusLabels[value];
+}
+
+export function getDocumentStatusChipType(value: ShipmentDocumentStatus): ShipmentChipType {
+  return documentStatusChipTypes[value];
+}
+
+export function getDocumentStatusIcon(value: ShipmentDocumentStatus): string {
+  return documentStatusIcons[value];
+}
 export function getUserRoleLabel(value: UserRole): string {
   return userRoleLabels[value];
 }
