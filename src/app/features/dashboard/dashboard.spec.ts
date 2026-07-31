@@ -7,8 +7,8 @@ import { Observable, of, throwError } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
 import { DashboardMetrics, ReportMetrics, Shipment } from '../../core/models/shipment.model';
+import { ApiHomeService } from '../../core/services/api-home.service';
 import { AuthSessionService } from '../../core/services/auth-session.service';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
 import { Dashboard } from './dashboard';
 
 describe('Dashboard', () => {
@@ -31,7 +31,7 @@ describe('Dashboard', () => {
           },
         },
         {
-          provide: MockShipmentService,
+          provide: ApiHomeService,
           useValue: {
             getDashboardMetrics: jasmine.createSpy('getDashboardMetrics').and.returnValue(of(createDashboardMetrics())),
             getReportMetrics: jasmine.createSpy('getReportMetrics').and.returnValue(of(createReportMetrics())),
@@ -139,7 +139,7 @@ describe('Dashboard', () => {
   }));
 
   it('should render error state and retry action', fakeAsync(() => {
-    const service = TestBed.inject(MockShipmentService) as unknown as {
+    const service = TestBed.inject(ApiHomeService) as unknown as {
       getDashboardMetrics: jasmine.Spy<() => Observable<DashboardMetrics>>;
       getReportMetrics: jasmine.Spy<() => Observable<ReportMetrics>>;
       getRecent: jasmine.Spy<() => Observable<Shipment[]>>;

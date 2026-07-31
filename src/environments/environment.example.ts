@@ -7,7 +7,9 @@ export const environment = {
     scope: 'openid profile email',
   },
   api: {
-    baseUrl: '',
+    baseUrl: '/api/v1',
+    homeClientId: '',
+    homeRole: '',
   },
   appName: 'Conexion360',
 };

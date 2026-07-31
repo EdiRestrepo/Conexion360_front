@@ -30,7 +30,7 @@
     @if (viewModel.state === 'loading') {
       <div class="surface-card loading-state">
         <strong>Cargando dashboard...</strong>
-        <p>Calculando indicadores desde datos simulados.</p>
+        <p>Consultando indicadores del servicio de inicio.</p>
       </div>
     } @else if (viewModel.state === 'error') {
       <div class="surface-card error-state">
@@ -120,7 +120,7 @@
         <header class="recent-card__header">
           <div>
             <h2 id="recent-title">Envíos recientes</h2>
-            <p>Últimos movimientos registrados en la fuente simulada.</p>
+            <p>Últimos movimientos registrados para el usuario autenticado.</p>
           </div>
           <a mat-button routerLink="/shipments">Ver todos</a>
         </header>

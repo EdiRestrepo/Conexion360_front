@@ -14,7 +14,7 @@ import {
   getTransportModeIcon,
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
+import { ApiHomeService } from '../../core/services/api-home.service';
 
 interface MetricCard {
   label: string;
@@ -60,7 +60,7 @@ const initialViewModel: DashboardViewModel = {
 })
 export class Dashboard {
   private readonly authSession = inject(AuthSessionService);
-  private readonly shipmentService = inject(MockShipmentService);
+  private readonly shipmentService = inject(ApiHomeService);
   private readonly router = inject(Router);
 
   protected readonly searchControl = new FormControl('', { nonNullable: true });
