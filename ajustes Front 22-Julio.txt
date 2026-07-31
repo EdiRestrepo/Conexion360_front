@@ -1,20 +1,10 @@
-1. Dejar comentado el inicio de sesion, registro, mockup base 44
-	Logo inicio de sesion, registro, en icono de angular
-	eslogan inicio de sesion y restro
-
-----
-2. Auth0
-	logo mas grande en inicio de sesión, registro
-	Don't have an account? esto en español (unificar lenguaje) 
-	Registro debe de llevar nombre, empresa, telefono
-	Registro organizar nombre de la app, eslogan, Already have an account? (unificar lenguaje) 
-
-3. Logo, eslogan, nombre mas grandes
 
 3. Inicio
 	ajustar importacion/exportacion
 		modalidad area/maritimos
 		con novedad/entregados
+
+	Ajustar tamaño logo, eslogan y nombre de la app
 
 
 ------------------------------------------
