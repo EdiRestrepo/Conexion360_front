@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 
 const rolesClaim = 'https://conexion360.space/roles';
 const validRoles: readonly UserRole[] = ['CLIENT', 'OPERATOR', 'ADMIN'];
+const appUrl = environment.appUrl || window.location.origin;
 
 @Injectable({
   providedIn: 'root',
@@ -61,7 +62,7 @@ export class Auth0FacadeService {
   logout(): Observable<void> {
     return this.auth0.logout({
       logoutParams: {
-        returnTo: window.location.origin,
+        returnTo: appUrl,
       },
     });
   }

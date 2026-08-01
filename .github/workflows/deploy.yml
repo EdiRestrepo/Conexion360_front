@@ -34,7 +34,31 @@ jobs:
         run: npm ci
 
       - name: Create CI environment file
-        run: cp src/environments/environment.example.ts src/environments/environment.ts
+        run: |
+          APP_URL="${{ vars.APP_URL }}"
+          if [ -z "$APP_URL" ]; then
+            APP_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          fi
+
+          cat > src/environments/environment.ts <<'EOF'
+          export const environment = {
+            production: true,
+            auth0: {
+              domain: '${{ vars.AUTH0_DOMAIN }}',
+              clientId: '${{ vars.AUTH0_CLIENT_ID }}',
+              audience: '${{ vars.AUTH0_AUDIENCE }}',
+              scope: 'openid profile email',
+            },
+            api: {
+              baseUrl: '/api/v1',
+              homeClientId: '',
+              homeRole: '',
+            },
+            appUrl: '__APP_URL__',
+            appName: 'Conexion360',
+          };
+          EOF
+          sed -i "s|__APP_URL__|$APP_URL|g" src/environments/environment.ts
 
       - name: Run unit tests
         run: npx ng test --watch=false --browsers=ChromeHeadless

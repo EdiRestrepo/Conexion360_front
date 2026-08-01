@@ -11,5 +11,6 @@ export const environment = {
     homeClientId: '',
     homeRole: '',
   },
+  appUrl: '',
   appName: 'Conexion360',
 };
