@@ -74,6 +74,42 @@ jobs:
         with:
           path: dist/seguimiento-envios/browser
 
+      - name: Create Nginx environment file
+        run: |
+          cat > src/environments/environment.ts <<'EOF'
+          export const environment = {
+            production: true,
+            auth0: {
+              domain: '${{ vars.AUTH0_DOMAIN }}',
+              clientId: '${{ vars.AUTH0_CLIENT_ID }}',
+              audience: '${{ vars.AUTH0_AUDIENCE }}',
+              scope: 'openid profile email',
+            },
+            api: {
+              baseUrl: '/api/v1',
+              homeClientId: '',
+              homeRole: '',
+            },
+            appUrl: '${{ vars.NGINX_APP_URL }}',
+            appName: 'Conexion360',
+          };
+          EOF
+
+      - name: Build Nginx distribution bundle
+        run: npx ng build --configuration production --base-href "/" --output-path dist/nginx-package
+
+      - name: Create Nginx ZIP package
+        run: |
+          cd dist/nginx-package/browser
+          zip -r ../../conexion360-nginx-dist.zip .
+
+      - name: Upload Nginx ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conexion360-nginx-dist
+          path: dist/conexion360-nginx-dist.zip
+          if-no-files-found: error
+
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
