@@ -7,34 +7,30 @@ import { PaginatedResult, SearchFilters } from '../models/common.model';
 import {
   DashboardMetrics,
   OperationType,
-  ReportMetrics,
-  Shipment,
   ShipmentStatus,
   TransportMode,
 } from '../models/shipment.model';
-import { isTerminalShipmentStatus } from '../utils/display-labels';
 
 type JsonRecord = Record<string, unknown>;
 
-interface HomeDashboardData {
-  metrics: DashboardMetrics;
-  reportMetrics: ReportMetrics;
-  recentShipments: Shipment[];
+export interface HomeShipmentSummary {
+  id: string;
+  documentNumber: string;
+  operationType: OperationType;
+  transportMode: TransportMode;
+  status: ShipmentStatus;
+  origin: {
+    country: string;
+  };
+  destination: {
+    country: string;
+  };
 }
 
-const emptyStatusTotals: Record<ShipmentStatus, number> = {
-  PENDING: 0,
-  ORIGIN_WAREHOUSE: 0,
-  ORIGIN_CUSTOMS: 0,
-  IN_TRANSIT: 0,
-  DESTINATION_CUSTOMS: 0,
-  NATIONALIZED: 0,
-  DESTINATION_WAREHOUSE: 0,
-  DISPATCHED: 0,
-  DELIVERED: 0,
-  WITH_ISSUE: 0,
-  CANCELLED: 0,
-};
+interface HomeDashboardData {
+  metrics: DashboardMetrics;
+  recentShipments: HomeShipmentSummary[];
+}
 
 @Injectable({
   providedIn: 'root',
@@ -57,15 +53,11 @@ export class ApiHomeService {
     return this.dashboardData$.pipe(map((data) => data.metrics));
   }
 
-  getReportMetrics(): Observable<ReportMetrics> {
-    return this.dashboardData$.pipe(map((data) => data.reportMetrics));
-  }
-
-  getRecent(limit: number): Observable<Shipment[]> {
+  getRecent(limit: number): Observable<HomeShipmentSummary[]> {
     return this.dashboardData$.pipe(map((data) => data.recentShipments.slice(0, Math.max(limit, 0))));
   }
 
-  search(filters: SearchFilters): Observable<PaginatedResult<Shipment>> {
+  search(filters: SearchFilters): Observable<PaginatedResult<HomeShipmentSummary>> {
     return this.dashboardData$.pipe(map((data) => this.paginate(this.filterShipments(data.recentShipments, filters), filters)));
   }
 
@@ -86,7 +78,6 @@ export class ApiHomeService {
 
     return {
       metrics,
-      reportMetrics: this.toReportMetrics(payload, metrics, recentShipments),
       recentShipments,
     };
   }
@@ -106,7 +97,7 @@ export class ApiHomeService {
     return root;
   }
 
-  private toDashboardMetrics(payload: unknown, shipments: Shipment[]): DashboardMetrics {
+  private toDashboardMetrics(payload: unknown, shipments: HomeShipmentSummary[]): DashboardMetrics {
     const record = this.asRecord(payload);
     const totalShipments = this.readNumber(record, ['totalShipments', 'totalEnvios', 'totalRegistros', 'total', 'cantidadTotal'], shipments.length);
     const totalImports = this.readNumber(record, ['totalImports', 'totalImportaciones', 'importaciones', 'totalImpo'], this.countOperation(shipments, 'IMPO'));
@@ -118,7 +109,7 @@ export class ApiHomeService {
     const totalActive = this.readNumber(
       record,
       ['totalActive', 'totalActivos', 'activos'],
-      Math.max(totalShipments - totalDelivered - this.countStatus(shipments, 'CANCELLED'), 0),
+      Math.max(totalShipments - totalDelivered, 0),
     );
 
     return {
@@ -134,29 +125,7 @@ export class ApiHomeService {
     };
   }
 
-  private toReportMetrics(payload: unknown, metrics: DashboardMetrics, shipments: Shipment[]): ReportMetrics {
-    const record = this.asRecord(payload);
-
-    return {
-      ...metrics,
-      totalBilledUsd: this.readNumber(record, ['totalBilledUsd', 'totalFacturado', 'totalFacturadoUsd'], 0),
-      totalAdvancesUsd: this.readNumber(record, ['totalAdvancesUsd', 'totalAnticipos', 'totalAnticiposUsd'], 0),
-      totalDelayUsd: this.readNumber(record, ['totalDelayUsd', 'totalDemoras', 'totalDemorasUsd'], 0),
-      averageProgress: shipments.length ? Math.round(shipments.reduce((sum, shipment) => sum + shipment.progress, 0) / shipments.length) : 0,
-      byOperationType: {
-        IMPO: metrics.totalImports,
-        EXPO: metrics.totalExports,
-      },
-      byTransportMode: {
-        AIR: metrics.totalAir,
-        SEA: metrics.totalSea,
-      },
-      byStatus: this.countStatuses(shipments, metrics),
-      topClients: this.getTopClients(shipments),
-    };
-  }
-
-  private toShipment(value: unknown, index: number): Shipment {
+  private toShipment(value: unknown, index: number): HomeShipmentSummary {
     const record = this.asRecord(value);
     const operationType = this.toOperationType(this.readString(record, ['operationType', 'tipoOperacion', 'operacion', 'operation']));
     const transportMode = this.toTransportMode(this.readString(record, ['transportMode', 'modalidad', 'modalidadTransporte', 'mode']));
@@ -171,47 +140,21 @@ export class ApiHomeService {
       operationType,
       transportMode,
       status,
-      client: this.readString(record, ['client', 'cliente', 'customer']) || 'Cliente',
-      provider: this.readString(record, ['provider', 'proveedor']) || 'Proveedor logistico',
-      incoterm: this.readString(record, ['incoterm']) || 'N/D',
       origin: {
-        country: this.readString(record, ['originCountry', 'paisOrigen', 'origen', 'origin']) || 'Origen',
-        city: this.readString(record, ['originCity', 'ciudadOrigen']) || null,
-        terminal: this.readString(record, ['originTerminal', 'terminalOrigen']) || null,
+        country: this.readString(record, ['originCountry', 'paisOrigen', 'origen', 'origin']),
       },
       destination: {
-        country: this.readString(record, ['destinationCountry', 'paisDestino', 'destino', 'destination']) || 'Destino',
-        city: this.readString(record, ['destinationCity', 'ciudadDestino']) || null,
-        terminal: this.readString(record, ['destinationTerminal', 'terminalDestino']) || null,
+        country: this.readString(record, ['destinationCountry', 'paisDestino', 'destino', 'destination']),
       },
-      merchandiseDescription: this.readString(record, ['merchandiseDescription', 'mercancia', 'descripcionMercancia']) || 'Mercancia',
-      cargoType: this.readString(record, ['cargoType', 'tipoCarga']).toUpperCase() === 'FCL' ? 'FCL' : 'LCL',
-      packages: this.readNumber(record, ['packages', 'bultos', 'piezas'], 0),
-      weightKg: this.readNumber(record, ['weightKg', 'pesoKg', 'peso'], 0),
-      volumeM3: this.readNumber(record, ['volumeM3', 'volumenM3', 'volumen'], 0),
-      carrier: this.readString(record, ['carrier', 'transportador', 'naviera', 'aerolinea']) || 'N/D',
-      logisticDates: {
-        etd: this.readString(record, ['etd']) || null,
-        atd: this.readString(record, ['atd']) || null,
-        eta: this.readString(record, ['eta']) || null,
-        ata: this.readString(record, ['ata']) || null,
-      },
-      financialInfo: { advancePayment: null, invoice: null },
-      documents: [],
-      events: [],
-      issue: status === 'WITH_ISSUE' ? { type: 'DELAY', comment: 'Novedad reportada', date: new Date().toISOString(), resolved: false } : null,
-      progress: this.readNumber(record, ['progress', 'progreso', 'porcentaje'], isTerminalShipmentStatus(status) ? 100 : 50),
-      nextStop: this.readString(record, ['nextStop', 'proximaParada']) || null,
     };
   }
 
-  private filterShipments(shipments: Shipment[], filters: SearchFilters): Shipment[] {
+  private filterShipments(shipments: HomeShipmentSummary[], filters: SearchFilters): HomeShipmentSummary[] {
     const normalizedQuery = filters.query?.trim().toLowerCase() ?? '';
 
     return shipments.filter((shipment) => {
       const searchableText = [
         shipment.documentNumber,
-        shipment.client,
         shipment.origin.country,
         shipment.destination.country,
         shipment.status,
@@ -225,7 +168,7 @@ export class ApiHomeService {
     });
   }
 
-  private paginate(shipments: Shipment[], filters: SearchFilters): PaginatedResult<Shipment> {
+  private paginate(shipments: HomeShipmentSummary[], filters: SearchFilters): PaginatedResult<HomeShipmentSummary> {
     const page = Math.max(filters.page ?? 1, 1);
     const pageSize = Math.max(filters.pageSize ?? 10, 1);
     const start = (page - 1) * pageSize;
@@ -358,44 +301,15 @@ export class ApiHomeService {
     return 'IN_TRANSIT';
   }
 
-  private countOperation(shipments: Shipment[], operationType: OperationType): number {
+  private countOperation(shipments: HomeShipmentSummary[], operationType: OperationType): number {
     return shipments.filter((shipment) => shipment.operationType === operationType).length;
   }
 
-  private countMode(shipments: Shipment[], transportMode: TransportMode): number {
+  private countMode(shipments: HomeShipmentSummary[], transportMode: TransportMode): number {
     return shipments.filter((shipment) => shipment.transportMode === transportMode).length;
   }
 
-  private countStatus(shipments: Shipment[], status: ShipmentStatus): number {
+  private countStatus(shipments: HomeShipmentSummary[], status: ShipmentStatus): number {
     return shipments.filter((shipment) => shipment.status === status).length;
-  }
-
-  private countStatuses(shipments: Shipment[], metrics: DashboardMetrics): Record<ShipmentStatus, number> {
-    const byStatus = shipments.reduce(
-      (result, shipment) => ({
-        ...result,
-        [shipment.status]: result[shipment.status] + 1,
-      }),
-      { ...emptyStatusTotals },
-    );
-
-    return {
-      ...byStatus,
-      DELIVERED: Math.max(byStatus.DELIVERED, metrics.totalDelivered),
-      WITH_ISSUE: Math.max(byStatus.WITH_ISSUE, metrics.totalWithIssue),
-      PENDING: Math.max(byStatus.PENDING, metrics.totalPending),
-    };
-  }
-
-  private getTopClients(shipments: Shipment[]): { client: string; total: number }[] {
-    const totals = shipments.reduce<Record<string, number>>((result, shipment) => {
-      result[shipment.client] = (result[shipment.client] ?? 0) + 1;
-      return result;
-    }, {});
-
-    return Object.entries(totals)
-      .map(([client, total]) => ({ client, total }))
-      .sort((first, second) => second.total - first.total || first.client.localeCompare(second.client))
-      .slice(0, 5);
   }
 }

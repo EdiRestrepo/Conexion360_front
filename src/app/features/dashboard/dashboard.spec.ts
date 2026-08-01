@@ -6,8 +6,8 @@ import { Router, provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
-import { DashboardMetrics, ReportMetrics, Shipment } from '../../core/models/shipment.model';
-import { ApiHomeService } from '../../core/services/api-home.service';
+import { DashboardMetrics } from '../../core/models/shipment.model';
+import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { Dashboard } from './dashboard';
 
@@ -34,7 +34,6 @@ describe('Dashboard', () => {
           provide: ApiHomeService,
           useValue: {
             getDashboardMetrics: jasmine.createSpy('getDashboardMetrics').and.returnValue(of(createDashboardMetrics())),
-            getReportMetrics: jasmine.createSpy('getReportMetrics').and.returnValue(of(createReportMetrics())),
             getRecent: jasmine.createSpy('getRecent').and.returnValue(of(createShipments().slice(0, 5))),
             search: searchSpy,
           },
@@ -141,8 +140,7 @@ describe('Dashboard', () => {
   it('should render error state and retry action', fakeAsync(() => {
     const service = TestBed.inject(ApiHomeService) as unknown as {
       getDashboardMetrics: jasmine.Spy<() => Observable<DashboardMetrics>>;
-      getReportMetrics: jasmine.Spy<() => Observable<ReportMetrics>>;
-      getRecent: jasmine.Spy<() => Observable<Shipment[]>>;
+      getRecent: jasmine.Spy<() => Observable<HomeShipmentSummary[]>>;
     };
     service.getDashboardMetrics.and.returnValue(throwError(() => new Error('error')));
     fixture = TestBed.createComponent(Dashboard);
@@ -199,56 +197,14 @@ function createDashboardMetrics(): DashboardMetrics {
   };
 }
 
-function createReportMetrics(): ReportMetrics {
-  return {
-    ...createDashboardMetrics(),
-    totalBilledUsd: 10000,
-    totalAdvancesUsd: 2000,
-    totalDelayUsd: 450,
-    averageProgress: 58,
-    byOperationType: { IMPO: 15, EXPO: 15 },
-    byTransportMode: { AIR: 12, SEA: 18 },
-    byStatus: {
-      PENDING: 2,
-      ORIGIN_WAREHOUSE: 2,
-      ORIGIN_CUSTOMS: 2,
-      IN_TRANSIT: 3,
-      DESTINATION_CUSTOMS: 4,
-      NATIONALIZED: 2,
-      DESTINATION_WAREHOUSE: 2,
-      DISPATCHED: 2,
-      DELIVERED: 6,
-      WITH_ISSUE: 5,
-      CANCELLED: 0,
-    },
-    topClients: [{ client: 'Enka', total: 8 }],
-  };
-}
-
-function createShipments(): Shipment[] {
+function createShipments(): HomeShipmentSummary[] {
   return Array.from({ length: 5 }, (_, index) => ({
     id: `shipment-00${index + 1}`,
     documentNumber: `AWB-00${index + 1}`,
     operationType: index % 2 === 0 ? 'IMPO' : 'EXPO',
     transportMode: index % 2 === 0 ? 'AIR' : 'SEA',
     status: index === 0 ? 'IN_TRANSIT' : 'DELIVERED',
-    client: 'Enka',
-    provider: 'Global Freight Logistics S.A.S.',
-    incoterm: 'DAP',
-    origin: { country: 'México', city: 'Ciudad de México', terminal: null },
-    destination: { country: 'Colombia', city: 'Bogotá', terminal: null },
-    merchandiseDescription: 'Textiles',
-    cargoType: 'LCL',
-    packages: 10,
-    weightKg: 200,
-    volumeM3: 4,
-    carrier: 'Avianca Cargo',
-    logisticDates: { eta: '2026-01-10' },
-    financialInfo: { advancePayment: null, invoice: null },
-    documents: [],
-    events: [],
-    issue: null,
-    progress: 50,
-    nextStop: 'Aduana destino',
+    origin: { country: 'México' },
+    destination: { country: 'Colombia' },
   }));
 }

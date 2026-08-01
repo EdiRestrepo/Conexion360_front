@@ -6,7 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, forkJoin, map, of, startWith, take } from 'rxjs';
 
-import { DashboardMetrics, ReportMetrics, Shipment } from '../../core/models/shipment.model';
+import { DashboardMetrics } from '../../core/models/shipment.model';
+import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import {
   getOperationTypeLabel,
@@ -14,7 +15,6 @@ import {
   getTransportModeIcon,
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
-import { ApiHomeService } from '../../core/services/api-home.service';
 
 interface MetricCard {
   label: string;
@@ -33,8 +33,7 @@ interface DistributionItem {
 interface DashboardViewModel {
   state: 'loading' | 'empty' | 'error' | 'success';
   metrics: DashboardMetrics | null;
-  reportMetrics: ReportMetrics | null;
-  recentShipments: Shipment[];
+  recentShipments: HomeShipmentSummary[];
   cards: MetricCard[];
   operationDistribution: DistributionItem[];
   modeDistribution: DistributionItem[];
@@ -44,7 +43,6 @@ interface DashboardViewModel {
 const initialViewModel: DashboardViewModel = {
   state: 'loading',
   metrics: null,
-  reportMetrics: null,
   recentShipments: [],
   cards: [],
   operationDistribution: [],
@@ -110,23 +108,21 @@ export class Dashboard {
     });
   }
 
-  protected getRouteLabel(shipment: Shipment): string {
+  protected getRouteLabel(shipment: HomeShipmentSummary): string {
     return `${shipment.origin.country} → ${shipment.destination.country}`;
   }
 
   private loadDashboard(): Observable<DashboardViewModel> {
     return forkJoin({
       metrics: this.shipmentService.getDashboardMetrics(),
-      reportMetrics: this.shipmentService.getReportMetrics(),
       recentShipments: this.shipmentService.getRecent(5),
     }).pipe(
-      map(({ metrics, recentShipments, reportMetrics }) => {
+      map(({ metrics, recentShipments }) => {
         if (metrics.totalShipments === 0) {
           return {
             ...initialViewModel,
             state: 'empty',
             metrics,
-            reportMetrics,
             message: 'No hay envíos disponibles para construir el dashboard.',
           } satisfies DashboardViewModel;
         }
@@ -134,11 +130,10 @@ export class Dashboard {
         return {
           state: 'success',
           metrics,
-          reportMetrics,
           recentShipments,
           cards: this.createMetricCards(metrics),
-          operationDistribution: this.createOperationDistribution(reportMetrics),
-          modeDistribution: this.createModeDistribution(reportMetrics),
+          operationDistribution: this.createOperationDistribution(metrics),
+          modeDistribution: this.createModeDistribution(metrics),
         } satisfies DashboardViewModel;
       }),
       startWith(initialViewModel),
@@ -185,17 +180,17 @@ export class Dashboard {
     ];
   }
 
-  private createOperationDistribution(reportMetrics: ReportMetrics): DistributionItem[] {
+  private createOperationDistribution(metrics: DashboardMetrics): DistributionItem[] {
     return [
-      this.createDistributionItem('Importaciones', reportMetrics.byOperationType.IMPO, reportMetrics.totalShipments),
-      this.createDistributionItem('Exportaciones', reportMetrics.byOperationType.EXPO, reportMetrics.totalShipments),
+      this.createDistributionItem('Importaciones', metrics.totalImports, metrics.totalShipments),
+      this.createDistributionItem('Exportaciones', metrics.totalExports, metrics.totalShipments),
     ];
   }
 
-  private createModeDistribution(reportMetrics: ReportMetrics): DistributionItem[] {
+  private createModeDistribution(metrics: DashboardMetrics): DistributionItem[] {
     return [
-      this.createDistributionItem('Aéreos', reportMetrics.byTransportMode.AIR, reportMetrics.totalShipments),
-      this.createDistributionItem('Marítimos', reportMetrics.byTransportMode.SEA, reportMetrics.totalShipments),
+      this.createDistributionItem('Aéreos', metrics.totalAir, metrics.totalShipments),
+      this.createDistributionItem('Marítimos', metrics.totalSea, metrics.totalShipments),
     ];
   }
 
