@@ -1,4 +1,4 @@
-import { UserRole } from './user.model';
+﻿import { UserRole } from './user.model';
 
 export interface NotificationPreference {
   email: boolean;
@@ -16,6 +16,7 @@ export interface Auth0Identity {
   name?: string;
   nickname?: string;
   picture?: string;
+  roles: UserRole[];
 }
 
 export interface PendingUserProfile {

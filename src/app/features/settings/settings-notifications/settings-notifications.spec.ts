@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+﻿import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
@@ -78,7 +78,7 @@ describe('SettingsNotifications', () => {
 });
 
 function createIdentity(): Auth0Identity {
-  return { auth0UserId: 'auth0|123', email: 'cliente@conexion360.com', name: 'Cliente Demo' };
+  return { auth0UserId: 'auth0|123', email: 'cliente@conexion360.com', name: 'Cliente Demo', roles: ['CLIENT'] };
 }
 
 function createProfile(): UserProfile {
@@ -103,3 +103,4 @@ function createProfile(): UserProfile {
     createdAt: '2026-07-22T00:00:00.000Z',
   };
 }
+

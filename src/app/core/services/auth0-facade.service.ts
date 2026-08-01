@@ -1,10 +1,14 @@
-import { Injectable, inject, signal } from '@angular/core';
+﻿import { Injectable, inject, signal } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { User as Auth0User } from '@auth0/auth0-spa-js';
 import { Observable, map } from 'rxjs';
 
+import { UserRole } from '../models/user.model';
 import { Auth0Identity } from '../models/user-profile.model';
 import { environment } from '../../../environments/environment';
+
+const rolesClaim = 'https://conexion360.space/roles';
+const validRoles: readonly UserRole[] = ['CLIENT', 'OPERATOR', 'ADMIN'];
 
 @Injectable({
   providedIn: 'root',
@@ -87,6 +91,19 @@ export class Auth0FacadeService {
       name: auth0User.name ?? undefined,
       nickname: auth0User.nickname ?? undefined,
       picture: auth0User.picture ?? undefined,
+      roles: this.mapRoles(auth0User),
     };
+  }
+
+  private mapRoles(auth0User: Auth0User): UserRole[] {
+    const candidate = (auth0User as Record<string, unknown>)[rolesClaim];
+
+    if (!Array.isArray(candidate)) {
+      return [];
+    }
+
+    return candidate.filter((role): role is UserRole =>
+      typeof role === 'string' && validRoles.includes(role as UserRole),
+    );
   }
 }

@@ -1,4 +1,4 @@
-import { fakeAsync, tick } from '@angular/core/testing';
+﻿import { fakeAsync, tick } from '@angular/core/testing';
 
 import { Auth0Identity } from '../../core/models/user-profile.model';
 import { MockUserProfileService } from './mock-user-profile.service';
@@ -67,5 +67,7 @@ function createIdentity(): Auth0Identity {
     auth0UserId: 'auth0|123',
     email: 'nuevo@demo.com',
     name: 'Nuevo Cliente',
+    roles: ['CLIENT'],
   };
 }
+

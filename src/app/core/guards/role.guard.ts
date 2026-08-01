@@ -21,12 +21,14 @@ export const roleGuard: CanActivateFn = (route) => {
     take(1),
     switchMap(() => combineLatest([auth0Facade.isAuthenticated$, auth0Facade.user$]).pipe(take(1))),
     switchMap(([isAuthenticated, identity]) => {
-      if (!isAuthenticated) {
+      if (!isAuthenticated || !identity) {
         return of(router.createUrlTree(['/login']));
       }
 
-      if (!identity) {
-        return of(router.createUrlTree(['/complete-profile']));
+      const hasAuth0Role = identity.roles.some((role) => allowedRoles.includes(role));
+
+      if (hasAuth0Role) {
+        return of(true);
       }
 
       return userProfileService.completeProfileFromIdentity(identity).pipe(

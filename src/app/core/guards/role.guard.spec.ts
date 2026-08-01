@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
@@ -15,8 +15,10 @@ describe('roleGuard', () => {
 
   beforeEach(() => {
     isAuthenticatedSubject = new BehaviorSubject<boolean>(true);
-    userSubject = new BehaviorSubject<Auth0Identity | null>(createIdentity());
-    completeProfileSpy = jasmine.createSpy<(identity: Auth0Identity) => Observable<UserProfile | null>>().and.returnValue(of(createProfile('ADMIN')));
+    userSubject = new BehaviorSubject<Auth0Identity | null>(createIdentity(['ADMIN']));
+    completeProfileSpy = jasmine
+      .createSpy<(identity: Auth0Identity) => Observable<UserProfile | null>>()
+      .and.returnValue(of(null));
 
     TestBed.configureTestingModule({
       providers: [
@@ -34,7 +36,19 @@ describe('roleGuard', () => {
     });
   });
 
-  it('should allow users with an allowed role', (done) => {
+  it('should allow users with an allowed Auth0 role', (done) => {
+    const result = runGuard(['ADMIN']);
+
+    result.subscribe((canActivate) => {
+      expect(canActivate).toBeTrue();
+      expect(completeProfileSpy).not.toHaveBeenCalled();
+      done();
+    });
+  });
+
+  it('should allow users with an allowed mock profile role as fallback', (done) => {
+    userSubject.next(createIdentity([]));
+    completeProfileSpy.and.returnValue(of(createProfile('ADMIN')));
     const result = runGuard(['ADMIN']);
 
     result.subscribe((canActivate) => {
@@ -44,6 +58,7 @@ describe('roleGuard', () => {
   });
 
   it('should redirect users without required role to settings', (done) => {
+    userSubject.next(createIdentity(['CLIENT']));
     completeProfileSpy.and.returnValue(of(createProfile('CLIENT')));
     const router = TestBed.inject(Router);
     const result = runGuard(['ADMIN']);
@@ -72,8 +87,8 @@ describe('roleGuard', () => {
   }
 });
 
-function createIdentity(): Auth0Identity {
-  return { auth0UserId: 'auth0|123', email: 'admin@conexion360.com', name: 'Admin Conexion360' };
+function createIdentity(roles: UserRole[]): Auth0Identity {
+  return { auth0UserId: 'auth0|123', email: 'admin@conexion360.com', name: 'Admin Conexion360', roles };
 }
 
 function createProfile(role: UserRole): UserProfile {

@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -29,11 +29,6 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
-      },
-      {
-        path: 'complete-profile',
-        loadComponent: () =>
-          import('./features/auth/complete-profile/complete-profile').then((m) => m.CompleteProfile),
       },
       {
         path: 'shipments',

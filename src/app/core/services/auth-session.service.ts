@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, combineLatest, map, of, switchMap } from 'rxjs';
 
@@ -34,7 +34,7 @@ export class AuthSessionService {
                 id: identity.auth0UserId,
                 name: displayName,
                 email: identity.email,
-                role: profile?.role ?? 'CLIENT',
+                role: profile?.role ?? identity.roles[0] ?? 'CLIENT',
                 company: profile?.company,
                 picture: profile?.picture ?? identity.picture ?? null,
               },
