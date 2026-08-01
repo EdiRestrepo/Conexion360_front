@@ -98,16 +98,11 @@ jobs:
       - name: Build Nginx distribution bundle
         run: npx ng build --configuration production --base-href "/" --output-path dist/nginx-package
 
-      - name: Create Nginx ZIP package
-        run: |
-          cd dist/nginx-package/browser
-          zip -r ../../conexion360-nginx-dist.zip .
-
-      - name: Upload Nginx ZIP artifact
+      - name: Upload Nginx distribution artifact
         uses: actions/upload-artifact@v4
         with:
           name: conexion360-nginx-dist
-          path: dist/conexion360-nginx-dist.zip
+          path: dist/nginx-package/browser
           if-no-files-found: error
 
   deploy:
