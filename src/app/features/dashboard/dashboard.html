@@ -41,7 +41,7 @@
   @if (searchResults().length > 0) {
     <section class="surface-card dashboard-search-results" aria-label="Resultado de búsqueda por documento">
       @for (shipment of searchResults(); track shipment.id) {
-        <article class="dashboard-search-result">
+        <a class="dashboard-search-result" [routerLink]="['/shipments', shipment.id]" [queryParams]="{ document: shipment.documentNumber, from: 'dashboard' }">
           <span class="dashboard-search-result__icon" aria-hidden="true">
             <mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
           </span>
@@ -55,7 +55,7 @@
           <span class="dashboard-search-result__meta">
             {{ getOperationTypeLabel(shipment.operationType) }} · {{ getTransportModeLabel(shipment.transportMode) }}
           </span>
-        </article>
+        </a>
       }
     </section>
   }
@@ -161,7 +161,7 @@
 
         <div class="recent-list">
           @for (shipment of viewModel.recentShipments; track shipment.id) {
-            <a class="recent-item" [routerLink]="['/shipments', shipment.id]">
+            <a class="recent-item" [routerLink]="['/shipments', shipment.id]" [queryParams]="{ document: shipment.documentNumber, from: 'dashboard' }">
               <span class="recent-item__icon" aria-hidden="true">
                 <mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
               </span>

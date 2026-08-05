@@ -4,6 +4,7 @@ import { ActivatedRoute, Params, Router, convertToParamMap, provideRouter } from
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
 import { LogisticDates, Shipment, ShipmentFinancialInfo } from '../../core/models/shipment.model';
+import { ApiHomeService } from '../../core/services/api-home.service';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
 import { ShipmentDetail } from './shipment-detail';
 
@@ -11,6 +12,7 @@ describe('ShipmentDetail', () => {
   let fixture: ComponentFixture<ShipmentDetail>;
   let router: Router;
   let getByIdSpy: jasmine.Spy<(id: string) => Observable<Shipment | null>>;
+  let homeSearchSpy: jasmine.Spy;
   let paramSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let querySubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let clipboardWriteSpy: jasmine.Spy<(value: string) => Promise<void>>;
@@ -19,6 +21,15 @@ describe('ShipmentDetail', () => {
     paramSubject = new BehaviorSubject(convertToParamMap({ id: 'shipment-001' }));
     querySubject = new BehaviorSubject(convertToParamMap({}));
     getByIdSpy = jasmine.createSpy('getById').and.returnValue(of(createShipment()));
+    homeSearchSpy = jasmine.createSpy('search').and.returnValue(
+      of({
+        items: [],
+        page: 1,
+        pageSize: 10,
+        totalItems: 0,
+        totalPages: 0,
+      }),
+    );
     clipboardWriteSpy = jasmine.createSpy('writeText').and.resolveTo();
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       value: { writeText: clipboardWriteSpy },
@@ -38,6 +49,7 @@ describe('ShipmentDetail', () => {
           },
         },
         { provide: MockShipmentService, useValue: { getById: getByIdSpy } },
+        { provide: ApiHomeService, useValue: { search: homeSearchSpy } },
       ],
     }).compileComponents();
 
@@ -61,6 +73,38 @@ describe('ShipmentDetail', () => {
     render();
 
     expect(getText()).toContain('Envío no encontrado');
+  }));
+
+  it('should render detail from home search when route id is not in mock data', fakeAsync(() => {
+    getByIdSpy.and.returnValue(of(null));
+    homeSearchSpy.and.returnValue(
+      of({
+        items: [
+          {
+            id: '200',
+            documentNumber: 'AWB-JL9TDCC5',
+            operationType: 'EXPO',
+            transportMode: 'SEA',
+            status: 'ORIGIN_CUSTOMS',
+            origin: { country: 'Colombia' },
+            destination: { country: 'Alemania' },
+          },
+        ],
+        page: 1,
+        pageSize: 10,
+        totalItems: 1,
+        totalPages: 1,
+      }),
+    );
+    paramSubject.next(convertToParamMap({ id: '200' }));
+    querySubject.next(convertToParamMap({ document: 'AWB-JL9TDCC5', from: 'dashboard' }));
+    fixture = TestBed.createComponent(ShipmentDetail);
+    render();
+
+    expect(homeSearchSpy).toHaveBeenCalledWith({ query: 'AWB-JL9TDCC5', page: 1, pageSize: 10 });
+    expect(getText()).toContain('AWB-JL9TDCC5');
+    expect(getText()).toContain('Colombia → Alemania');
+    expect(getText()).toContain('Exportación');
   }));
 
   it('should render error state and retry', fakeAsync(() => {

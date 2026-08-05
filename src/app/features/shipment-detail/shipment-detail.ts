@@ -27,6 +27,7 @@ import {
   ShipmentStatus,
   TransportMode,
 } from '../../core/models/shipment.model';
+import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import {
   ShipmentChipType,
   getDocumentStatusChipType,
@@ -105,6 +106,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly shipmentService = inject(MockShipmentService);
+  private readonly apiHomeService = inject(ApiHomeService);
   private readonly retry$ = new Subject<void>();
   private readonly currentViewModel = signal<DetailViewModel | null>(null);
   private map: L.Map | null = null;
@@ -134,15 +136,21 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       const id = params.get('id') ?? '';
       const selectedTab = this.getTabFromParams(queryParams);
       const listQueryParams = this.getListQueryParams(queryParams);
+      const documentNumber = queryParams.get('document') ?? '';
 
       return this.shipmentService.getById(id).pipe(
-        map((shipment) => ({
-          state: shipment ? 'success' : 'not-found',
-          selectedTab,
-          listQueryParams,
-          shipment,
-          message: shipment ? undefined : 'El identificador solicitado no existe en los datos simulados.',
-        }) satisfies DetailViewModel),
+        switchMap((shipment) => {
+          if (shipment) {
+            return of({
+              state: 'success',
+              selectedTab,
+              listQueryParams,
+              shipment,
+            } satisfies DetailViewModel);
+          }
+
+          return this.getShipmentFromHomeSearch(id, documentNumber, selectedTab, listQueryParams);
+        }),
         startWith({ state: 'loading', selectedTab, listQueryParams, shipment: null } satisfies DetailViewModel),
         catchError(() =>
           of({
@@ -196,6 +204,11 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   }
 
   protected goBack(queryParams: Params): void {
+    if (queryParams['from'] === 'dashboard') {
+      void this.router.navigate(['/dashboard']);
+      return;
+    }
+
     void this.router.navigate(['/shipments'], { queryParams });
   }
 
@@ -222,7 +235,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   }
 
   protected getRouteLabel(shipment: Shipment): string {
-    return `${shipment.origin.country} ? ${shipment.destination.country}`;
+    return `${shipment.origin.country} → ${shipment.destination.country}`;
   }
 
   protected getLocationLabel(location: Shipment['origin']): string {
@@ -718,6 +731,134 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       }
       return result;
     }, {});
+  }
+
+  private getShipmentFromHomeSearch(
+    id: string,
+    documentNumber: string,
+    selectedTab: DetailTab,
+    listQueryParams: Params,
+  ): Observable<DetailViewModel> {
+    if (!documentNumber.trim()) {
+      return of({
+        state: 'not-found',
+        selectedTab,
+        listQueryParams,
+        shipment: null,
+        message: 'El identificador solicitado no existe en los datos simulados.',
+      } satisfies DetailViewModel);
+    }
+
+    return this.apiHomeService.search({ query: documentNumber, page: 1, pageSize: 10 }).pipe(
+      map((result) => {
+        const normalizedDocument = documentNumber.trim().toLowerCase();
+        const summary =
+          result.items.find((item) => item.id === id || item.documentNumber.toLowerCase() === normalizedDocument) ??
+          result.items[0] ??
+          null;
+
+        return {
+          state: summary ? 'success' : 'not-found',
+          selectedTab,
+          listQueryParams,
+          shipment: summary ? this.createShipmentFromHomeSummary(summary) : null,
+          message: summary
+            ? undefined
+            : 'El identificador solicitado no fue encontrado en la consulta por documento.',
+        } satisfies DetailViewModel;
+      }),
+      catchError(() =>
+        of({
+          state: 'error',
+          selectedTab,
+          listQueryParams,
+          shipment: null,
+          message: 'No fue posible cargar el detalle desde la búsqueda por documento. Intenta nuevamente.',
+        } satisfies DetailViewModel),
+      ),
+    );
+  }
+
+  private createShipmentFromHomeSummary(summary: HomeShipmentSummary): Shipment {
+    return {
+      id: summary.id,
+      documentNumber: summary.documentNumber,
+      operationType: summary.operationType,
+      transportMode: summary.transportMode,
+      status: summary.status,
+      client: 'Cliente autenticado',
+      provider: 'Pendiente por integrar',
+      incoterm: '-',
+      origin: {
+        country: summary.origin.country || '-',
+        city: null,
+        terminal: null,
+        latitude: null,
+        longitude: null,
+      },
+      destination: {
+        country: summary.destination.country || '-',
+        city: null,
+        terminal: null,
+        latitude: null,
+        longitude: null,
+      },
+      merchandiseDescription: 'Información pendiente por integrar desde el servicio de detalle.',
+      cargoType: summary.transportMode === 'SEA' ? 'FCL' : 'LCL',
+      packages: 0,
+      weightKg: 0,
+      volumeM3: 0,
+      carrier: 'Pendiente por integrar',
+      logisticDates: {},
+      container: null,
+      financialInfo: {
+        advancePayment: null,
+        invoice: null,
+      },
+      documents: [],
+      events: [
+        {
+          id: `${summary.id || summary.documentNumber}-home-search`,
+          dateTime: '2026-01-01T00:00:00.000Z',
+          status: summary.status,
+          location: {
+            country: summary.origin.country || '-',
+            city: null,
+            terminal: null,
+          },
+          description: 'Detalle construido desde la búsqueda por documento de transporte.',
+          source: 'Servicio de inicio Conexion360',
+          user: null,
+        },
+      ],
+      issue:
+        summary.status === 'WITH_ISSUE'
+          ? {
+              type: 'DELAY',
+              comment: 'El envío registra una novedad según el servicio de inicio.',
+              date: '2026-01-01',
+              resolved: false,
+            }
+          : null,
+      progress: this.getProgressFromStatus(summary.status),
+      nextStop: null,
+    };
+  }
+
+  private getProgressFromStatus(status: ShipmentStatus): number {
+    if (status === 'DELIVERED') {
+      return 100;
+    }
+
+    if (status === 'CANCELLED' || status === 'PENDING') {
+      return 0;
+    }
+
+    if (status === 'IN_TRANSIT') {
+      return 50;
+    }
+
+    return Math.min(getShipmentStatusOrder(status) * 12, 90);
   }
 
   private toSafeFileName(value: string): string {
