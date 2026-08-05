@@ -64,7 +64,7 @@ describe('ShipmentDetail', () => {
     expect(getByIdSpy).toHaveBeenCalledWith('shipment-001');
     expect(getText()).toContain('AWB-001');
     expect(getText()).toContain('Importación');
-    expect(getText()).toContain('México ? Colombia');
+    expect(getText()).toContain('México → Colombia');
   }));
 
   it('should render not found state', fakeAsync(() => {

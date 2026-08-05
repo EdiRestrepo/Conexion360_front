@@ -36,7 +36,7 @@ describe('ApiHomeService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe(environment.api.homeClientId);
-    expect(request.request.params.get('rol')).toBe(environment.api.homeRole);
+    expect(request.request.params.get('role')).toBe(environment.api.homeRole);
 
     request.flush({
       dataResponse: {
@@ -112,7 +112,7 @@ describe('ApiHomeService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe(environment.api.homeClientId);
-    expect(request.request.params.get('rol')).toBe(environment.api.homeRole);
+    expect(request.request.params.get('role')).toBe(environment.api.homeRole);
     expect(request.request.params.get('filterValue')).toBe('9YJB1QX6');
 
     request.flush({
@@ -135,6 +135,7 @@ describe('ApiHomeService', () => {
     });
 
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/filters`);
+    expect(request.request.params.get('role')).toBe(environment.api.homeRole);
 
     request.flush({
       dataResponse: {

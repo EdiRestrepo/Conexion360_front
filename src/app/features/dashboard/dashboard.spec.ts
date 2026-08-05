@@ -62,9 +62,12 @@ describe('Dashboard', () => {
 
     expect(text).toContain('Total de envíos');
     expect(text).toContain('30');
-    expect(text).toContain('Importaciones');
-    expect(text).toContain('Aéreos');
-    expect(text).toContain('Con novedad');
+    expect(text).toContain('Tipo de operación');
+    expect(text).toContain('15 import · 15 export');
+    expect(text).toContain('Modalidad');
+    expect(text).toContain('12 aéreos · 18 marítimos');
+    expect(text).toContain('Estado');
+    expect(text).toContain('5 con novedad · 6 entregados');
   }));
 
   it('should render distribution percentages with progressbars', fakeAsync(() => {
