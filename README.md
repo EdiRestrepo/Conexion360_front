@@ -38,13 +38,13 @@ Pasos:
    conexion360-nginx-dist
    ```
 
-7. GitHub descargara un archivo `.zip`. Descomprimirlo en una carpeta temporal, por ejemplo:
+7. GitHub descargara un archivo `.zip`. Descomprimirlo una sola vez en una carpeta temporal, por ejemplo:
 
    ```text
    C:\conexion360-dist
    ```
 
-Al descomprimirlo se deben ver archivos parecidos a estos:
+Al descomprimirlo se deben ver directamente archivos parecidos a estos:
 
 ```text
 index.html
@@ -56,6 +56,8 @@ assets\
 ```
 
 Estos son los archivos que Nginx debe servir.
+
+Nota: no es necesario que dentro del ZIP exista una ruta como `dist\seguimiento-envios\browser`. Esa ruta es usada durante la compilacion dentro del proyecto Angular. Para entregar el proyecto a otra persona, el artefacto contiene directamente el contenido final de `browser`, porque eso es lo que Nginx necesita publicar.
 
 ## Instalar Nginx en Windows
 

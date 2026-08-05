@@ -2,7 +2,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
@@ -15,7 +15,6 @@ describe('Dashboard', () => {
   let fixture: ComponentFixture<Dashboard>;
   let component: DashboardTestComponent;
   let searchSpy: jasmine.Spy;
-  let router: Router;
 
   beforeEach(async () => {
     searchSpy = jasmine.createSpy('search').and.returnValue(of({ items: [], page: 1, pageSize: 30, totalItems: 0, totalPages: 0 }));
@@ -41,8 +40,6 @@ describe('Dashboard', () => {
       ],
     }).compileComponents();
 
-    router = TestBed.inject(Router);
-    spyOn(router, 'navigate').and.resolveTo(true);
     fixture = TestBed.createComponent(Dashboard);
     component = fixture.componentInstance as unknown as DashboardTestComponent;
   });
@@ -94,26 +91,33 @@ describe('Dashboard', () => {
     expect(getText()).toContain('AWB-001');
   }));
 
-  it('should navigate to shipment detail when search has one result', fakeAsync(() => {
+  it('should render search result in dashboard when search has one result', fakeAsync(() => {
     searchSpy.and.returnValue(of({ items: [createShipments()[0]], page: 1, pageSize: 30, totalItems: 1, totalPages: 1 }));
     fixture.detectChanges();
     tick();
     component.searchControl.setValue('AWB-001');
     component.searchShipment();
     tick();
+    fixture.detectChanges();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/shipments', 'shipment-001']);
+    expect(getText()).toContain('AWB-001');
+    expect(getText()).toContain('Búsquedas recientes');
   }));
 
-  it('should navigate to shipments with query params when search has multiple results', fakeAsync(() => {
+  it('should render all search results in dashboard when search has multiple results', fakeAsync(() => {
     searchSpy.and.returnValue(of({ items: createShipments().slice(0, 2), page: 1, pageSize: 30, totalItems: 2, totalPages: 1 }));
     fixture.detectChanges();
     tick();
     component.searchControl.setValue('AWB');
     component.searchShipment();
     tick();
+    fixture.detectChanges();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/shipments'], { queryParams: { q: 'AWB' } });
+    const resultItems = fixture.nativeElement.querySelectorAll('.dashboard-search-result') as NodeListOf<HTMLElement>;
+
+    expect(resultItems.length).toBe(2);
+    expect(getText()).toContain('AWB-001');
+    expect(getText()).toContain('AWB-002');
   }));
 
   it('should show a message when search has no results', fakeAsync(() => {
@@ -167,7 +171,7 @@ describe('Dashboard', () => {
 
 interface DashboardTestComponent {
   searchControl: FormControl<string>;
-  searchShipment: () => void;
+  searchShipment: (event?: Event) => boolean;
 }
 
 function createSession(name: string): AuthSession {

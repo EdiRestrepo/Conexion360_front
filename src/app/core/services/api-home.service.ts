@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, shareReplay } from 'rxjs';
+import { Observable, map, of, shareReplay } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { PaginatedResult, SearchFilters } from '../models/common.model';
@@ -38,11 +38,12 @@ interface HomeDashboardData {
 export class ApiHomeService {
   private readonly http = inject(HttpClient);
   private readonly homeUrl = `${environment.api.baseUrl}/home/totals`;
+  private readonly filtersUrl = `${environment.api.baseUrl}/home/filters`;
   private readonly dashboardData$ = this.http
     .get<unknown>(this.homeUrl, {
       params: new HttpParams()
         .set('idClient', environment.api.homeClientId)
-        .set('rol', environment.api.homeRole),
+        .set('role', environment.api.homeRole),
     })
     .pipe(
       map((response) => this.toHomeDashboardData(response)),
@@ -58,7 +59,20 @@ export class ApiHomeService {
   }
 
   search(filters: SearchFilters): Observable<PaginatedResult<HomeShipmentSummary>> {
-    return this.dashboardData$.pipe(map((data) => this.paginate(this.filterShipments(data.recentShipments, filters), filters)));
+    const filterValue = filters.query?.trim() ?? '';
+
+    if (!filterValue) {
+      return of(this.paginate([], filters));
+    }
+
+    return this.http
+      .get<unknown>(this.filtersUrl, {
+        params: new HttpParams()
+          .set('idClient', environment.api.homeClientId)
+          .set('role', environment.api.homeRole)
+          .set('filterValue', filterValue),
+      })
+      .pipe(map((response) => this.paginate(this.toHomeFilterResults(response), filters)));
   }
 
   private toHomeDashboardData(response: unknown): HomeDashboardData {
@@ -125,14 +139,32 @@ export class ApiHomeService {
     };
   }
 
-  private toShipment(value: unknown, index: number): HomeShipmentSummary {
+  private toHomeFilterResults(response: unknown): HomeShipmentSummary[] {
+    const payload = this.unwrapPayload(response);
+    const items = Array.isArray(payload) ? payload : [payload];
+
+    return items
+      .map((item, index) => this.toShipment(item, index, false))
+      .filter((shipment) => this.hasSearchResultData(shipment));
+  }
+
+  private toShipment(value: unknown, index: number, useDocumentFallback = true): HomeShipmentSummary {
     const record = this.asRecord(value);
     const operationType = this.toOperationType(this.readString(record, ['operationType', 'tipoOperacion', 'operacion', 'operation']));
     const transportMode = this.toTransportMode(this.readString(record, ['transportMode', 'modalidad', 'modalidadTransporte', 'mode']));
     const status = this.toShipmentStatus(this.readString(record, ['status', 'estado', 'estadoLogistico']));
     const documentNumber =
-      this.readString(record, ['documentNumber', 'documentoTransporte', 'numeroDocumento', 'nroDocumento', 'hbl', 'awb', 'mbl', 'guia']) ||
-      `ENVIO-${index + 1}`;
+      this.readString(record, [
+        'documentNumber',
+        'documentoTransporte',
+        'numeroDocumento',
+        'nroDocumento',
+        'nrDocumento',
+        'hbl',
+        'awb',
+        'mbl',
+        'guia',
+      ]) || (useDocumentFallback ? `ENVIO-${index + 1}` : '');
 
     return {
       id: this.readString(record, ['id', 'shipmentId', 'idShipment', 'idEnvio']) || documentNumber,
@@ -149,23 +181,15 @@ export class ApiHomeService {
     };
   }
 
-  private filterShipments(shipments: HomeShipmentSummary[], filters: SearchFilters): HomeShipmentSummary[] {
-    const normalizedQuery = filters.query?.trim().toLowerCase() ?? '';
+  private hasSearchResultData(shipment: HomeShipmentSummary): boolean {
+    const normalizedId = shipment.id.trim();
 
-    return shipments.filter((shipment) => {
-      const searchableText = [
-        shipment.documentNumber,
-        shipment.origin.country,
-        shipment.destination.country,
-        shipment.status,
-        shipment.operationType,
-        shipment.transportMode,
-      ]
-        .join(' ')
-        .toLowerCase();
-
-      return normalizedQuery ? searchableText.includes(normalizedQuery) : true;
-    });
+    return Boolean(
+      shipment.documentNumber ||
+        shipment.origin.country ||
+        shipment.destination.country ||
+        (normalizedId && normalizedId !== '0'),
+    );
   }
 
   private paginate(shipments: HomeShipmentSummary[], filters: SearchFilters): PaginatedResult<HomeShipmentSummary> {

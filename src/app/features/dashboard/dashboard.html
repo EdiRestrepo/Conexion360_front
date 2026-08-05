@@ -5,7 +5,7 @@
       <p>Resumen de envíos internacionales</p>
     </div>
 
-    <form class="dashboard-search" (ngSubmit)="searchShipment()" role="search" aria-label="Buscar envío por documento de transporte">
+    <form class="dashboard-search" (submit)="searchShipment($event)" role="search" aria-label="Buscar envío por documento de transporte">
       <mat-icon aria-hidden="true">search</mat-icon>
       <label class="dashboard-search__field">
         <span>Documento de transporte</span>
@@ -14,9 +14,10 @@
           [formControl]="searchControl"
           placeholder="Ingrese HBL, AWB, MBL o documento"
           aria-describedby="dashboard-search-message"
+          (keydown.enter)="searchShipment($event)"
         />
       </label>
-      <button mat-flat-button type="submit">Buscar</button>
+      <button mat-flat-button type="button" (click)="searchShipment()">Buscar</button>
     </form>
   </header>
 
@@ -24,6 +25,39 @@
     <p id="dashboard-search-message" class="dashboard-message" role="status">{{ searchMessage() }}</p>
   } @else {
     <span id="dashboard-search-message" class="sr-only">Ingrese un documento para consultar envíos.</span>
+  }
+
+  @if (recentSearches().length > 0) {
+    <section class="dashboard-search-recent" aria-label="Búsquedas recientes">
+      <span>Búsquedas recientes</span>
+      <div>
+        @for (search of recentSearches(); track search) {
+          <button mat-button type="button" (click)="searchAgain(search)">{{ search }}</button>
+        }
+      </div>
+    </section>
+  }
+
+  @if (searchResults().length > 0) {
+    <section class="surface-card dashboard-search-results" aria-label="Resultado de búsqueda por documento">
+      @for (shipment of searchResults(); track shipment.id) {
+        <article class="dashboard-search-result">
+          <span class="dashboard-search-result__icon" aria-hidden="true">
+            <mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
+          </span>
+          <span class="dashboard-search-result__main">
+            <strong>{{ shipment.documentNumber }}</strong>
+            <small>{{ getRouteLabel(shipment) }}</small>
+          </span>
+          <span class="status-chip" [class.status-chip--issue]="shipment.status === 'WITH_ISSUE'">
+            {{ getShipmentStatusLabel(shipment.status) }}
+          </span>
+          <span class="dashboard-search-result__meta">
+            {{ getOperationTypeLabel(shipment.operationType) }} · {{ getTransportModeLabel(shipment.transportMode) }}
+          </span>
+        </article>
+      }
+    </section>
   }
 
   @if (viewModel$ | async; as viewModel) {

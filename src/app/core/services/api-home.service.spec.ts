@@ -98,4 +98,54 @@ describe('ApiHomeService', () => {
       },
     });
   });
+
+  it('should request home filters with document value and map one result', () => {
+    service.search({ query: '9YJB1QX6', page: 1, pageSize: 30 }).subscribe((result) => {
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0].id).toBe('157');
+      expect(result.items[0].documentNumber).toBe('9YJB1QX6');
+      expect(result.items[0].origin.country).toBe('Colombia');
+      expect(result.items[0].destination.country).toBe('Mexico');
+    });
+
+    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/filters`);
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('idClient')).toBe(environment.api.homeClientId);
+    expect(request.request.params.get('rol')).toBe(environment.api.homeRole);
+    expect(request.request.params.get('filterValue')).toBe('9YJB1QX6');
+
+    request.flush({
+      dataResponse: {
+        id: 157,
+        nrDocumento: '9YJB1QX6',
+        origen: 'Colombia',
+        destino: 'Mexico',
+        estado: 'En transito',
+        tipoOperacion: 'IMPO',
+        modalidad: 'AIR',
+      },
+    });
+  });
+
+  it('should treat empty filter payload as no results', () => {
+    service.search({ query: 'SIN-DATO', page: 1, pageSize: 30 }).subscribe((result) => {
+      expect(result.totalItems).toBe(0);
+      expect(result.items).toEqual([]);
+    });
+
+    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/filters`);
+
+    request.flush({
+      dataResponse: {
+        id: 0,
+        nrDocumento: '',
+        origen: '',
+        destino: '',
+        estado: '',
+        tipoOperacion: '',
+        modalidad: '',
+      },
+    });
+  });
 });

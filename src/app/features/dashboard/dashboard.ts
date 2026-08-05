@@ -1,7 +1,7 @@
 ﻿import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, forkJoin, map, of, startWith, take } from 'rxjs';
@@ -29,6 +29,8 @@ interface DistributionItem {
   count: number;
   percentage: number;
 }
+
+type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error';
 
 interface DashboardViewModel {
   state: 'loading' | 'empty' | 'error' | 'success';
@@ -59,7 +61,6 @@ const initialViewModel: DashboardViewModel = {
 export class Dashboard {
   private readonly authSession = inject(AuthSessionService);
   private readonly shipmentService = inject(ApiHomeService);
-  private readonly router = inject(Router);
 
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly session = this.authSession.currentSession;
@@ -69,6 +70,9 @@ export class Dashboard {
   });
   protected viewModel$ = this.loadDashboard();
   protected readonly searchMessage = signal('');
+  protected readonly searchResults = signal<HomeShipmentSummary[]>([]);
+  protected readonly searchState = signal<SearchState>('idle');
+  protected readonly recentSearches = signal<string[]>([]);
 
   protected readonly getOperationTypeLabel = getOperationTypeLabel;
   protected readonly getTransportModeLabel = getTransportModeLabel;
@@ -77,39 +81,57 @@ export class Dashboard {
 
   protected retry(): void {
     this.searchMessage.set('');
+    this.searchResults.set([]);
+    this.searchState.set('idle');
     this.viewModel$ = this.loadDashboard();
   }
 
-  protected searchShipment(): void {
+  protected searchShipment(event?: Event): boolean {
+    event?.preventDefault();
+    event?.stopPropagation();
+
     const query = this.searchControl.value.trim();
     this.searchMessage.set('');
+    this.searchResults.set([]);
 
     if (!query) {
-      return;
+      this.searchState.set('idle');
+      return false;
     }
+
+    this.searchState.set('loading');
+    this.searchMessage.set('Buscando documento de transporte...');
 
     this.shipmentService.search({ query, page: 1, pageSize: 30 }).pipe(take(1)).subscribe({
       next: (result) => {
         if (result.totalItems === 0) {
+          this.searchState.set('empty');
           this.searchMessage.set('No encontramos envíos con ese documento.');
           return;
         }
 
-        if (result.totalItems === 1) {
-          void this.router.navigate(['/shipments', result.items[0].id]);
-          return;
-        }
-
-        void this.router.navigate(['/shipments'], { queryParams: { q: query } });
+        this.searchState.set('success');
+        this.searchMessage.set('');
+        this.searchResults.set(result.items);
+        this.addRecentSearch(query);
       },
       error: () => {
+        this.searchState.set('error');
+        this.searchResults.set([]);
         this.searchMessage.set('No fue posible ejecutar la búsqueda. Intenta nuevamente.');
       },
     });
+
+    return false;
   }
 
   protected getRouteLabel(shipment: HomeShipmentSummary): string {
     return `${shipment.origin.country} → ${shipment.destination.country}`;
+  }
+
+  protected searchAgain(value: string): void {
+    this.searchControl.setValue(value);
+    this.searchShipment();
   }
 
   private loadDashboard(): Observable<DashboardViewModel> {
@@ -200,5 +222,9 @@ export class Dashboard {
       count,
       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
     };
+  }
+
+  private addRecentSearch(query: string): void {
+    this.recentSearches.update((searches) => [query, ...searches.filter((item) => item !== query)].slice(0, 5));
   }
 }
