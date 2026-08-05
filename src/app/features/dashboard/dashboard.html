@@ -86,8 +86,10 @@
               <mat-icon>{{ card.icon }}</mat-icon>
             </span>
             <div>
-              <p>{{ card.label }}</p>
-              <strong>{{ card.value }}</strong>
+              <div class="metric-card__header">
+                <p>{{ card.label }}</p>
+                <strong>{{ card.value }}</strong>
+              </div>
               <small>{{ card.detail }}</small>
             </div>
           </article>
@@ -97,15 +99,17 @@
       <section class="dashboard-grid">
         <article class="surface-card distribution-card">
           <header>
-            <h2>Distribución por operación</h2>
-            <p>IMPO frente a EXPO</p>
+            <h2>Tipo de operación</h2>
           </header>
 
           @for (item of viewModel.operationDistribution; track item.label) {
             <div class="distribution-row">
               <div class="distribution-row__label">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.count }}</strong>
+                <span>
+                  <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+                  {{ item.label }}
+                </span>
+                <strong>{{ item.percentage }}%</strong>
               </div>
               <div
                 class="distribution-row__bar"
@@ -117,7 +121,6 @@
               >
                 <span [style.width.%]="item.percentage"></span>
               </div>
-              <p>{{ item.percentage }}% del total de envíos.</p>
             </div>
           }
         </article>
@@ -125,14 +128,16 @@
         <article class="surface-card distribution-card">
           <header>
             <h2>Modalidad de transporte</h2>
-            <p>AIR frente a SEA</p>
           </header>
 
           @for (item of viewModel.modeDistribution; track item.label) {
             <div class="distribution-row">
               <div class="distribution-row__label">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.count }}</strong>
+                <span>
+                  <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+                  {{ item.label }}
+                </span>
+                <strong>{{ item.percentage }}%</strong>
               </div>
               <div
                 class="distribution-row__bar"
@@ -144,7 +149,6 @@
               >
                 <span [style.width.%]="item.percentage"></span>
               </div>
-              <p>{{ item.percentage }}% del total de envíos.</p>
             </div>
           }
         </article>

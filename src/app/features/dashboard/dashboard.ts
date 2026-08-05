@@ -28,6 +28,7 @@ interface DistributionItem {
   label: string;
   count: number;
   percentage: number;
+  icon: string;
 }
 
 type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error';
@@ -179,24 +180,24 @@ export class Dashboard {
         tone: 'primary',
       },
       {
-        label: 'Importaciones',
-        value: metrics.totalImports,
+        label: 'Tipo de operación',
+        value: metrics.totalShipments,
         icon: 'call_received',
-        detail: `${metrics.totalExports} exportaciones registradas`,
+        detail: `${metrics.totalImports} import · ${metrics.totalExports} export`,
         tone: 'secondary',
       },
       {
-        label: 'Modalidad aérea',
-        value: metrics.totalAir,
+        label: 'Modalidad',
+        value: metrics.totalShipments,
         icon: 'flight',
-        detail: `${metrics.totalSea} envíos marítimos`,
+        detail: `${metrics.totalAir} aéreos · ${metrics.totalSea} marítimos`,
         tone: 'primary',
       },
       {
-        label: 'Con novedad',
-        value: metrics.totalWithIssue,
+        label: 'Estado',
+        value: metrics.totalShipments,
         icon: 'warning',
-        detail: `${metrics.totalDelivered} entregados sin gestión adicional`,
+        detail: `${metrics.totalWithIssue} con novedad · ${metrics.totalDelivered} entregados`,
         tone: metrics.totalWithIssue > 0 ? 'warning' : 'success',
       },
     ];
@@ -204,23 +205,24 @@ export class Dashboard {
 
   private createOperationDistribution(metrics: DashboardMetrics): DistributionItem[] {
     return [
-      this.createDistributionItem('Importaciones', metrics.totalImports, metrics.totalShipments),
-      this.createDistributionItem('Exportaciones', metrics.totalExports, metrics.totalShipments),
+      this.createDistributionItem('EXPO — Exportación', metrics.totalExports, metrics.totalShipments, 'north_east'),
+      this.createDistributionItem('IMPO — Importación', metrics.totalImports, metrics.totalShipments, 'south_west'),
     ];
   }
 
   private createModeDistribution(metrics: DashboardMetrics): DistributionItem[] {
     return [
-      this.createDistributionItem('Aéreos', metrics.totalAir, metrics.totalShipments),
-      this.createDistributionItem('Marítimos', metrics.totalSea, metrics.totalShipments),
+      this.createDistributionItem('AIR — Aéreo', metrics.totalAir, metrics.totalShipments, 'flight'),
+      this.createDistributionItem('SEA — Marítimo', metrics.totalSea, metrics.totalShipments, 'directions_boat'),
     ];
   }
 
-  private createDistributionItem(label: string, count: number, total: number): DistributionItem {
+  private createDistributionItem(label: string, count: number, total: number, icon: string): DistributionItem {
     return {
       label,
       count,
       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+      icon,
     };
   }
 
