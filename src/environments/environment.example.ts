@@ -8,8 +8,6 @@ export const environment = {
   },
   api: {
     baseUrl: '/api/v1',
-    homeClientId: '',
-    homeRole: '',
   },
   appUrl: '',
   appName: 'Conexion360',

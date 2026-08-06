@@ -92,8 +92,9 @@ const documentStatusIcons: Record<ShipmentDocumentStatus, string> = {
 
 const userRoleLabels: Record<UserRole, string> = {
   CLIENT: 'Cliente',
-  OPERATOR: 'Operador',
   ADMIN: 'Administrador',
+  ANALISTAOPE: 'Analista operativo',
+  ANALISTASAC: 'Analista de servicio al cliente',
 };
 
 export function getOperationTypeLabel(value: OperationType): string {

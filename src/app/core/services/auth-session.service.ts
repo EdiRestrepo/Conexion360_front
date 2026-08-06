@@ -27,7 +27,7 @@ export class AuthSessionService {
 
         return this.userProfileService.getProfileByAuth0Id(identity.auth0UserId).pipe(
           map((profile): AuthSession => {
-            const displayName = profile?.fullName || identity.name || identity.nickname || identity.email;
+            const displayName = profile?.fullName || identity.fullName || identity.name || identity.nickname || identity.email;
 
             return {
               user: {
@@ -35,7 +35,8 @@ export class AuthSessionService {
                 name: displayName,
                 email: identity.email,
                 role: profile?.role ?? identity.roles[0] ?? 'CLIENT',
-                company: profile?.company,
+                document: profile?.document ?? identity.document,
+                company: profile?.company ?? identity.company,
                 picture: profile?.picture ?? identity.picture ?? null,
               },
               accessToken: '',

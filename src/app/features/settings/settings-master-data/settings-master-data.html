@@ -21,7 +21,7 @@
       <div class="parameter-row">
         <div>
           <strong>Actualización automática de seguimiento</strong>
-          <span>Refresca el estado de los envíos en intervalos simulados.</span>
+          <span>Refresca el estado de los envíos en intervalos configurados.</span>
         </div>
         <span class="static-switch static-switch--on" aria-label="Activado"></span>
       </div>
@@ -95,12 +95,12 @@
       } @else if (viewModel.state === 'empty') {
         <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
       } @else {
-        <section class="master-data__grid" aria-label="Catálogos maestros simulados">
+        <section class="master-data__grid" aria-label="Catálogos maestros">
           @for (group of viewModel.groups; track group.id) {
             <article class="master-card">
               <header>
                 <h4>{{ group.title }}</h4>
-                <button mat-stroked-button type="button" (click)="simulateSave(group)">
+                <button mat-stroked-button type="button" (click)="saveMasterData(group)">
                   <mat-icon aria-hidden="true">save</mat-icon>
                   Guardar
                 </button>

@@ -1,14 +1,16 @@
-﻿export type SettingsViewState = 'loading' | 'empty' | 'error' | 'success';
+﻿import { UserRole } from './user.model';
 
-export type SimulatedUserStatus = 'ACTIVE' | 'INACTIVE';
+export type SettingsViewState = 'loading' | 'empty' | 'error' | 'success';
 
-export interface SimulatedUser {
+export type SettingsUserStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface SettingsUser {
   id: string;
   fullName: string;
   email: string;
   company: string;
-  role: 'CLIENT' | 'OPERATOR' | 'ADMIN';
-  status: SimulatedUserStatus;
+  role: UserRole;
+  status: SettingsUserStatus;
 }
 
 export interface MasterDataGroup {

@@ -40,7 +40,7 @@
     <header class="users-panel__header">
       <div>
         <h3>Usuarios</h3>
-        <p>Consulta, busca y actualiza estados de acceso simulados.</p>
+        <p>Consulta, busca y actualiza estados de acceso.</p>
       </div>
       <div class="settings-users__filters" aria-label="Filtros de usuarios">
         <label>
@@ -70,7 +70,7 @@
       } @else if (viewModel.state === 'empty') {
         <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
       } @else {
-        <div class="users-list" aria-label="Usuarios simulados">
+        <div class="users-list" aria-label="Usuarios">
           @for (user of viewModel.users; track user.id) {
             <article class="user-row">
               <span class="user-avatar" aria-hidden="true">{{ getInitials(user) }}</span>

@@ -1,15 +1,17 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, of, shareReplay } from 'rxjs';
+import { Observable, filter, map, of, shareReplay, switchMap, take } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { PaginatedResult, SearchFilters } from '../models/common.model';
+import { Auth0Identity } from '../models/user-profile.model';
 import {
   DashboardMetrics,
   OperationType,
   ShipmentStatus,
   TransportMode,
 } from '../models/shipment.model';
+import { Auth0FacadeService } from './auth0-facade.service';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -37,15 +39,15 @@ interface HomeDashboardData {
 })
 export class ApiHomeService {
   private readonly http = inject(HttpClient);
+  private readonly auth0Facade = inject(Auth0FacadeService);
   private readonly homeUrl = `${environment.api.baseUrl}/home/totals`;
   private readonly filtersUrl = `${environment.api.baseUrl}/home/filters`;
-  private readonly dashboardData$ = this.http
-    .get<unknown>(this.homeUrl, {
-      params: new HttpParams()
-        .set('idClient', environment.api.homeClientId)
-        .set('role', environment.api.homeRole),
-    })
-    .pipe(
+  private readonly dashboardData$ = this.getIdentity().pipe(
+    switchMap((identity) =>
+      this.http.get<unknown>(this.homeUrl, {
+        params: this.createHomeParams(identity),
+      }),
+    ),
       map((response) => this.toHomeDashboardData(response)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
@@ -65,14 +67,27 @@ export class ApiHomeService {
       return of(this.paginate([], filters));
     }
 
-    return this.http
-      .get<unknown>(this.filtersUrl, {
-        params: new HttpParams()
-          .set('idClient', environment.api.homeClientId)
-          .set('role', environment.api.homeRole)
-          .set('filterValue', filterValue),
-      })
-      .pipe(map((response) => this.paginate(this.toHomeFilterResults(response), filters)));
+    return this.getIdentity().pipe(
+      switchMap((identity) =>
+        this.http.get<unknown>(this.filtersUrl, {
+          params: this.createHomeParams(identity).set('filterValue', filterValue),
+        }),
+      ),
+      map((response) => this.paginate(this.toHomeFilterResults(response), filters)),
+    );
+  }
+
+  private getIdentity(): Observable<Auth0Identity> {
+    return this.auth0Facade.user$.pipe(
+      filter((identity): identity is Auth0Identity => Boolean(identity)),
+      take(1),
+    );
+  }
+
+  private createHomeParams(identity: Auth0Identity): HttpParams {
+    return new HttpParams()
+      .set('idClient', identity.document ?? '')
+      .set('role', identity.roles[0] ?? '');
   }
 
   private toHomeDashboardData(response: unknown): HomeDashboardData {

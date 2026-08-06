@@ -15,6 +15,9 @@ export interface Auth0Identity {
   email: string;
   name?: string;
   nickname?: string;
+  fullName?: string;
+  document?: string;
+  company?: string;
   picture?: string;
   roles: UserRole[];
 }
@@ -23,6 +26,7 @@ export interface PendingUserProfile {
   fullName: string;
   company: string;
   email: string;
+  document?: string;
   phone?: string | null;
   acceptedDataPolicy: true;
   createdAt: string;
@@ -33,6 +37,7 @@ export interface UserProfile {
   fullName: string;
   company: string;
   email: string;
+  document?: string;
   phone?: string | null;
   picture?: string | null;
   role: UserRole;

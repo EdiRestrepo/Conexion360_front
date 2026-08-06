@@ -16,14 +16,14 @@ describe('UserMenu', () => {
   });
 
   it('should render dynamic profile data and translated role', () => {
-    fixture.componentRef.setInput('session', createSession('OPERATOR'));
+    fixture.componentRef.setInput('session', createSession('ANALISTAOPE'));
     fixture.detectChanges();
 
     const content = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     expect(content).toContain('Iván Valencia');
     expect(content).toContain('ivan.valencia@conexion360.com');
-    expect(content).toContain('Operador');
+    expect(content).toContain('Analista operativo');
   });
 
   it('should use initials when the Auth0 picture is not available', () => {

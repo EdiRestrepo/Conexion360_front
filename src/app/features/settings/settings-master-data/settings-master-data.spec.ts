@@ -4,21 +4,21 @@ import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { MasterDataGroup } from '../../../core/models/settings.model';
-import { MockSettingsService } from '../../../mocks/services/mock-settings.service';
+import { SettingsService } from '../../../core/services/settings.service';
 import { SettingsMasterData } from './settings-master-data';
 
 describe('SettingsMasterData', () => {
   let fixture: ComponentFixture<SettingsMasterData>;
   let getMasterDataSpy: jasmine.Spy<() => Observable<MasterDataGroup[]>>;
-  let simulateMasterDataSaveSpy: jasmine.Spy<(groupId: string) => Observable<MasterDataGroup | null>>;
+  let saveMasterDataSpy: jasmine.Spy<(groupId: string) => Observable<MasterDataGroup | null>>;
 
   beforeEach(async () => {
     getMasterDataSpy = jasmine.createSpy('getMasterData').and.returnValue(of(createMasterData()));
-    simulateMasterDataSaveSpy = jasmine.createSpy('simulateMasterDataSave').and.returnValue(of(createMasterData()[0]));
+    saveMasterDataSpy = jasmine.createSpy('saveMasterData').and.returnValue(of(createMasterData()[0]));
 
     await TestBed.configureTestingModule({
       imports: [SettingsMasterData, NoopAnimationsModule],
-      providers: [provideRouter([]), { provide: MockSettingsService, useValue: { getMasterData: getMasterDataSpy, simulateMasterDataSave: simulateMasterDataSaveSpy } }],
+      providers: [provideRouter([]), { provide: SettingsService, useValue: { getMasterData: getMasterDataSpy, saveMasterData: saveMasterDataSpy } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsMasterData);
@@ -40,8 +40,8 @@ describe('SettingsMasterData', () => {
     tick();
     fixture.detectChanges();
 
-    expect(simulateMasterDataSaveSpy).toHaveBeenCalledWith('statuses');
-    expect(getText()).toContain('Cambios maestros guardados de forma simulada.');
+    expect(saveMasterDataSpy).toHaveBeenCalledWith('statuses');
+    expect(getText()).toContain('Cambios maestros guardados.');
   }));
 
   it('should render empty state', fakeAsync(() => {

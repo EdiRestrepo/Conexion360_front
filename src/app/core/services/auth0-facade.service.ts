@@ -1,15 +1,20 @@
 ﻿import { Injectable, inject, signal } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { User as Auth0User } from '@auth0/auth0-spa-js';
-import { Observable, map } from 'rxjs';
+import { Observable, combineLatest, map } from 'rxjs';
 
 import { UserRole } from '../models/user.model';
 import { Auth0Identity } from '../models/user-profile.model';
 import { environment } from '../../../environments/environment';
 
 const rolesClaim = 'https://conexion360.space/roles';
-const validRoles: readonly UserRole[] = ['CLIENT', 'OPERATOR', 'ADMIN'];
+const userMetadataClaim = 'https://conexion360.space/user_metadata';
+const documentClaim = 'https://conexion360.space/document';
+const companyClaim = 'https://conexion360.space/company';
+const fullNameClaim = 'https://conexion360.space/fullName';
+const validRoles: readonly UserRole[] = ['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
 const appUrl = environment.appUrl || window.location.origin;
+type Auth0Record = Record<string, unknown>;
 
 @Injectable({
   providedIn: 'root',
@@ -21,8 +26,8 @@ export class Auth0FacadeService {
   readonly isLoading$ = this.auth0.isLoading$;
   readonly authError$ = this.auth0.error$.pipe(map((error) => error.message));
   readonly authorizationUrl = signal<string | null>(null);
-  readonly user$: Observable<Auth0Identity | null> = this.auth0.user$.pipe(
-    map((auth0User) => (auth0User ? this.mapIdentity(auth0User) : null)),
+  readonly user$: Observable<Auth0Identity | null> = combineLatest([this.auth0.user$, this.auth0.idTokenClaims$]).pipe(
+    map(([auth0User, idTokenClaims]) => (auth0User ? this.mapIdentity(auth0User, idTokenClaims) : null)),
   );
 
   login(emailOrTarget?: string): Observable<void> {
@@ -83,21 +88,45 @@ export class Auth0FacadeService {
     auth0Link.remove();
   }
 
-  private mapIdentity(auth0User: Auth0User): Auth0Identity {
+  private mapIdentity(auth0User: Auth0User, idTokenClaims: unknown): Auth0Identity {
     const email = auth0User.email ?? '';
+    const auth0Record = {
+      ...this.asRecord(auth0User),
+      ...this.asRecord(idTokenClaims),
+    };
+    const userMetadata = {
+      ...this.asRecord(auth0Record['user_metadata']),
+      ...this.asRecord(auth0Record[userMetadataClaim]),
+    };
+    const fullName =
+      this.readString(auth0Record, fullNameClaim) ||
+      this.readString(auth0Record, 'fullName') ||
+      this.readString(userMetadata, 'fullName') ||
+      this.readString(userMetadata, 'name');
+    const document =
+      this.readString(auth0Record, documentClaim) ||
+      this.readString(auth0Record, 'document') ||
+      this.readString(userMetadata, 'document');
+    const company =
+      this.readString(auth0Record, companyClaim) ||
+      this.readString(auth0Record, 'company') ||
+      this.readString(userMetadata, 'company');
 
     return {
       auth0UserId: auth0User.sub ?? email,
       email,
       name: auth0User.name ?? undefined,
       nickname: auth0User.nickname ?? undefined,
+      fullName: fullName || undefined,
+      document: document || undefined,
+      company: company || undefined,
       picture: auth0User.picture ?? undefined,
       roles: this.mapRoles(auth0User),
     };
   }
 
   private mapRoles(auth0User: Auth0User): UserRole[] {
-    const candidate = (auth0User as Record<string, unknown>)[rolesClaim];
+    const candidate = (auth0User as Auth0Record)[rolesClaim];
 
     if (!Array.isArray(candidate)) {
       return [];
@@ -106,5 +135,23 @@ export class Auth0FacadeService {
     return candidate.filter((role): role is UserRole =>
       typeof role === 'string' && validRoles.includes(role as UserRole),
     );
+  }
+
+  private asRecord(value: unknown): Auth0Record {
+    return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Auth0Record) : {};
+  }
+
+  private readString(record: Auth0Record, key: string): string {
+    const value = record[key];
+
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+
+    if (typeof value === 'number') {
+      return String(value);
+    }
+
+    return '';
   }
 }

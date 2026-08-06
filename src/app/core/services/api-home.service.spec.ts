@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { Auth0FacadeService } from './auth0-facade.service';
 import { ApiHomeService } from './api-home.service';
 
 describe('ApiHomeService', () => {
@@ -11,7 +13,22 @@ describe('ApiHomeService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [ApiHomeService, provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        ApiHomeService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: Auth0FacadeService,
+          useValue: {
+            user$: of({
+              auth0UserId: 'auth0|123',
+              email: 'edison@example.com',
+              document: '8110357412',
+              roles: ['CLIENT'],
+            }),
+          },
+        },
+      ],
     });
 
     service = TestBed.inject(ApiHomeService);
@@ -22,7 +39,7 @@ describe('ApiHomeService', () => {
     httpMock.verify();
   });
 
-  it('should request home totals with configured client and role', () => {
+  it('should request home totals with Auth0 document and role', () => {
     service.getDashboardMetrics().subscribe((metrics) => {
       expect(metrics.totalShipments).toBe(2);
       expect(metrics.totalImports).toBe(1);
@@ -35,8 +52,8 @@ describe('ApiHomeService', () => {
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/totals`);
 
     expect(request.request.method).toBe('GET');
-    expect(request.request.params.get('idClient')).toBe(environment.api.homeClientId);
-    expect(request.request.params.get('role')).toBe(environment.api.homeRole);
+    expect(request.request.params.get('idClient')).toBe('8110357412');
+    expect(request.request.params.get('role')).toBe('CLIENT');
 
     request.flush({
       dataResponse: {
@@ -111,8 +128,8 @@ describe('ApiHomeService', () => {
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/filters`);
 
     expect(request.request.method).toBe('GET');
-    expect(request.request.params.get('idClient')).toBe(environment.api.homeClientId);
-    expect(request.request.params.get('role')).toBe(environment.api.homeRole);
+    expect(request.request.params.get('idClient')).toBe('8110357412');
+    expect(request.request.params.get('role')).toBe('CLIENT');
     expect(request.request.params.get('filterValue')).toBe('9YJB1QX6');
 
     request.flush({
@@ -135,7 +152,7 @@ describe('ApiHomeService', () => {
     });
 
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/filters`);
-    expect(request.request.params.get('role')).toBe(environment.api.homeRole);
+    expect(request.request.params.get('role')).toBe('CLIENT');
 
     request.flush({
       dataResponse: {

@@ -24,7 +24,7 @@ const settingsCards: SettingsCard[] = [
     description: 'Configura canales y eventos para recibir alertas de tus envíos.',
     icon: 'notifications_active',
     route: '/settings/notifications',
-    roles: ['CLIENT', 'OPERATOR', 'ADMIN'],
+    roles: ['CLIENT', 'ANALISTAOPE', 'ANALISTASAC', 'ADMIN'],
   },
   {
     title: 'Gestión de usuarios',

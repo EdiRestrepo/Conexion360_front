@@ -417,15 +417,31 @@ AUTH0_DOMAIN
 AUTH0_CLIENT_ID
 AUTH0_AUDIENCE
 APP_URL
+API_BASE_URL
 NGINX_APP_URL
+NGINX_API_BASE_URL
 ```
 
 En Angular, estos valores quedan incluidos en los archivos JavaScript compilados. Por esa razon no se deben guardar secretos privados en esas variables.
+
+Valores usados normalmente para desarrollo y pruebas locales:
+
+```text
+API_BASE_URL=https://localhost:44368/api/v1
+```
+
+El documento/NIT (`document`) y el rol del usuario ya no se configuran en GitHub Actions. La aplicacion los toma desde Auth0 al iniciar sesion.
 
 Para el artefacto de Nginx, si `NGINX_APP_URL` esta vacio, la aplicacion usa automaticamente el dominio desde donde se esta ejecutando, por ejemplo:
 
 ```text
 http://localhost
+```
+
+Si el ZIP de Nginx debe consumir un backend diferente al de GitHub Pages, configurar tambien:
+
+```text
+NGINX_API_BASE_URL=https://localhost:44368/api/v1
 ```
 
 Esto permite que el mismo ZIP pueda copiarse a diferentes equipos, siempre que la URL usada este autorizada en Auth0.

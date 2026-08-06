@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { Observable, Subject, catchError, map, of, startWith, switchMap, take } from 'rxjs';
 
 import { MasterDataGroup, SettingsViewState } from '../../../core/models/settings.model';
-import { MockSettingsService } from '../../../mocks/services/mock-settings.service';
+import { SettingsService } from '../../../core/services/settings.service';
 
 interface MasterDataViewModel {
   state: SettingsViewState;
@@ -22,7 +22,7 @@ interface MasterDataViewModel {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsMasterData {
-  private readonly settingsService = inject(MockSettingsService);
+  private readonly settingsService = inject(SettingsService);
   private readonly retry$ = new Subject<void>();
 
   protected readonly saveMessage = signal<string | null>(null);
@@ -45,14 +45,14 @@ export class SettingsMasterData {
     this.retry$.next();
   }
 
-  protected simulateSave(group: MasterDataGroup): void {
+  protected saveMasterData(group: MasterDataGroup): void {
     this.saveMessage.set(null);
     this.settingsService
-      .simulateMasterDataSave(group.id)
+      .saveMasterData(group.id)
       .pipe(take(1))
       .subscribe({
-        next: () => this.saveMessage.set('Cambios maestros guardados de forma simulada.'),
-        error: () => this.saveMessage.set('No fue posible guardar el catálogo simulado.'),
+        next: () => this.saveMessage.set('Cambios maestros guardados.'),
+        error: () => this.saveMessage.set('No fue posible guardar el catálogo.'),
       });
   }
 }

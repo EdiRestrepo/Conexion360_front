@@ -39,6 +39,10 @@ jobs:
           if [ -z "$APP_URL" ]; then
             APP_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           fi
+          API_BASE_URL="${{ vars.API_BASE_URL }}"
+          if [ -z "$API_BASE_URL" ]; then
+            API_BASE_URL="/api/v1"
+          fi
 
           cat > src/environments/environment.ts <<'EOF'
           export const environment = {
@@ -50,15 +54,14 @@ jobs:
               scope: 'openid profile email',
             },
             api: {
-              baseUrl: '/api/v1',
-              homeClientId: '',
-              homeRole: '',
+              baseUrl: '__API_BASE_URL__',
             },
             appUrl: '__APP_URL__',
             appName: 'Conexion360',
           };
           EOF
           sed -i "s|__APP_URL__|$APP_URL|g" src/environments/environment.ts
+          sed -i "s|__API_BASE_URL__|$API_BASE_URL|g" src/environments/environment.ts
 
       - name: Run unit tests
         run: npx ng test --watch=false --browsers=ChromeHeadless
@@ -76,6 +79,14 @@ jobs:
 
       - name: Create Nginx environment file
         run: |
+          NGINX_API_BASE_URL="${{ vars.NGINX_API_BASE_URL }}"
+          if [ -z "$NGINX_API_BASE_URL" ]; then
+            NGINX_API_BASE_URL="${{ vars.API_BASE_URL }}"
+          fi
+          if [ -z "$NGINX_API_BASE_URL" ]; then
+            NGINX_API_BASE_URL="/api/v1"
+          fi
+
           cat > src/environments/environment.ts <<'EOF'
           export const environment = {
             production: true,
@@ -86,14 +97,13 @@ jobs:
               scope: 'openid profile email',
             },
             api: {
-              baseUrl: '/api/v1',
-              homeClientId: '',
-              homeRole: '',
+              baseUrl: '__NGINX_API_BASE_URL__',
             },
             appUrl: '${{ vars.NGINX_APP_URL }}',
             appName: 'Conexion360',
           };
           EOF
+          sed -i "s|__NGINX_API_BASE_URL__|$NGINX_API_BASE_URL|g" src/environments/environment.ts
 
       - name: Build Nginx distribution bundle
         run: npx ng build --configuration production --base-href "/" --output-path dist/nginx-package

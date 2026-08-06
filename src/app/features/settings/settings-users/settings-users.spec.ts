@@ -3,15 +3,15 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
-import { SimulatedUser } from '../../../core/models/settings.model';
+import { SettingsUser } from '../../../core/models/settings.model';
+import { SettingsService } from '../../../core/services/settings.service';
 import { UserRole } from '../../../core/models/user.model';
-import { MockSettingsService } from '../../../mocks/services/mock-settings.service';
 import { SettingsUsers } from './settings-users';
 
 describe('SettingsUsers', () => {
   let fixture: ComponentFixture<SettingsUsers>;
-  let searchUsersSpy: jasmine.Spy<(query: string, role: UserRole | 'ALL') => Observable<SimulatedUser[]>>;
-  let toggleUserStatusSpy: jasmine.Spy<(userId: string) => Observable<SimulatedUser | null>>;
+  let searchUsersSpy: jasmine.Spy<(query: string, role: UserRole | 'ALL') => Observable<SettingsUser[]>>;
+  let toggleUserStatusSpy: jasmine.Spy<(userId: string) => Observable<SettingsUser | null>>;
 
   beforeEach(async () => {
     searchUsersSpy = jasmine.createSpy('searchUsers').and.callFake((query: string, role: UserRole | 'ALL') =>
@@ -21,7 +21,7 @@ describe('SettingsUsers', () => {
 
     await TestBed.configureTestingModule({
       imports: [SettingsUsers, NoopAnimationsModule],
-      providers: [provideRouter([]), { provide: MockSettingsService, useValue: { searchUsers: searchUsersSpy, toggleUserStatus: toggleUserStatusSpy } }],
+      providers: [provideRouter([]), { provide: SettingsService, useValue: { searchUsers: searchUsersSpy, toggleUserStatus: toggleUserStatusSpy } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsUsers);
@@ -32,7 +32,7 @@ describe('SettingsUsers', () => {
 
     expect(getText()).toContain('Gestión de usuarios');
     expect(getText()).toContain('Laura Méndez');
-    expect(getText()).toContain('Operador');
+    expect(getText()).toContain('Analista operativo');
   }));
 
   it('should search users by text', fakeAsync(() => {
@@ -71,7 +71,7 @@ describe('SettingsUsers', () => {
     fixture.detectChanges();
 
     expect(toggleUserStatusSpy).toHaveBeenCalledWith('user-001');
-    expect(getText()).toContain('Actualización simulada guardada.');
+    expect(getText()).toContain('Actualización guardada.');
   }));
 
   it('should render error state', fakeAsync(() => {
@@ -101,7 +101,7 @@ describe('SettingsUsers', () => {
   }
 });
 
-function filterUsers(query: string, role: UserRole | 'ALL'): SimulatedUser[] {
+function filterUsers(query: string, role: UserRole | 'ALL'): SettingsUser[] {
   const normalizedQuery = query.trim().toLowerCase();
   return createUsers().filter((user) => {
     const matchesRole = role === 'ALL' ? true : user.role === role;
@@ -110,10 +110,10 @@ function filterUsers(query: string, role: UserRole | 'ALL'): SimulatedUser[] {
   });
 }
 
-function createUsers(): SimulatedUser[] {
+function createUsers(): SettingsUser[] {
   return [
     { id: 'user-001', fullName: 'Edison Estival', email: 'edison@demo.com', company: 'Cliente demo', role: 'CLIENT', status: 'ACTIVE' },
-    { id: 'user-002', fullName: 'Laura Méndez', email: 'laura@conexion360.com', company: 'TCC', role: 'OPERATOR', status: 'ACTIVE' },
+    { id: 'user-002', fullName: 'Laura Méndez', email: 'laura@conexion360.com', company: 'TCC', role: 'ANALISTAOPE', status: 'ACTIVE' },
     { id: 'user-003', fullName: 'Admin Conexion360', email: 'admin@conexion360.com', company: 'Conexion360', role: 'ADMIN', status: 'ACTIVE' },
     { id: 'user-004', fullName: 'Carlos Restrepo', email: 'carlos@cliente.com', company: 'Nutresa', role: 'CLIENT', status: 'INACTIVE' },
   ];
