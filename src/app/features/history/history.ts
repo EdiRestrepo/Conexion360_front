@@ -14,33 +14,7 @@ import {
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
-
-interface HistoryFilters {
-  query: string;
-  operation: OperationType | '';
-  mode: TransportMode | '';
-  page: number;
-  pageSize: number;
-}
-
-interface HistorySummary {
-  total: number;
-  air: number;
-  sea: number;
-}
-
-interface HistoryViewModel {
-  state: 'loading' | 'empty' | 'error' | 'success';
-  filters: HistoryFilters;
-  shipments: Shipment[];
-  summary: HistorySummary;
-  totalItems: number;
-  totalPages: number;
-  rangeStart: number;
-  rangeEnd: number;
-  queryParams: Params;
-  message?: string;
-}
+import type { HistoryFilters, HistorySummary, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {
   query: '',

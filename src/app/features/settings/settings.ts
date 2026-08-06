@@ -5,18 +5,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserRole } from '../../core/models/user.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { getUserRoleLabel } from '../../core/utils/display-labels';
-
-interface SettingsCard {
-  title: string;
-  description: string;
-  icon: string;
-  route: string;
-  roles: UserRole[];
-}
-
-interface SettingsCardView extends SettingsCard {
-  available: boolean;
-}
+import type { SettingsCard, SettingsCardView } from './models/settings-view.model';
 
 const settingsCards: SettingsCard[] = [
   {

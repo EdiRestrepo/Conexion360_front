@@ -8,6 +8,7 @@ import { Observable, catchError, forkJoin, map, of, startWith, take } from 'rxjs
 
 import { DashboardMetrics } from '../../core/models/shipment.model';
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
+import type { DashboardDistributionItem, DashboardMetricCard, DashboardSearchState, DashboardViewModel } from './models/dashboard-view.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import {
   getOperationTypeLabel,
@@ -16,32 +17,6 @@ import {
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
 
-interface MetricCard {
-  label: string;
-  value: number;
-  icon: string;
-  detail: string;
-  tone: 'primary' | 'secondary' | 'success' | 'warning';
-}
-
-interface DistributionItem {
-  label: string;
-  count: number;
-  percentage: number;
-  icon: string;
-}
-
-type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error';
-
-interface DashboardViewModel {
-  state: 'loading' | 'empty' | 'error' | 'success';
-  metrics: DashboardMetrics | null;
-  recentShipments: HomeShipmentSummary[];
-  cards: MetricCard[];
-  operationDistribution: DistributionItem[];
-  modeDistribution: DistributionItem[];
-  message?: string;
-}
 
 const initialViewModel: DashboardViewModel = {
   state: 'loading',
@@ -72,7 +47,7 @@ export class Dashboard {
   protected viewModel$ = this.loadDashboard();
   protected readonly searchMessage = signal('');
   protected readonly searchResults = signal<HomeShipmentSummary[]>([]);
-  protected readonly searchState = signal<SearchState>('idle');
+  protected readonly searchState = signal<DashboardSearchState>('idle');
   protected readonly recentSearches = signal<string[]>([]);
 
   protected readonly getOperationTypeLabel = getOperationTypeLabel;
@@ -170,7 +145,7 @@ export class Dashboard {
     );
   }
 
-  private createMetricCards(metrics: DashboardMetrics): MetricCard[] {
+  private createMetricCards(metrics: DashboardMetrics): DashboardMetricCard[] {
     return [
       {
         label: 'Total de envíos',
@@ -203,21 +178,21 @@ export class Dashboard {
     ];
   }
 
-  private createOperationDistribution(metrics: DashboardMetrics): DistributionItem[] {
+  private createOperationDistribution(metrics: DashboardMetrics): DashboardDistributionItem[] {
     return [
       this.createDistributionItem('EXPO — Exportación', metrics.totalExports, metrics.totalShipments, 'north_east'),
       this.createDistributionItem('IMPO — Importación', metrics.totalImports, metrics.totalShipments, 'south_west'),
     ];
   }
 
-  private createModeDistribution(metrics: DashboardMetrics): DistributionItem[] {
+  private createModeDistribution(metrics: DashboardMetrics): DashboardDistributionItem[] {
     return [
       this.createDistributionItem('AIR — Aéreo', metrics.totalAir, metrics.totalShipments, 'flight'),
       this.createDistributionItem('SEA — Marítimo', metrics.totalSea, metrics.totalShipments, 'directions_boat'),
     ];
   }
 
-  private createDistributionItem(label: string, count: number, total: number, icon: string): DistributionItem {
+  private createDistributionItem(label: string, count: number, total: number, icon: string): DashboardDistributionItem {
     return {
       label,
       count,

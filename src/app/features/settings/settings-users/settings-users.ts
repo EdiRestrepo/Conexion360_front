@@ -10,12 +10,7 @@ import { SettingsUser, SettingsViewState } from '../../../core/models/settings.m
 import { SettingsService } from '../../../core/services/settings.service';
 import { UserRole } from '../../../core/models/user.model';
 import { getUserRoleLabel } from '../../../core/utils/display-labels';
-
-interface UsersViewModel {
-  state: SettingsViewState;
-  users: SettingsUser[];
-  message?: string;
-}
+import type { UsersViewModel } from '../models/settings-view.model';
 
 @Component({
   selector: 'app-settings-users',

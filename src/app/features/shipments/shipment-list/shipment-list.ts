@@ -19,34 +19,7 @@ import {
   isTerminalShipmentStatus,
 } from '../../../core/utils/display-labels';
 import { MockShipmentService } from '../../../mocks/services/mock-shipment.service';
-
-interface ShipmentListFilters {
-  query: string;
-  operation: OperationType | '';
-  mode: TransportMode | '';
-  status: ShipmentStatus | '';
-  page: number;
-  pageSize: number;
-}
-
-interface ShipmentListSummary {
-  total: number;
-  air: number;
-  sea: number;
-}
-
-interface ShipmentListViewModel {
-  state: 'loading' | 'empty' | 'error' | 'success';
-  filters: ShipmentListFilters;
-  shipments: Shipment[];
-  summary: ShipmentListSummary;
-  totalItems: number;
-  totalPages: number;
-  rangeStart: number;
-  rangeEnd: number;
-  queryParams: Params;
-  message?: string;
-}
+import type { ShipmentListFilters, ShipmentListSummary, ShipmentListViewModel } from './models/shipment-list-view.model';
 
 const defaultFilters: ShipmentListFilters = {
   query: '',

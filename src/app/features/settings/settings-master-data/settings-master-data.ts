@@ -7,12 +7,7 @@ import { Observable, Subject, catchError, map, of, startWith, switchMap, take } 
 
 import { MasterDataGroup, SettingsViewState } from '../../../core/models/settings.model';
 import { SettingsService } from '../../../core/services/settings.service';
-
-interface MasterDataViewModel {
-  state: SettingsViewState;
-  groups: MasterDataGroup[];
-  message?: string;
-}
+import type { MasterDataViewModel } from '../models/settings-view.model';
 
 @Component({
   selector: 'app-settings-master-data',

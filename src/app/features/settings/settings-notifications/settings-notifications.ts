@@ -9,18 +9,7 @@ import { Observable, catchError, map, of, startWith, switchMap, take } from 'rxj
 import { NotificationPreference, UserProfile } from '../../../core/models/user-profile.model';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
 import { MockUserProfileService } from '../../../mocks/services/mock-user-profile.service';
-
-type PreferencesState = 'loading' | 'empty' | 'error' | 'success';
-
-interface PreferencesViewModel {
-  state: PreferencesState;
-  profile: UserProfile | null;
-  message?: string;
-}
-
-type NotificationPreferenceForm = {
-  [Key in keyof NotificationPreference]: FormControl<boolean>;
-};
+import type { NotificationPreferenceForm, PreferencesState, PreferencesViewModel } from '../models/settings-view.model';
 
 const defaultPreferences: NotificationPreference = {
   email: true,

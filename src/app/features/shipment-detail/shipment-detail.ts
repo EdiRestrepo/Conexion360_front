@@ -42,52 +42,19 @@ import {
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
-
-type DetailState = 'loading' | 'error' | 'not-found' | 'success';
-type DetailTab = 'summary' | 'tracking' | 'dates' | 'container' | 'financial' | 'documents' | 'history';
-type DateState = 'on-time' | 'delayed' | 'pending' | 'not-applicable' | 'no-data';
-type TrackingStageState = 'completed' | 'current' | 'pending';
-
-interface DetailViewModel {
-  state: DetailState;
-  selectedTab: DetailTab;
-  listQueryParams: Params;
-  shipment: Shipment | null;
-  message?: string;
-}
-
-interface TabItem {
-  id: DetailTab;
-  label: string;
-}
-
-interface DetailField {
-  label: string;
-  value: string;
-}
-
-interface LogisticDateRow {
-  label: string;
-  estimated: string;
-  actual: string;
-  state: DateState;
-  stateLabel: string;
-}
-
-interface TrackingStage {
-  label: string;
-  state: TrackingStageState;
-}
-
-interface NextStop {
-  location: string;
-  date: string;
-}
-
-interface Coordinates {
-  latitude: number;
-  longitude: number;
-}
+import type {
+  Coordinates,
+  DateState,
+  DetailField,
+  DetailState,
+  DetailTab,
+  DetailViewModel,
+  LogisticDateRow,
+  NextStop,
+  TabItem,
+  TrackingStage,
+  TrackingStageState,
+} from './models/shipment-detail-view.model';
 
 const defaultTab: DetailTab = 'summary';
 const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'documents', 'history'];

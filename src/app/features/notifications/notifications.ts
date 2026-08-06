@@ -14,16 +14,7 @@ import {
   getNotificationTypeLabel,
 } from '../../core/utils/notification-labels';
 import { MockNotificationService } from '../../mocks/services/mock-notification.service';
-
-interface NotificationsViewModel {
-  state: 'loading' | 'empty' | 'error' | 'success';
-  notifications: Notification[];
-  unreadCount: number;
-  filter: NotificationFilter;
-  message?: string;
-}
-
-type NotificationFilter = 'all' | 'unread';
+import type { NotificationFilter, NotificationsViewModel } from './models/notifications-view.model';
 
 const initialViewModel: NotificationsViewModel = {
   state: 'loading',

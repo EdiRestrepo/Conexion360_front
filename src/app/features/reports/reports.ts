@@ -22,37 +22,7 @@ import {
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
-
-type ReportsState = 'loading' | 'empty' | 'error' | 'success';
-type ChartKind = 'doughnut' | 'bar';
-
-interface ReportsViewModel {
-  state: ReportsState;
-  metrics: ReportMetrics | null;
-  indicators: MetricCard[];
-  financials: MetricCard[];
-  charts: ReportChart[];
-  message?: string;
-}
-
-interface MetricCard {
-  label: string;
-  value: string;
-  icon: string;
-}
-
-interface ChartValue {
-  label: string;
-  value: number;
-}
-
-interface ReportChart {
-  id: string;
-  title: string;
-  kind: ChartKind;
-  values: ChartValue[];
-  summary: string;
-}
+import type { ChartKind, ChartValue, MetricCard, ReportChart, ReportsState, ReportsViewModel } from './models/reports-view.model';
 
 const initialViewModel: ReportsViewModel = {
   state: 'loading',
