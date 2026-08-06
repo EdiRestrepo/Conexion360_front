@@ -8,7 +8,6 @@ import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 
 const appUrl = environment.appUrl || window.location.origin;
-
 const apiAllowedList = environment.api.baseUrl
   ? [
       {
