@@ -193,6 +193,17 @@ http {
             try_files $uri $uri/ /index.html;
         }
 
+        location /api/v1/ {
+            proxy_pass https://localhost:44368/api/v1/;
+            proxy_ssl_verify off;
+
+            proxy_set_header Host localhost;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+        }
+
         error_page   500 502 503 504  /50x.html;
 
         location = /50x.html {
