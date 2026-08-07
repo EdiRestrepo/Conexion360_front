@@ -4,7 +4,6 @@ import { Observable, filter, map, switchMap, take } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { SearchFilters } from '../models/common.model';
-import { getShipmentStatusLabel } from '../utils/display-labels';
 import { Auth0Identity } from '../models/user.model';
 import { Auth0FacadeService } from './auth0-facade.service';
 import { MyShipmentsPage, mapShipmentsPageResponse } from './shipments-page.mapper';
@@ -14,11 +13,11 @@ export type { MyShipmentsPage, MyShipmentsSummary } from './shipments-page.mappe
 @Injectable({
   providedIn: 'root',
 })
-export class ApiMyShipmentsService {
+export class ApiHistoryService {
   private readonly http = inject(HttpClient);
   private readonly auth0Facade = inject(Auth0FacadeService);
-  private readonly shipmentsUrl = `${environment.api.baseUrl}/myshipments/allshipments`;
-  private readonly filteredShipmentsUrl = `${environment.api.baseUrl}/myshipments/filterShipments`;
+  private readonly historyUrl = `${environment.api.baseUrl}/myshipments/allhistory`;
+  private readonly filteredHistoryUrl = `${environment.api.baseUrl}/myshipments/filterhistory`;
 
   search(filters: SearchFilters): Observable<MyShipmentsPage> {
     return this.getIdentity().pipe(
@@ -51,16 +50,11 @@ export class ApiMyShipmentsService {
   }
 
   private getSearchUrl(filters: SearchFilters): string {
-    return this.hasFilters(filters) ? this.filteredShipmentsUrl : this.shipmentsUrl;
+    return this.hasFilters(filters) ? this.filteredHistoryUrl : this.historyUrl;
   }
 
   private hasFilters(filters: SearchFilters): boolean {
-    return Boolean(
-      filters.query?.trim() ||
-        filters.operationType ||
-        filters.transportMode ||
-        filters.status,
-    );
+    return Boolean(filters.query?.trim() || filters.operationType || filters.transportMode);
   }
 
   private addFilterParams(params: HttpParams, filters: SearchFilters): HttpParams {
@@ -77,10 +71,6 @@ export class ApiMyShipmentsService {
 
     if (filters.transportMode) {
       nextParams = nextParams.set('ShipmentMode', filters.transportMode);
-    }
-
-    if (filters.status) {
-      nextParams = nextParams.set('State', getShipmentStatusLabel(filters.status));
     }
 
     return nextParams;

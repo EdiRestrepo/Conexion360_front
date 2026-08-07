@@ -17,7 +17,8 @@ import {
   getTransportModeIcon,
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
+import { ApiHistoryService } from '../../core/services/api-history.service';
+import { MyShipmentsPage } from '../../core/services/shipments-page.mapper';
 import type { HistoryFilters, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {
@@ -52,7 +53,7 @@ export class History {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly shipmentService = inject(MockShipmentService);
+  private readonly historyService = inject(ApiHistoryService);
 
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly operationControl = new FormControl<OperationType | ''>('', { nonNullable: true });
@@ -72,18 +73,26 @@ export class History {
       map((params) => this.getFiltersFromParams(params)),
       tap((filters) => this.patchControls(filters)),
       switchMap((filters) =>
-        this.shipmentService.getDelivered().pipe(
-          map((shipments) => this.createViewModel(shipments, filters)),
-          startWith({ ...initialViewModel, filters } satisfies HistoryViewModel),
-          catchError(() =>
-            of({
-              ...initialViewModel,
-              state: 'error',
-              filters,
-              message: 'No fue posible cargar el historial de envíos. Intenta nuevamente.',
-            } satisfies HistoryViewModel),
+        this.historyService
+          .search({
+            query: filters.query,
+            operationType: filters.operation || null,
+            transportMode: filters.mode || null,
+            page: filters.page,
+            pageSize: filters.pageSize,
+          })
+          .pipe(
+            map((result) => this.createViewModel(result, filters)),
+            startWith({ ...initialViewModel, filters } satisfies HistoryViewModel),
+            catchError(() =>
+              of({
+                ...initialViewModel,
+                state: 'error',
+                filters,
+                message: 'No fue posible cargar el historial de envíos. Intenta nuevamente.',
+              } satisfies HistoryViewModel),
+            ),
           ),
-        ),
       ),
     );
 
@@ -168,59 +177,32 @@ export class History {
       .subscribe((pageSize) => void this.updateQueryParams({ pageSize: Number(pageSize), page: 1 }));
   }
 
-  private createViewModel(shipments: Shipment[], filters: HistoryFilters): HistoryViewModel {
-    const deliveredShipments = shipments.filter((shipment) => shipment.status === 'DELIVERED');
-    const filteredShipments = this.filterShipments(deliveredShipments, filters);
-    const totalItems = filteredShipments.length;
-    const totalPages = Math.max(Math.ceil(totalItems / filters.pageSize), 1);
-    const page = Math.min(filters.page, totalPages);
-    const start = (page - 1) * filters.pageSize;
-    const pagedShipments = filteredShipments.slice(start, start + filters.pageSize);
-    const state = deliveredShipments.length === 0 ? 'empty' : totalItems === 0 ? 'empty' : 'success';
+  private createViewModel(result: MyShipmentsPage, filters: HistoryFilters): HistoryViewModel {
+    const totalItems = result.totalItems;
+    const totalPages = Math.max(result.totalPages, 1);
+    const page = Math.min(Math.max(result.page, 1), totalPages);
+    const start = (page - 1) * result.pageSize;
+    const state = result.items.length === 0 ? 'empty' : 'success';
 
     return {
       state,
-      filters: { ...filters, page },
-      shipments: pagedShipments,
+      filters: { ...filters, page, pageSize: result.pageSize },
+      shipments: result.items,
       summary: {
-        total: totalItems,
-        exports: filteredShipments.filter((shipment) => shipment.operationType === 'EXPO').length,
-        imports: filteredShipments.filter((shipment) => shipment.operationType === 'IMPO').length,
-        air: filteredShipments.filter((shipment) => shipment.transportMode === 'AIR').length,
-        sea: filteredShipments.filter((shipment) => shipment.transportMode === 'SEA').length,
-        withIssues: filteredShipments.filter((shipment) => shipment.status === 'WITH_ISSUE').length,
+        total: result.summary.total,
+        exports: result.summary.exports,
+        imports: result.summary.imports,
+        air: result.summary.air,
+        sea: result.summary.sea,
+        withIssues: result.summary.withIssues,
       },
       totalItems,
       totalPages,
       rangeStart: totalItems === 0 ? 0 : start + 1,
-      rangeEnd: Math.min(start + filters.pageSize, totalItems),
+      rangeEnd: totalItems === 0 ? 0 : Math.min(start + result.items.length, totalItems),
       queryParams: { ...this.buildQueryParams({ ...filters, page }), from: 'history' },
-      message: totalItems === 0 ? 'No hay envíos completados que coincidan con los filtros.' : undefined,
+      message: result.items.length === 0 ? 'No hay envíos completados que coincidan con los filtros.' : undefined,
     };
-  }
-
-  private filterShipments(shipments: Shipment[], filters: HistoryFilters): Shipment[] {
-    const query = filters.query.toLowerCase();
-
-    return shipments.filter((shipment) => {
-      const searchableText = [
-        shipment.documentNumber,
-        shipment.client,
-        shipment.origin.country,
-        shipment.origin.city,
-        shipment.destination.country,
-        shipment.destination.city,
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(' ')
-        .toLowerCase();
-
-      return (
-        (!query || searchableText.includes(query)) &&
-        (!filters.operation || shipment.operationType === filters.operation) &&
-        (!filters.mode || shipment.transportMode === filters.mode)
-      );
-    });
   }
 
   private getFiltersFromParams(params: ParamMap): HistoryFilters {

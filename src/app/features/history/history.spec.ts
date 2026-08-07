@@ -1,21 +1,27 @@
-﻿import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Params, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
-import { Shipment } from '../../core/models/shipment.model';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
+import { SearchFilters } from '../../core/models/common.model';
+import { LogisticDates, OperationType, Shipment, TransportMode } from '../../core/models/shipment.model';
+import { ApiHistoryService } from '../../core/services/api-history.service';
+import { MyShipmentsPage } from '../../core/services/shipments-page.mapper';
 import { History } from './history';
 
 describe('History', () => {
   let fixture: ComponentFixture<History>;
+  let component: HistoryTestComponent;
   let router: Router;
-  let getDeliveredSpy: jasmine.Spy<() => Observable<Shipment[]>>;
-  let querySubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let searchSpy: jasmine.Spy<(filters: SearchFilters) => Observable<MyShipmentsPage>>;
+  let queryParamSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let currentParams: Record<string, string>;
 
   beforeEach(async () => {
-    querySubject = new BehaviorSubject(convertToParamMap({}));
-    getDeliveredSpy = jasmine.createSpy('getDelivered').and.returnValue(of(createShipments()));
+    currentParams = {};
+    queryParamSubject = new BehaviorSubject(convertToParamMap(currentParams));
+    searchSpy = jasmine.createSpy('search').and.returnValue(of(createApiPage(createApiShipments())));
 
     await TestBed.configureTestingModule({
       imports: [History, NoopAnimationsModule],
@@ -24,96 +30,145 @@ describe('History', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            queryParamMap: querySubject.asObservable(),
-            snapshot: { queryParamMap: convertToParamMap({}) },
+            queryParamMap: queryParamSubject.asObservable(),
+            snapshot: { queryParamMap: convertToParamMap({}), queryParams: {} },
           },
         },
-        { provide: MockShipmentService, useValue: { getDelivered: getDeliveredSpy } },
+        {
+          provide: ApiHistoryService,
+          useValue: { search: searchSpy },
+        },
       ],
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    spyOn(router, 'navigate').and.resolveTo(true);
+    spyOn(router, 'navigate').and.callFake((_commands: unknown[], extras?: { queryParams?: Params }) => {
+      if (extras?.queryParams) {
+        applyQueryParams(extras.queryParams);
+      }
+      return Promise.resolve(true);
+    });
+
     fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
   });
 
-  it('should render only delivered shipments', fakeAsync(() => {
+  it('should render backend history shipments', fakeAsync(() => {
     render();
 
-    expect(getText()).toContain('AWB-DEL-001');
-    expect(getText()).toContain('HBL-DEL-002');
-    expect(getText()).not.toContain('AWB-ACT-003');
+    const text = getText();
+
+    expect(text).toContain('AWB-DEL-001');
+    expect(text).toContain('HBL-DEL-002');
   }));
 
-  it('should render the shared shipment date columns', fakeAsync(() => {
+  it('should render dashes for unavailable dates', fakeAsync(() => {
+    searchSpy.and.returnValue(of(createApiPage([createApiShipment({ documentNumber: 'AWB-NODATE', logisticDates: { etd: null, atd: null, eta: null, ata: null } })])));
+    fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
     render();
 
-    const dataRows = fixture.nativeElement.querySelectorAll('.history-table__row:not(.history-table__row--head)') as NodeListOf<HTMLElement>;
-    const firstRowCells = dataRows[0].querySelectorAll('[role="cell"]') as NodeListOf<HTMLElement>;
+    const dashCells = Array.from(fixture.nativeElement.querySelectorAll('[role="cell"]') as NodeListOf<HTMLElement>).filter(
+      (cell) => cell.textContent?.trim() === '-',
+    );
 
-    expect(firstRowCells[10].textContent).toContain('09/01/2026');
+    expect(dashCells.length).toBeGreaterThanOrEqual(4);
+    expect(getText()).not.toContain('null');
+    expect(getText()).not.toContain('undefined');
   }));
 
-  it('should search by document, client, origin or destination', fakeAsync(() => {
+  it('should render dates with Base44 numeric format', fakeAsync(() => {
     render();
 
-    const input = fixture.nativeElement.querySelector('input[type="search"]') as HTMLInputElement;
-    input.value = 'Nutresa';
-    input.dispatchEvent(new Event('input'));
-    tick(260);
+    expect(getText()).toContain('05/01/2026');
+    expect(getText()).not.toContain('05 de ene de 2026');
+  }));
 
+  it('should render all backend summary pills in requested order', fakeAsync(() => {
+    render();
+
+    const pills = Array.from(fixture.nativeElement.querySelectorAll('.summary-pill') as NodeListOf<HTMLElement>);
+    const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos', 'con novedad'];
+    const numbers = ['2', '1', '1', '1', '1', '0'];
+
+    expect(pills.length).toBe(6);
+    pills.forEach((pill, index) => {
+      expect(pill.querySelector('strong')?.textContent?.trim()).toBe(numbers[index]);
+      expect(pill.textContent).toContain(labels[index]);
+    });
+  }));
+
+  it('should debounce search and keep query params', fakeAsync(() => {
+    render();
+
+    component.searchControl.setValue('Enka');
+    tick(249);
+    expect(router.navigate).not.toHaveBeenCalled();
+
+    tick(1);
     expect(router.navigate).toHaveBeenCalledWith([], jasmine.objectContaining({
-      queryParams: { query: 'Nutresa', page: 1 },
+      queryParams: jasmine.objectContaining({ query: 'Enka', page: 1 }),
       queryParamsHandling: 'merge',
     }));
   }));
 
-  it('should filter by operation and mode from query params', fakeAsync(() => {
-    setQueryParams({ operation: 'EXPO', mode: 'SEA' });
+  it('should request backend data with combined query params', fakeAsync(() => {
     render();
+    setQueryParams({ query: 'China', operation: 'EXPO', mode: 'AIR' });
 
-    expect(getText()).toContain('HBL-DEL-002');
-    expect(getText()).not.toContain('AWB-DEL-001');
+    expect(searchSpy).toHaveBeenCalledWith(jasmine.objectContaining({
+      query: 'China',
+      operationType: 'EXPO',
+      transportMode: 'AIR',
+      page: 1,
+      pageSize: 10,
+    }));
   }));
 
-  it('should render summary from filtered delivered results', fakeAsync(() => {
-    setQueryParams({ mode: 'AIR' });
+  it('should restore query params in controls', fakeAsync(() => {
     render();
+    setQueryParams({ query: 'Bogota', operation: 'EXPO', mode: 'SEA', pageSize: '25' });
 
-    expect(getText()).toContain('envíos');
-    expect(getText()).toContain('2');
-    expect(getText()).toContain('exportaciones');
-    expect(getText()).toContain('importaciones');
-    expect(getText()).toContain('aéreos');
-    expect(getText()).toContain('marítimos');
-    expect(getText()).toContain('con novedad');
+    expect(component.searchControl.value).toBe('Bogota');
+    expect(component.operationControl.value).toBe('EXPO');
+    expect(component.modeControl.value).toBe('SEA');
+    expect(component.pageSizeControl.value).toBe(25);
   }));
 
-  it('should paginate and preserve query params', fakeAsync(() => {
-    setQueryParams({ page: '2', pageSize: '10', query: 'AWB' });
+  it('should paginate with 10 items by default and navigate pages', fakeAsync(() => {
+    searchSpy.and.callFake((filters) =>
+      of(createApiPage(createPaginatedApiShipments(Number(filters.page ?? 1), Number(filters.pageSize ?? 10)), 12, Number(filters.page ?? 1), Number(filters.pageSize ?? 10))),
+    );
+    fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
     render();
 
-    expect(getText()).toContain('Página 2 de 2');
+    expect(getTableRows().length).toBe(10);
+    expect(getText()).toContain('1-10 de 12');
+
+    clickButton('Página siguiente');
+    tick();
+    fixture.detectChanges();
+
+    expect(getTableRows().length).toBe(2);
     expect(getText()).toContain('11-12 de 12');
   }));
 
   it('should update query params when page size changes', fakeAsync(() => {
     render();
 
-    const select = fixture.nativeElement.querySelector('footer select') as HTMLSelectElement;
-    select.value = '25';
-    select.dispatchEvent(new Event('change'));
+    component.pageSizeControl.setValue(25);
     tick();
 
     expect(router.navigate).toHaveBeenCalledWith([], jasmine.objectContaining({
-      queryParams: { pageSize: 25, page: 1 },
+      queryParams: jasmine.objectContaining({ pageSize: 25, page: 1 }),
       queryParamsHandling: 'merge',
     }));
   }));
 
   it('should navigate to detail preserving filters', fakeAsync(() => {
-    setQueryParams({ query: 'Enka', page: '1' });
     render();
+    setQueryParams({ query: 'Enka', page: '1' });
 
     const link = fixture.nativeElement.querySelector('a[title="Ver detalle"]') as HTMLAnchorElement;
 
@@ -123,15 +178,19 @@ describe('History', () => {
   }));
 
   it('should render empty state when there are no matching results', fakeAsync(() => {
-    setQueryParams({ query: 'Sin coincidencias' });
+    searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
+    fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
     render();
+    setQueryParams({ query: 'Sin coincidencias' });
 
-    expect(getText()).toContain('No hay envíos completados para mostrar');
+    expect(getText()).toContain('No hay envíos completados que coincidan con los filtros.');
   }));
 
-  it('should render error state and retry', fakeAsync(() => {
-    getDeliveredSpy.and.returnValue(throwError(() => new Error('fallo')));
+  it('should render controlled error state and retry', fakeAsync(() => {
+    searchSpy.and.returnValue(throwError(() => new Error('fallo')));
     fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
     render();
 
     expect(getText()).toContain('No se pudo cargar el historial');
@@ -149,13 +208,33 @@ describe('History', () => {
   }
 
   function setQueryParams(params: Record<string, string>): void {
-    querySubject.next(convertToParamMap(params));
+    currentParams = { ...params };
+    queryParamSubject.next(convertToParamMap(currentParams));
     tick();
     fixture.detectChanges();
   }
 
+  function applyQueryParams(params: Params): void {
+    const nextParams = { ...currentParams };
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === '') {
+        delete nextParams[key];
+      } else {
+        nextParams[key] = String(value);
+      }
+    });
+    currentParams = nextParams;
+    queryParamSubject.next(convertToParamMap(currentParams));
+  }
+
   function getText(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  }
+
+  function getTableRows(): HTMLElement[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('.history-table__row:not(.history-table__row--head)') as NodeListOf<HTMLElement>,
+    );
   }
 
   function clickButton(label: string): void {
@@ -169,77 +248,86 @@ describe('History', () => {
   }
 });
 
-function createShipments(): Shipment[] {
-  const shipments: Shipment[] = [
-    createShipment({ id: 'delivered-001', documentNumber: 'AWB-DEL-001', operationType: 'IMPO', transportMode: 'AIR', client: 'Enka', originCountry: 'México', destinationCountry: 'Colombia', delivery: '2026-01-10', eta: '2026-01-09' }),
-    createShipment({ id: 'delivered-002', documentNumber: 'HBL-DEL-002', operationType: 'EXPO', transportMode: 'SEA', client: 'Nutresa', originCountry: 'Colombia', destinationCountry: 'Perú', delivery: '2026-02-12' }),
-    createShipment({ id: 'active-003', documentNumber: 'AWB-ACT-003', operationType: 'IMPO', transportMode: 'AIR', status: 'IN_TRANSIT', client: 'Postobon', originCountry: 'Chile', destinationCountry: 'Colombia', delivery: null }),
+interface HistoryTestComponent {
+  searchControl: FormControl<string>;
+  operationControl: FormControl<OperationType | ''>;
+  modeControl: FormControl<TransportMode | ''>;
+  pageSizeControl: FormControl<number>;
+}
+
+interface ShipmentInput extends Partial<Omit<Shipment, 'logisticDates'>> {
+  logisticDates?: Partial<LogisticDates>;
+}
+
+function createApiShipments(): Shipment[] {
+  return [
+    createApiShipment({ id: 'delivered-001', documentNumber: 'AWB-DEL-001', operationType: 'IMPO', transportMode: 'AIR', client: 'Enka' }),
+    createApiShipment({ id: 'delivered-002', documentNumber: 'HBL-DEL-002', operationType: 'EXPO', transportMode: 'SEA', client: 'Nutresa' }),
   ];
-
-  for (let index = 4; index <= 14; index += 1) {
-    shipments.push(
-      createShipment({
-        id: `delivered-${index.toString().padStart(3, '0')}`,
-        documentNumber: `AWB-DEL-${index.toString().padStart(3, '0')}`,
-        operationType: 'IMPO',
-        transportMode: 'AIR',
-        client: 'Enka',
-        originCountry: 'Estados Unidos',
-        destinationCountry: 'Colombia',
-        delivery: `2026-03-${index.toString().padStart(2, '0')}`,
-      }),
-    );
-  }
-
-  return shipments;
 }
 
-interface ShipmentInput {
-  id: string;
-  documentNumber: string;
-  operationType: Shipment['operationType'];
-  transportMode: Shipment['transportMode'];
-  client: string;
-  originCountry: string;
-  destinationCountry: string;
-  status?: Shipment['status'];
-  delivery: string | null;
-  eta?: string | null;
+function createPaginatedApiShipments(page: number, pageSize: number): Shipment[] {
+  const start = (page - 1) * pageSize;
+
+  return Array.from({ length: 12 }, (_, index) =>
+    createApiShipment({
+      id: `delivered-page-${index + 1}`,
+      documentNumber: `AWB-PAGE-${(index + 1).toString().padStart(3, '0')}`,
+      client: index % 2 === 0 ? 'Enka' : 'Nutresa',
+      transportMode: index % 2 === 0 ? 'AIR' : 'SEA',
+    }),
+  ).slice(start, start + pageSize);
 }
 
-function createShipment(input: ShipmentInput): Shipment {
+function createApiPage(items: Shipment[], totalItems = items.length, page = 1, pageSize = 10): MyShipmentsPage {
   return {
-    id: input.id,
-    documentNumber: input.documentNumber,
-    operationType: input.operationType,
-    transportMode: input.transportMode,
-    status: input.status ?? 'DELIVERED',
-    client: input.client,
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages: Math.max(Math.ceil(totalItems / pageSize), 1),
+    summary: {
+      total: totalItems,
+      air: items.filter((shipment) => shipment.transportMode === 'AIR').length,
+      sea: items.filter((shipment) => shipment.transportMode === 'SEA').length,
+      imports: items.filter((shipment) => shipment.operationType === 'IMPO').length,
+      exports: items.filter((shipment) => shipment.operationType === 'EXPO').length,
+      withIssues: items.filter((shipment) => shipment.status === 'WITH_ISSUE').length,
+    },
+  };
+}
+
+function createApiShipment(input: ShipmentInput = {}): Shipment {
+  return {
+    id: 'delivered-base',
+    documentNumber: 'AWB-BASE-001',
+    operationType: 'IMPO',
+    transportMode: 'AIR',
+    status: 'DELIVERED',
+    client: 'Enka',
     provider: 'Global Freight Logistics S.A.S.',
     incoterm: 'DAP',
-    origin: { country: input.originCountry, city: input.originCountry === 'Colombia' ? 'Medellín' : null, terminal: null },
-    destination: { country: input.destinationCountry, city: input.destinationCountry === 'Colombia' ? 'Bogotá' : null, terminal: null },
+    origin: { country: 'México', city: 'Ciudad de México', terminal: null },
+    destination: { country: 'Colombia', city: 'Bogotá', terminal: null },
     merchandiseDescription: 'Textiles',
     cargoType: 'LCL',
     packages: 10,
-    weightKg: 1200,
-    volumeM3: 8,
-    carrier: input.transportMode === 'AIR' ? 'Avianca Cargo' : 'Maersk',
+    weightKg: 200,
+    volumeM3: 4,
+    carrier: 'Avianca Cargo',
     logisticDates: {
-      etd: '2026-01-01',
-      atd: '2026-01-02',
-      eta: input.eta ?? '2026-01-09',
+      etd: '2026-01-05',
+      atd: '2026-01-06',
+      eta: '2026-01-08',
       ata: '2026-01-09',
-      destinationWarehouse: '2026-01-08',
-      dispatch: '2026-01-09',
-      delivery: input.delivery,
+      ...input.logisticDates,
     },
-    container: input.transportMode === 'SEA' ? null : undefined,
     financialInfo: { advancePayment: null, invoice: null },
     documents: [],
     events: [],
     issue: null,
-    progress: input.status === 'IN_TRANSIT' ? 45 : 100,
+    progress: 100,
     nextStop: null,
+    ...input,
   };
 }

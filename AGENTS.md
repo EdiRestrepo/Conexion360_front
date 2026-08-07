@@ -47,11 +47,8 @@ Integrado con el backend real:
   `/home/filters`).
 - Mis envíos (`ApiMyShipmentsService`, endpoints `/myshipments/allshipments`
   y `/myshipments/filterShipments`).
-
-Pendiente de integrar, aunque el backend ya expone endpoints listos para
-usarse:
-
-- Historial (actualmente sigue usando `MockShipmentService`).
+- Historial (`ApiHistoryService`, endpoints `/myshipments/allhistory` y
+  `/myshipments/filterhistory`).
 
 Todavía con datos simulados, sin endpoints de backend confirmados:
 
@@ -364,9 +361,19 @@ algo sigue mockeado):
 - `ApiMyShipmentsService`: real, consume el backend
   (`/myshipments/allshipments`, `/myshipments/filterShipments`) con el mismo
   patrón: `idClient` como parámetro, rol tomado del token por el backend.
+- `ApiHistoryService`: real, consume el backend (`/myshipments/allhistory`,
+  `/myshipments/filterhistory`) con el mismo patrón. A diferencia de
+  `ApiMyShipmentsService`, no admite filtro por estado (`State`); solo
+  `ValueFilter`, `OperationType` y `ShipmentMode` como opcionales.
+- `mapShipmentsPageResponse` (`shipments-page.mapper.ts`): función compartida
+  que traduce la respuesta del backend (`dataResponse`/`meta`) al modelo
+  `MyShipmentsPage`. La usan tanto `ApiMyShipmentsService` como
+  `ApiHistoryService` porque ambos endpoints devuelven la misma forma de
+  respuesta; no duplicar este mapeo al conectar un endpoint nuevo con la
+  misma forma de respuesta.
 - `MockShipmentService` (implementa `ShipmentDataSource`): sigue en uso para
-  detalle del envío, historial y reportes, mientras no exista integración con
-  el backend para esas pantallas.
+  detalle del envío y reportes, mientras no exista integración con el backend
+  para esas pantallas.
 - `MockNotificationService`: sigue en uso para notificaciones.
 
 Simular latencia usando RxJS en los servicios que sigan siendo mock.
@@ -374,7 +381,8 @@ Simular latencia usando RxJS en los servicios que sigan siendo mock.
 Los servicios deben devolver `Observable`.
 
 Al conectar una pantalla nueva al backend real, seguir el patrón ya
-establecido por `ApiHomeService` y `ApiMyShipmentsService`: inyectar
+establecido por `ApiHomeService`, `ApiMyShipmentsService` y
+`ApiHistoryService`: inyectar
 `Auth0FacadeService` para obtener `idClient`, llamar al endpoint con
 `HttpClient` (el token de Auth0 va en la cabecera `Authorization` y el
 backend deriva el rol de ahí, no se envía como parámetro), y mapear la
