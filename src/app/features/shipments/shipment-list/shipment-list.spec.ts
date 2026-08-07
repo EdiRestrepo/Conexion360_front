@@ -169,6 +169,13 @@ describe('ShipmentList', () => {
     expect(getText()).not.toContain('undefined');
   }));
 
+  it('should render dates with Base44 numeric format', fakeAsync(() => {
+    render();
+
+    expect(getText()).toContain('05/01/2026');
+    expect(getText()).not.toContain('05 de ene de 2026');
+  }));
+
   it('should preserve filters in detail links', fakeAsync(() => {
     render();
     setQueryParams({ query: 'Enka', operation: 'IMPO', page: '2', pageSize: '25' });

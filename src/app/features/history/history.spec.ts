@@ -51,7 +51,7 @@ describe('History', () => {
     const dataRows = fixture.nativeElement.querySelectorAll('.history-table__row:not(.history-table__row--head)') as NodeListOf<HTMLElement>;
     const firstRowCells = dataRows[0].querySelectorAll('[role="cell"]') as NodeListOf<HTMLElement>;
 
-    expect(firstRowCells[10].textContent).toContain('09 de ene de 2026');
+    expect(firstRowCells[10].textContent).toContain('09/01/2026');
   }));
 
   it('should search by document, client, origin or destination', fakeAsync(() => {

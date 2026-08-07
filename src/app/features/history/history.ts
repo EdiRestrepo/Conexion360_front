@@ -137,7 +137,15 @@ export class History {
       return '-';
     }
 
-    return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+    return this.toDayMonthYearDateFormat(date);
+  }
+
+  private toDayMonthYearDateFormat(date: Date): string {
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+
+    return `${day}/${month}/${year}`;
   }
 
   protected getStatusChipClass(status: ShipmentStatus): string {

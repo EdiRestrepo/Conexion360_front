@@ -147,6 +147,13 @@
   text-align: center;
 }
 
+.shipments-table__row > :nth-child(8),
+.shipments-table__row > :nth-child(9),
+.shipments-table__row > :nth-child(10),
+.shipments-table__row > :nth-child(11) {
+  white-space: nowrap;
+}
+
 .shipments-table__row strong {
   color: var(--color-primary);
 }

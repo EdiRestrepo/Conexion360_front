@@ -71,6 +71,13 @@
     72px;
 }
 
+.history-table__row > :nth-child(8),
+.history-table__row > :nth-child(9),
+.history-table__row > :nth-child(10),
+.history-table__row > :nth-child(11) {
+  white-space: nowrap;
+}
+
 .status-chip {
   gap: 6px;
   white-space: nowrap;
