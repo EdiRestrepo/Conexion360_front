@@ -113,7 +113,7 @@ export class Dashboard {
   private loadDashboard(): Observable<DashboardViewModel> {
     return forkJoin({
       metrics: this.shipmentService.getDashboardMetrics(),
-      recentShipments: this.shipmentService.getRecent(5),
+      recentShipments: this.shipmentService.getRecent(),
     }).pipe(
       map(({ metrics, recentShipments }) => {
         if (metrics.totalShipments === 0) {

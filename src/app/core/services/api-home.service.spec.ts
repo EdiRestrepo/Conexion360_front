@@ -116,6 +116,41 @@ describe('ApiHomeService', () => {
     });
   });
 
+  it('should expose all recent shipments when no limit is provided', () => {
+    service.getRecent().subscribe((shipments) => {
+      expect(shipments.length).toBe(2);
+      expect(shipments[0].documentNumber).toBe('AWB-010');
+      expect(shipments[1].documentNumber).toBe('HBL-011');
+    });
+
+    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/totals`);
+
+    request.flush({
+      dataResponse: {
+        recentShipments: [
+          {
+            id: 10,
+            documentNumber: 'AWB-010',
+            operationType: 'EXPO',
+            shipmentMode: 'AIR',
+            status: 'En tránsito',
+            origin: 'Colombia',
+            destination: 'Alemania',
+          },
+          {
+            id: 11,
+            documentNumber: 'HBL-011',
+            operationType: 'EXPO',
+            shipmentMode: 'SEA',
+            status: 'Pendiente',
+            origin: 'Colombia',
+            destination: 'Chile',
+          },
+        ],
+      },
+    });
+  });
+
   it('should request home filters with document value and map one result', () => {
     service.search({ query: '9YJB1QX6', page: 1, pageSize: 30 }).subscribe((result) => {
       expect(result.totalItems).toBe(1);

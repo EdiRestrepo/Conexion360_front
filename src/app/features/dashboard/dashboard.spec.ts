@@ -18,6 +18,7 @@ describe('Dashboard', () => {
 
   beforeEach(async () => {
     searchSpy = jasmine.createSpy('search').and.returnValue(of({ items: [], page: 1, pageSize: 30, totalItems: 0, totalPages: 0 }));
+    const recentShipments = createShipments(10);
 
     await TestBed.configureTestingModule({
       imports: [Dashboard, NoopAnimationsModule],
@@ -33,7 +34,7 @@ describe('Dashboard', () => {
           provide: ApiHomeService,
           useValue: {
             getDashboardMetrics: jasmine.createSpy('getDashboardMetrics').and.returnValue(of(createDashboardMetrics())),
-            getRecent: jasmine.createSpy('getRecent').and.returnValue(of(createShipments().slice(0, 5))),
+            getRecent: jasmine.createSpy('getRecent').and.returnValue(of(recentShipments)),
             search: searchSpy,
           },
         },
@@ -87,14 +88,19 @@ describe('Dashboard', () => {
     expect(progressbars[3].getAttribute('aria-valuenow')).toBe('60');
   }));
 
-  it('should render at least five recent shipments with detail links', fakeAsync(() => {
+  it('should render all recent shipments received from service', fakeAsync(() => {
     fixture.detectChanges();
     tick();
     fixture.detectChanges();
 
     const recentItems = fixture.nativeElement.querySelectorAll('.recent-item') as NodeListOf<HTMLAnchorElement>;
 
-    expect(recentItems.length).toBe(5);
+    const service = TestBed.inject(ApiHomeService) as unknown as {
+      getRecent: jasmine.Spy<() => Observable<HomeShipmentSummary[]>>;
+    };
+
+    expect(service.getRecent).toHaveBeenCalledWith();
+    expect(recentItems.length).toBe(10);
     expect(recentItems[0].getAttribute('href')).toContain('/shipments/shipment-001');
     expect(getText()).toContain('AWB-001');
   }));
@@ -243,8 +249,8 @@ function createShipment(overrides: Partial<HomeShipmentSummary> = {}): HomeShipm
   };
 }
 
-function createShipments(): HomeShipmentSummary[] {
-  return Array.from({ length: 5 }, (_, index) => createShipment({
+function createShipments(length = 5): HomeShipmentSummary[] {
+  return Array.from({ length }, (_, index) => createShipment({
     id: `shipment-00${index + 1}`,
     documentNumber: `AWB-00${index + 1}`,
     operationType: index % 2 === 0 ? 'IMPO' : 'EXPO',

@@ -56,8 +56,8 @@ export class ApiHomeService {
     return this.dashboardData$.pipe(map((data) => data.metrics));
   }
 
-  getRecent(limit: number): Observable<HomeShipmentSummary[]> {
-    return this.dashboardData$.pipe(map((data) => data.recentShipments.slice(0, Math.max(limit, 0))));
+  getRecent(limit?: number): Observable<HomeShipmentSummary[]> {
+    return this.dashboardData$.pipe(map((data) => (limit === undefined ? data.recentShipments : data.recentShipments.slice(0, Math.max(limit, 0)))));
   }
 
   search(filters: SearchFilters): Observable<PaginatedResult<HomeShipmentSummary>> {
