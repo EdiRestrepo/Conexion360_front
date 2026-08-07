@@ -74,7 +74,7 @@ describe('ShipmentList', () => {
     const cards = Array.from(fixture.nativeElement.querySelectorAll('.summary-card') as NodeListOf<HTMLElement>);
 
     expect(cards.map((card) => card.querySelector('span')?.textContent?.trim())).toEqual([
-      'Total envios',
+      'Total envíos',
       'Exportaciones',
       'Importaciones',
       'Aéreos',

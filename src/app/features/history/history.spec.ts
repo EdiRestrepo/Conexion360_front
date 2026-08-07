@@ -88,7 +88,7 @@ describe('History', () => {
     setQueryParams({ mode: 'AIR' });
     render();
 
-    expect(getText()).toContain('Total envios');
+    expect(getText()).toContain('Total envíos');
     expect(getText()).toContain('2');
     expect(getText()).toContain('Exportaciones');
     expect(getText()).toContain('Importaciones');
