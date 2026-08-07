@@ -105,7 +105,9 @@
                 <div class="ms" [attr.aria-label]="card.detail ?? card.label">
                   @for (item of card.items; track item.label) {
                     <span class="ms-i">
-                      <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+                      <span class="ms-i__icon" aria-hidden="true">
+                        <mat-icon>{{ item.icon }}</mat-icon>
+                      </span>
                       <span class="mic">
                         <span>{{ item.label }}</span>
                         <b>{{ item.value }}</b>
