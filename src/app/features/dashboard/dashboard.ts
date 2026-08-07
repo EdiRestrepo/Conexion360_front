@@ -151,7 +151,6 @@ export class Dashboard {
         label: 'Total de envíos',
         value: metrics.totalShipments,
         icon: 'inventory_2',
-        detail: `${metrics.totalActive} activos · ${metrics.totalDelivered} entregados`,
         tone: 'primary',
       },
       {
@@ -180,7 +179,6 @@ export class Dashboard {
         label: 'Estado',
         value: metrics.totalShipments,
         icon: 'warning',
-        detail: `${metrics.totalWithIssue} con novedad · ${metrics.totalDelivered} entregados`,
         tone: metrics.totalWithIssue > 0 ? 'warning' : 'success',
       },
     ];

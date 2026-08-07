@@ -41,12 +41,12 @@ describe('ApiHomeService', () => {
 
   it('should request home totals with Auth0 document and role', () => {
     service.getDashboardMetrics().subscribe((metrics) => {
-      expect(metrics.totalShipments).toBe(2);
-      expect(metrics.totalImports).toBe(1);
-      expect(metrics.totalExports).toBe(1);
-      expect(metrics.totalAir).toBe(1);
-      expect(metrics.totalSea).toBe(1);
-      expect(metrics.totalWithIssue).toBe(1);
+      expect(metrics.totalShipments).toBe(105);
+      expect(metrics.totalImports).toBe(51);
+      expect(metrics.totalExports).toBe(54);
+      expect(metrics.totalAir).toBe(52);
+      expect(metrics.totalSea).toBe(53);
+      expect(metrics.totalWithIssue).toBe(19);
     });
 
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/totals`);
@@ -57,12 +57,12 @@ describe('ApiHomeService', () => {
 
     request.flush({
       dataResponse: {
-        totalRegistros: 2,
-        totalImportaciones: 1,
-        totalExportaciones: 1,
-        totalModalidadAerea: 1,
-        totalModalidadMaritima: 1,
-        totalConNovedad: 1,
+        totalClientRecords: 105,
+        totalImports: 51,
+        totalExports: 54,
+        totalAirShipments: 52,
+        totalOceanShipments: 53,
+        totalWithIssues: 19,
         enviosRecientes: [
           {
             id: '1',

@@ -128,13 +128,13 @@ export class ApiHomeService {
 
   private toDashboardMetrics(payload: unknown, shipments: HomeShipmentSummary[]): DashboardMetrics {
     const record = this.asRecord(payload);
-    const totalShipments = this.readNumber(record, ['totalShipments', 'totalEnvios', 'totalRegistros', 'total', 'cantidadTotal'], shipments.length);
+    const totalShipments = this.readNumber(record, ['totalShipments', 'totalClientRecords', 'totalEnvios', 'totalRegistros', 'total', 'cantidadTotal'], shipments.length);
     const totalImports = this.readNumber(record, ['totalImports', 'totalImportaciones', 'importaciones', 'totalImpo'], this.countOperation(shipments, 'IMPO'));
     const totalExports = this.readNumber(record, ['totalExports', 'totalExportaciones', 'exportaciones', 'totalExpo'], this.countOperation(shipments, 'EXPO'));
-    const totalAir = this.readNumber(record, ['totalAir', 'totalAereos', 'aereos', 'totalModalidadAerea'], this.countMode(shipments, 'AIR'));
-    const totalSea = this.readNumber(record, ['totalSea', 'totalMaritimos', 'maritimos', 'totalModalidadMaritima'], this.countMode(shipments, 'SEA'));
+    const totalAir = this.readNumber(record, ['totalAir', 'totalAirShipments', 'totalAereos', 'aereos', 'totalModalidadAerea'], this.countMode(shipments, 'AIR'));
+    const totalSea = this.readNumber(record, ['totalSea', 'totalOceanShipments', 'totalMaritimos', 'maritimos', 'totalModalidadMaritima'], this.countMode(shipments, 'SEA'));
     const totalDelivered = this.readNumber(record, ['totalDelivered', 'totalEntregados', 'entregados'], this.countStatus(shipments, 'DELIVERED'));
-    const totalWithIssue = this.readNumber(record, ['totalWithIssue', 'totalConNovedad', 'conNovedad', 'novedades'], this.countStatus(shipments, 'WITH_ISSUE'));
+    const totalWithIssue = this.readNumber(record, ['totalWithIssue', 'totalWithIssues', 'totalConNovedad', 'conNovedad', 'novedades'], this.countStatus(shipments, 'WITH_ISSUE'));
     const totalActive = this.readNumber(
       record,
       ['totalActive', 'totalActivos', 'activos'],
