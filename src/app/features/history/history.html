@@ -4,22 +4,22 @@
     <p class="page__subtitle">Consulta el historial de tus envíos completados.</p>
   </header>
 
-  <section class="surface-card history-toolbar" aria-label="Filtros de historial">
+  <section class="history-toolbar" aria-label="Filtros de historial">
     <label class="history-toolbar__search">
-      <span>Buscar</span>
+      <span class="sr-only">Buscar</span>
       <span class="search-field">
         <mat-icon aria-hidden="true">search</mat-icon>
         <input
           type="search"
           [formControl]="searchControl"
-          placeholder="Guía, documento, cliente, origen o destino"
+          placeholder="Buscar por N° de guía, cliente, origen..."
           aria-label="Buscar envíos completados"
         />
       </span>
     </label>
 
     <label>
-      <span>Operación</span>
+      <span class="sr-only">Operación</span>
       <select [formControl]="operationControl" aria-label="Filtrar por operación">
         <option value="">IMPO + EXPO</option>
         <option value="IMPO">Importaciones</option>
@@ -28,7 +28,7 @@
     </label>
 
     <label>
-      <span>Modalidad</span>
+      <span class="sr-only">Modalidad</span>
       <select [formControl]="modeControl" aria-label="Filtrar por modalidad">
         <option value="">AIR + SEA</option>
         <option value="AIR">Aéreo</option>

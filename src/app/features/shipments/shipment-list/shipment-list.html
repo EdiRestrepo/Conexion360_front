@@ -4,22 +4,22 @@
     <p class="page__subtitle">Gestiona y consulta todos los envíos IMPO / EXPO · AIR / SEA</p>
   </header>
 
-  <section class="surface-card shipments-toolbar" aria-label="Filtros de envíos">
+  <section class="shipments-toolbar" aria-label="Filtros de envíos">
     <label class="shipments-toolbar__search">
-      <span>Buscar</span>
+      <span class="sr-only">Buscar</span>
       <span class="search-field">
         <mat-icon aria-hidden="true">search</mat-icon>
         <input
           type="search"
           [formControl]="searchControl"
-          placeholder="HBL, AWB, MBL, cliente, origen o destino"
+          placeholder="Buscar por HBL, AWB, cliente, origen..."
           aria-label="Buscar envíos"
         />
       </span>
     </label>
 
     <label>
-      <span>Operación</span>
+      <span class="sr-only">Operación</span>
       <select [formControl]="operationControl" aria-label="Filtrar por operación">
         <option value="">IMPO + EXPO</option>
         <option value="IMPO">Importaciones</option>
@@ -28,7 +28,7 @@
     </label>
 
     <label>
-      <span>Modalidad</span>
+      <span class="sr-only">Modalidad</span>
       <select [formControl]="modeControl" aria-label="Filtrar por modalidad">
         <option value="">AIR + SEA</option>
         <option value="AIR">Aéreo</option>
@@ -37,7 +37,7 @@
     </label>
 
     <label>
-      <span>Estado</span>
+      <span class="sr-only">Estado</span>
       <select [formControl]="statusControl" aria-label="Filtrar por estado">
         <option value="">Todos los estados</option>
         @for (status of statusOptions; track status) {

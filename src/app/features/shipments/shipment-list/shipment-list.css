@@ -13,15 +13,26 @@
   line-height: 1.25;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .shipments-toolbar {
   display: grid;
   grid-template-columns: minmax(260px, 1.8fr) repeat(3, minmax(150px, 1fr));
-  gap: 16px;
-  align-items: end;
-  padding: 18px 20px;
+  gap: 12px;
+  align-items: center;
 }
 
-.shipments-toolbar label,
+.shipments-toolbar label {
+  display: block;
+}
+
 .shipments-pagination label {
   display: grid;
   gap: 8px;
@@ -404,7 +415,6 @@
     font-size: 24px;
   }
 
-  .shipments-toolbar,
   .summary-card,
   .shipment-mobile-card,
   .shipments-pagination {
