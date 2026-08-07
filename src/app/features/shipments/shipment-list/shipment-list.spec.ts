@@ -68,6 +68,22 @@ describe('ShipmentList', () => {
     expect(text).toContain('AWB-DEL-001');
   }));
 
+  it('should render all backend summary cards in requested order', fakeAsync(() => {
+    render();
+
+    const cards = Array.from(fixture.nativeElement.querySelectorAll('.summary-card') as NodeListOf<HTMLElement>);
+
+    expect(cards.map((card) => card.querySelector('span')?.textContent?.trim())).toEqual([
+      'Total envios',
+      'Exportaciones',
+      'Importaciones',
+      'Aéreos',
+      'Marítimos',
+      'con novedad',
+    ]);
+    expect(cards.map((card) => card.querySelector('strong')?.textContent?.trim())).toEqual(['5', '1', '4', '3', '2', '2']);
+  }));
+
   it('should debounce search and keep query params', fakeAsync(() => {
     render();
 

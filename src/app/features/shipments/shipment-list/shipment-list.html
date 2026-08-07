@@ -47,8 +47,16 @@
   @if (viewModel$ | async; as viewModel) {
     <section class="shipments-summary" aria-label="Resumen de resultados">
       <article class="surface-card summary-card">
-        <span>Total resultados</span>
+        <span>Total envios</span>
         <strong>{{ viewModel.summary.total }}</strong>
+      </article>
+      <article class="surface-card summary-card">
+        <span>Exportaciones</span>
+        <strong>{{ viewModel.summary.exports }}</strong>
+      </article>
+      <article class="surface-card summary-card">
+        <span>Importaciones</span>
+        <strong>{{ viewModel.summary.imports }}</strong>
       </article>
       <article class="surface-card summary-card">
         <span>Aéreos</span>
@@ -57,6 +65,10 @@
       <article class="surface-card summary-card">
         <span>Marítimos</span>
         <strong>{{ viewModel.summary.sea }}</strong>
+      </article>
+      <article class="surface-card summary-card">
+        <span>con novedad</span>
+        <strong>{{ viewModel.summary.withIssues }}</strong>
       </article>
     </section>
 
