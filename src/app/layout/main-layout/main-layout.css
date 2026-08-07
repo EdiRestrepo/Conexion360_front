@@ -9,6 +9,39 @@
   background: var(--color-sidebar);
 }
 
+.shell__sidebar-frame {
+  position: relative;
+  display: none;
+  background: var(--color-sidebar);
+}
+
+.shell__sidebar-toggle {
+  position: absolute;
+  top: 72px;
+  right: -16px;
+  z-index: 5;
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+  cursor: pointer;
+}
+
+.shell__sidebar-toggle mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.shell__sidebar-toggle:hover {
+  color: var(--color-secondary);
+}
+
 .shell__body {
   min-width: 0;
   max-width: 100%;
@@ -20,19 +53,78 @@
   overflow-x: hidden;
 }
 
+.shell__bottom-nav {
+  display: none;
+}
+
 @media (min-width: 900px) {
   .shell {
     display: grid;
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    transition: grid-template-columns 180ms ease;
   }
 
+  .shell--sidebar-collapsed {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .shell__sidebar-frame,
   .shell__sidebar {
     display: block;
   }
 }
 
 @media (max-width: 899px) {
+  .shell__sidebar-frame,
+  .shell__sidebar-toggle {
+    display: none;
+  }
+
   .shell__content {
-    padding: 20px 16px 32px;
+    padding: 20px 16px 96px;
+  }
+
+  .shell__bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: 64px;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.08);
+  }
+
+  .shell__bottom-link {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-width: 0;
+    border-radius: var(--radius-control);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .shell__bottom-link mat-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+  }
+
+  .shell__bottom-link--active {
+    color: var(--color-secondary);
+  }
+
+  .shell__bottom-link:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: -2px;
   }
 }

@@ -17,6 +17,7 @@ import { UserMenu } from '../user-menu/user-menu';
 })
 export class Sidebar {
   readonly session = input<AuthSession | null>(null);
+  readonly collapsed = input(false);
   readonly logout = output<void>();
 
   private readonly notificationService = inject(MockNotificationService);

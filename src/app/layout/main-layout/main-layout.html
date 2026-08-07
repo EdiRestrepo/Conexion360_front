@@ -1,5 +1,17 @@
-<div class="shell">
-  <app-sidebar class="shell__sidebar" [session]="session()" (logout)="logout()" />
+<div class="shell" [class.shell--sidebar-collapsed]="sidebarCollapsed()">
+  <div class="shell__sidebar-frame">
+    <app-sidebar class="shell__sidebar" [session]="session()" [collapsed]="sidebarCollapsed()" (logout)="logout()" />
+    <button
+      class="shell__sidebar-toggle"
+      type="button"
+      [attr.aria-label]="sidebarCollapsed() ? 'Mostrar menú lateral' : 'Ocultar menú lateral'"
+      [attr.title]="sidebarCollapsed() ? 'Mostrar menú lateral' : 'Ocultar menú lateral'"
+      [attr.aria-expanded]="!sidebarCollapsed()"
+      (click)="toggleSidebar()"
+    >
+      <mat-icon aria-hidden="true">{{ sidebarCollapsed() ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</mat-icon>
+    </button>
+  </div>
   <div class="shell__body">
     <app-header
       [session]="session()"
@@ -19,4 +31,19 @@
     (close)="closeMobileNavigation()"
     (logout)="logout()"
   />
+
+  <nav class="shell__bottom-nav" aria-label="Navegación rápida">
+    @for (item of bottomNavItems; track item.route) {
+      <a
+        class="shell__bottom-link"
+        [routerLink]="item.route"
+        routerLinkActive="shell__bottom-link--active"
+        [routerLinkActiveOptions]="{ exact: item.exact }"
+        [attr.aria-label]="item.label"
+      >
+        <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
 </div>
