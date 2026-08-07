@@ -47,28 +47,46 @@
   @if (viewModel$ | async; as viewModel) {
     <section class="shipments-summary" aria-label="Resumen de resultados">
       <article class="surface-card summary-card">
-        <span>Total envios</span>
-        <strong>{{ viewModel.summary.total }}</strong>
+        <div>
+          <span>Total envios</span>
+          <strong>{{ viewModel.summary.total }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">inventory_2</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>Exportaciones</span>
-        <strong>{{ viewModel.summary.exports }}</strong>
+        <div>
+          <span>Exportaciones</span>
+          <strong>{{ viewModel.summary.exports }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">north_east</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>Importaciones</span>
-        <strong>{{ viewModel.summary.imports }}</strong>
+        <div>
+          <span>Importaciones</span>
+          <strong>{{ viewModel.summary.imports }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">south_west</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>Aéreos</span>
-        <strong>{{ viewModel.summary.air }}</strong>
+        <div>
+          <span>Aéreos</span>
+          <strong>{{ viewModel.summary.air }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">flight</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>Marítimos</span>
-        <strong>{{ viewModel.summary.sea }}</strong>
+        <div>
+          <span>Marítimos</span>
+          <strong>{{ viewModel.summary.sea }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">directions_boat</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>con novedad</span>
-        <strong>{{ viewModel.summary.withIssues }}</strong>
+        <div>
+          <span>con novedad</span>
+          <strong>{{ viewModel.summary.withIssues }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon summary-card__icon--warning" aria-hidden="true">warning</mat-icon>
       </article>
     </section>
 
