@@ -6,7 +6,7 @@
 
   <section class="history-toolbar" aria-label="Filtros de historial">
     <label class="history-toolbar__search">
-      <span class="sr-only">Buscar</span>
+      <span class="sr-only">Buscar envíos completados</span>
       <span class="search-field">
         <mat-icon aria-hidden="true">search</mat-icon>
         <input
@@ -19,7 +19,7 @@
     </label>
 
     <label>
-      <span class="sr-only">Operación</span>
+      <span class="sr-only">Filtrar por operación</span>
       <select [formControl]="operationControl" aria-label="Filtrar por operación">
         <option value="">IMPO + EXPO</option>
         <option value="IMPO">Importaciones</option>
@@ -28,7 +28,7 @@
     </label>
 
     <label>
-      <span class="sr-only">Modalidad</span>
+      <span class="sr-only">Filtrar por modalidad</span>
       <select [formControl]="modeControl" aria-label="Filtrar por modalidad">
         <option value="">AIR + SEA</option>
         <option value="AIR">Aéreo</option>
@@ -40,48 +40,36 @@
 
   @if (viewModel$ | async; as viewModel) {
     <section class="history-summary" aria-label="Resumen de envíos completados">
-      <article class="surface-card summary-card">
-        <div>
-          <span>Total envíos</span>
-          <strong>{{ viewModel.summary.total }}</strong>
-        </div>
-        <mat-icon class="summary-card__icon" aria-hidden="true">inventory_2</mat-icon>
-      </article>
-      <article class="surface-card summary-card">
-        <div>
-          <span>Exportaciones</span>
-          <strong>{{ viewModel.summary.exports }}</strong>
-        </div>
-        <mat-icon class="summary-card__icon" aria-hidden="true">north_east</mat-icon>
-      </article>
-      <article class="surface-card summary-card">
-        <div>
-          <span>Importaciones</span>
-          <strong>{{ viewModel.summary.imports }}</strong>
-        </div>
-        <mat-icon class="summary-card__icon" aria-hidden="true">south_west</mat-icon>
-      </article>
-      <article class="surface-card summary-card">
-        <div>
-          <span>Aéreos</span>
-          <strong>{{ viewModel.summary.air }}</strong>
-        </div>
-        <mat-icon class="summary-card__icon" aria-hidden="true">flight</mat-icon>
-      </article>
-      <article class="surface-card summary-card">
-        <div>
-          <span>Marítimos</span>
-          <strong>{{ viewModel.summary.sea }}</strong>
-        </div>
-        <mat-icon class="summary-card__icon" aria-hidden="true">directions_boat</mat-icon>
-      </article>
-      <article class="surface-card summary-card">
-        <div>
-          <span>con novedad</span>
-          <strong>{{ viewModel.summary.withIssues }}</strong>
-        </div>
-        <mat-icon class="summary-card__icon summary-card__icon--warning" aria-hidden="true">warning</mat-icon>
-      </article>
+      <span class="summary-pill">
+        <mat-icon aria-hidden="true">inventory_2</mat-icon>
+        <strong>{{ viewModel.summary.total }}</strong>
+        envíos
+      </span>
+      <span class="summary-pill">
+        <mat-icon aria-hidden="true">north_east</mat-icon>
+        <strong>{{ viewModel.summary.exports }}</strong>
+        exportaciones
+      </span>
+      <span class="summary-pill">
+        <mat-icon aria-hidden="true">south_west</mat-icon>
+        <strong>{{ viewModel.summary.imports }}</strong>
+        importaciones
+      </span>
+      <span class="summary-pill">
+        <mat-icon aria-hidden="true">flight</mat-icon>
+        <strong>{{ viewModel.summary.air }}</strong>
+        aéreos
+      </span>
+      <span class="summary-pill">
+        <mat-icon aria-hidden="true">directions_boat</mat-icon>
+        <strong>{{ viewModel.summary.sea }}</strong>
+        marítimos
+      </span>
+      <span class="summary-pill summary-pill--warning">
+        <mat-icon aria-hidden="true">warning</mat-icon>
+        <strong>{{ viewModel.summary.withIssues }}</strong>
+        con novedad
+      </span>
     </section>
 
     <div class="surface-card history-card">

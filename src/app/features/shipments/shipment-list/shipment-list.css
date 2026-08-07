@@ -92,50 +92,40 @@
 }
 
 .shipments-summary {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.summary-card {
-  position: relative;
-  display: grid;
-  gap: 4px;
-  min-height: 82px;
-  padding: 14px 58px 14px 16px;
-  align-content: center;
-  overflow: hidden;
-}
-
-.summary-card span {
+.summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
   color: var(--color-text-muted);
   font-size: var(--font-size-label);
-  font-weight: 700;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.summary-card strong {
-  display: block;
+.summary-pill mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
   color: var(--color-primary);
-  font-size: 26px;
-  line-height: 1;
 }
 
-.summary-card__icon {
-  position: absolute;
-  right: 16px;
-  bottom: 14px;
-  display: inline-grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border-radius: 10px;
-  background: var(--color-primary-soft);
+.summary-pill strong {
   color: var(--color-primary);
-  font-size: 19px;
+  font-size: var(--font-size-text);
+  font-weight: 800;
 }
 
-.summary-card__icon--warning {
-  background: var(--color-warning-soft);
+.summary-pill--warning mat-icon,
+.summary-pill--warning strong {
   color: var(--color-warning);
 }
 
@@ -375,15 +365,10 @@
   .shipments-toolbar__search {
     grid-column: 1 / -1;
   }
-
-  .shipments-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 760px) {
-  .shipments-toolbar,
-  .shipments-summary {
+  .shipments-toolbar {
     grid-template-columns: 1fr;
   }
 
@@ -415,14 +400,9 @@
     font-size: 24px;
   }
 
-  .summary-card,
   .shipment-mobile-card,
   .shipments-pagination {
     padding: 16px;
-  }
-
-  .summary-card {
-    padding-right: 56px;
   }
 
   .shipment-mobile-card__meta {

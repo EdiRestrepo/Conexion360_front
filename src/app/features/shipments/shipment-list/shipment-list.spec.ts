@@ -68,20 +68,18 @@ describe('ShipmentList', () => {
     expect(text).toContain('AWB-DEL-001');
   }));
 
-  it('should render all backend summary cards in requested order', fakeAsync(() => {
+  it('should render all backend summary pills in requested order', fakeAsync(() => {
     render();
 
-    const cards = Array.from(fixture.nativeElement.querySelectorAll('.summary-card') as NodeListOf<HTMLElement>);
+    const pills = Array.from(fixture.nativeElement.querySelectorAll('.summary-pill') as NodeListOf<HTMLElement>);
+    const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos', 'con novedad'];
+    const numbers = ['5', '1', '4', '3', '2', '2'];
 
-    expect(cards.map((card) => card.querySelector('span')?.textContent?.trim())).toEqual([
-      'Total envíos',
-      'Exportaciones',
-      'Importaciones',
-      'Aéreos',
-      'Marítimos',
-      'con novedad',
-    ]);
-    expect(cards.map((card) => card.querySelector('strong')?.textContent?.trim())).toEqual(['5', '1', '4', '3', '2', '2']);
+    expect(pills.length).toBe(6);
+    pills.forEach((pill, index) => {
+      expect(pill.querySelector('strong')?.textContent?.trim()).toBe(numbers[index]);
+      expect(pill.textContent).toContain(labels[index]);
+    });
   }));
 
   it('should debounce search and keep query params', fakeAsync(() => {

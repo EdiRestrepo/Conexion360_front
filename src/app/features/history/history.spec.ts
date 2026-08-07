@@ -80,12 +80,12 @@ describe('History', () => {
     setQueryParams({ mode: 'AIR' });
     render();
 
-    expect(getText()).toContain('Total envíos');
+    expect(getText()).toContain('envíos');
     expect(getText()).toContain('2');
-    expect(getText()).toContain('Exportaciones');
-    expect(getText()).toContain('Importaciones');
-    expect(getText()).toContain('Aéreos');
-    expect(getText()).toContain('Marítimos');
+    expect(getText()).toContain('exportaciones');
+    expect(getText()).toContain('importaciones');
+    expect(getText()).toContain('aéreos');
+    expect(getText()).toContain('marítimos');
     expect(getText()).toContain('con novedad');
   }));
 
