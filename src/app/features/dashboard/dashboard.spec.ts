@@ -68,7 +68,8 @@ describe('Dashboard', () => {
     expect(text).toContain('Modalidad');
     expect(text).toContain('Aérea');
     expect(text).toContain('Marítima');
-    expect(text).toContain('Estado');
+    expect(text).toContain('Con novedad');
+    expect(text).toContain('5');
     expect(text).not.toContain('5 con novedad · 6 entregados');
   }));
 

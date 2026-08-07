@@ -176,8 +176,8 @@ export class Dashboard {
         ],
       },
       {
-        label: 'Estado',
-        value: metrics.totalShipments,
+        label: 'Con novedad',
+        value: metrics.totalWithIssue,
         icon: 'warning',
         tone: metrics.totalWithIssue > 0 ? 'warning' : 'success',
       },
