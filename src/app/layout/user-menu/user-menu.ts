@@ -25,7 +25,7 @@ export class UserMenu {
   protected readonly email = computed(() => this.session()?.user.email ?? 'Completa tu perfil');
   protected readonly roleLabel = computed(() => {
     const user = this.session()?.user;
-    return user ? getUserRoleLabel(user.role) : 'Perfil incompleto';
+    return user?.role ? getUserRoleLabel(user.role) : 'Rol no asignado en Auth0';
   });
   protected readonly picture = computed(() => this.session()?.user.picture ?? null);
   protected readonly initials = computed(() => this.getInitials(this.displayName()));

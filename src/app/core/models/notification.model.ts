@@ -26,3 +26,13 @@ export interface NotificationPreference {
   type: NotificationType;
   enabled: boolean;
 }
+
+export interface UserNotificationPreferences {
+  email: boolean;
+  inApp: boolean;
+  shipmentStatusChanges: boolean;
+  delays: boolean;
+  delivery: boolean;
+  documents: boolean;
+  containers: boolean;
+}

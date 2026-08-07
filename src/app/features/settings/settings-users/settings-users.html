@@ -5,90 +5,25 @@
     </a>
     <div>
       <h2>Gestión de usuarios</h2>
-      <p>Administra usuarios y roles.</p>
+      <p>Usuarios y roles se administran desde Auth0.</p>
     </div>
   </header>
 
-  <article class="surface-card invite-panel" aria-labelledby="invite-user-title">
-    <header>
-      <h3 id="invite-user-title"><mat-icon aria-hidden="true">person_add</mat-icon> Invitar usuario</h3>
-    </header>
-    <div class="invite-panel__form">
-      <label>
-        <span>Correo electrónico</span>
-        <input type="email" [formControl]="inviteEmailControl" placeholder="correo@empresa.com" aria-label="Correo del usuario invitado" />
-      </label>
-      <label>
-        <span>Rol</span>
-        <select [formControl]="inviteRoleControl" aria-label="Rol del usuario invitado">
-          @for (role of inviteRoles; track role) {
-            <option [value]="role">{{ getRoleLabel(role) }}</option>
-          }
-        </select>
-      </label>
-      <button mat-flat-button type="button" (click)="sendInvitation()">
-        <mat-icon aria-hidden="true">send</mat-icon>
-        Enviar invitación
-      </button>
+  <article class="surface-card auth0-panel" aria-labelledby="auth0-users-title">
+    <span class="auth0-panel__icon" aria-hidden="true">
+      <mat-icon>admin_panel_settings</mat-icon>
+    </span>
+
+    <div class="auth0-panel__content">
+      <h3 id="auth0-users-title">Gestión centralizada en Auth0</h3>
+      <p>
+        Conexion360 ya no mantiene usuarios, invitaciones ni roles simulados en el frontend.
+        Los datos del usuario autenticado se leen desde el <strong>id_token</strong> de Auth0,
+        incluyendo roles, documento, nombre, empresa, correo y foto cuando están disponibles.
+      </p>
+      <p class="auth0-panel__note">
+        Para crear usuarios, asignar roles o modificar permisos, usa el panel de Auth0.
+      </p>
     </div>
-    @if (inviteMessage(); as message) {
-      <p class="settings-message" role="status">{{ message }}</p>
-    }
-  </article>
-
-  <article class="surface-card users-panel">
-    <header class="users-panel__header">
-      <div>
-        <h3>Usuarios</h3>
-        <p>Consulta, busca y actualiza estados de acceso.</p>
-      </div>
-      <div class="settings-users__filters" aria-label="Filtros de usuarios">
-        <label>
-          <span>Buscar usuario</span>
-          <input type="search" [formControl]="queryControl" placeholder="nombre, correo o empresa" aria-label="Buscar usuarios por nombre, correo o empresa" />
-        </label>
-        <label>
-          <span>Rol</span>
-          <select [formControl]="roleControl" aria-label="Filtrar usuarios por rol">
-            @for (role of roles; track role) {
-              <option [value]="role">{{ getRoleLabel(role) }}</option>
-            }
-          </select>
-        </label>
-      </div>
-    </header>
-
-    @if (saveMessage(); as message) {
-      <p class="settings-message" role="status">{{ message }}</p>
-    }
-
-    @if (viewModel$ | async; as viewModel) {
-      @if (viewModel.state === 'loading') {
-        <div class="state-box"><strong>Cargando usuarios...</strong></div>
-      } @else if (viewModel.state === 'error') {
-        <div class="state-box state-box--error"><strong>{{ viewModel.message }}</strong></div>
-      } @else if (viewModel.state === 'empty') {
-        <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
-      } @else {
-        <div class="users-list" aria-label="Usuarios">
-          @for (user of viewModel.users; track user.id) {
-            <article class="user-row">
-              <span class="user-avatar" aria-hidden="true">{{ getInitials(user) }}</span>
-              <div class="user-main">
-                <strong>{{ user.fullName }}</strong>
-                <span>{{ user.email }}</span>
-              </div>
-              <span class="user-company">{{ user.company }}</span>
-              <span class="role-chip">{{ getRoleLabel(user.role) }}</span>
-              <span class="status-chip" [class.status-chip--inactive]="user.status === 'INACTIVE'">{{ getStatusLabel(user) }}</span>
-              <button mat-stroked-button type="button" [attr.aria-label]="(user.status === 'ACTIVE' ? 'Desactivar ' : 'Activar ') + user.fullName" (click)="toggleUser(user)">
-                <mat-icon aria-hidden="true">{{ user.status === 'ACTIVE' ? 'person_off' : 'person_check' }}</mat-icon>
-                {{ user.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
-              </button>
-            </article>
-          }
-        </div>
-      }
-    }
   </article>
 </section>

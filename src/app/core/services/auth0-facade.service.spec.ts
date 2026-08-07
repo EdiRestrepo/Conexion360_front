@@ -24,6 +24,7 @@ describe('Auth0FacadeService', () => {
             isLoading$: of(false),
             loginWithRedirect: loginWithRedirectSpy,
             logout: logoutSpy,
+            idTokenClaims$: of(null),
             user$: of(null),
           },
         },
@@ -49,5 +50,31 @@ describe('Auth0FacadeService', () => {
     service.logout().subscribe();
 
     expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('should map user roles from Auth0 custom claims', (done) => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        Auth0FacadeService,
+        {
+          provide: AuthService,
+          useValue: {
+            error$: EMPTY,
+            isAuthenticated$: of(true),
+            isLoading$: of(false),
+            loginWithRedirect: loginWithRedirectSpy,
+            logout: logoutSpy,
+            user$: of({ sub: 'auth0|123', email: 'edison@example.com', name: 'Edison' }),
+            idTokenClaims$: of({ 'https://conexion360.space/roles': ['ADMIN'] }),
+          },
+        },
+      ],
+    });
+
+    TestBed.inject(Auth0FacadeService).user$.subscribe((identity) => {
+      expect(identity?.roles).toEqual(['ADMIN']);
+      done();
+    });
   });
 });

@@ -6,12 +6,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, startWith, switchMap, take } from 'rxjs';
 
-import { NotificationPreference, UserProfile } from '../../../core/models/user-profile.model';
+import { UserNotificationPreferences } from '../../../core/models/notification.model';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
-import { MockUserProfileService } from '../../../mocks/services/mock-user-profile.service';
+import { NotificationPreferencesService } from '../../../core/services/notification-preferences.service';
 import type { NotificationPreferenceForm, PreferencesState, PreferencesViewModel } from '../models/settings-view.model';
 
-const defaultPreferences: NotificationPreference = {
+const defaultPreferences: UserNotificationPreferences = {
   email: true,
   inApp: true,
   shipmentStatusChanges: true,
@@ -30,8 +30,8 @@ const defaultPreferences: NotificationPreference = {
 })
 export class SettingsNotifications {
   private readonly auth0Facade = inject(Auth0FacadeService);
-  private readonly userProfileService = inject(MockUserProfileService);
-  private readonly currentProfile = signal<UserProfile | null>(null);
+  private readonly preferencesService = inject(NotificationPreferencesService);
+  private readonly currentAuth0UserId = signal<string | null>(null);
 
   protected readonly saveMessage = signal<string | null>(null);
   protected readonly form = new FormGroup<NotificationPreferenceForm>({
@@ -47,51 +47,39 @@ export class SettingsNotifications {
   protected readonly viewModel$: Observable<PreferencesViewModel> = this.auth0Facade.user$.pipe(
     switchMap((identity) => {
       if (!identity) {
-        return of({ state: 'empty', profile: null, message: 'No hay identidad autenticada para cargar preferencias.' } satisfies PreferencesViewModel);
+        return of({ state: 'empty', preferences: null, message: 'No hay identidad autenticada para cargar preferencias.' } satisfies PreferencesViewModel);
       }
 
-      return this.userProfileService.getProfileByAuth0Id(identity.auth0UserId).pipe(
-        map((profile) => {
-          if (!profile) {
-            return { state: 'empty', profile: null, message: 'Completa tu perfil para configurar preferencias.' } satisfies PreferencesViewModel;
-          }
+      this.currentAuth0UserId.set(identity.auth0UserId);
 
-          const preferences = { ...defaultPreferences, ...profile.notificationPreferences };
-          const nextProfile = { ...profile, notificationPreferences: preferences };
-          this.currentProfile.set(nextProfile);
+      return this.preferencesService.getPreferences(identity.auth0UserId).pipe(
+        map((storedPreferences) => {
+          const preferences = { ...defaultPreferences, ...(storedPreferences ?? {}) };
           this.form.patchValue(preferences, { emitEvent: false });
 
-          return { state: 'success', profile: nextProfile } satisfies PreferencesViewModel;
+          return { state: 'success', preferences } satisfies PreferencesViewModel;
         }),
-        startWith({ state: 'loading', profile: null } satisfies PreferencesViewModel),
-        catchError(() => of({ state: 'error', profile: null, message: 'No fue posible cargar las preferencias.' } satisfies PreferencesViewModel)),
+        startWith({ state: 'loading', preferences: null } satisfies PreferencesViewModel),
+        catchError(() => of({ state: 'error', preferences: null, message: 'No fue posible cargar las preferencias.' } satisfies PreferencesViewModel)),
       );
     }),
   );
 
   protected savePreferences(): void {
-    const profile = this.currentProfile();
+    const auth0UserId = this.currentAuth0UserId();
 
-    if (!profile) {
-      this.saveMessage.set('No hay perfil disponible para guardar preferencias.');
+    if (!auth0UserId) {
+      this.saveMessage.set('No hay identidad de Auth0 disponible para guardar preferencias.');
       return;
     }
 
-    const updatedProfile: UserProfile = {
-      ...profile,
-      notificationPreferences: this.form.getRawValue(),
-    };
-
     this.saveMessage.set(null);
-    this.userProfileService
-      .saveProfile(updatedProfile)
+    this.preferencesService
+      .savePreferences(auth0UserId, this.form.getRawValue())
       .pipe(take(1))
       .subscribe({
-        next: (savedProfile) => {
-          this.currentProfile.set(savedProfile);
-          this.saveMessage.set('Preferencias guardadas de forma simulada.');
-        },
-        error: () => this.saveMessage.set('No fue posible guardar las preferencias simuladas.'),
+        next: () => this.saveMessage.set('Preferencias guardadas.'),
+        error: () => this.saveMessage.set('No fue posible guardar las preferencias.'),
       });
   }
 }

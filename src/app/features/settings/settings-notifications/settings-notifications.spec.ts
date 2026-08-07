@@ -3,25 +3,28 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
-import { Auth0Identity, UserProfile } from '../../../core/models/user-profile.model';
+import { UserNotificationPreferences } from '../../../core/models/notification.model';
+import { Auth0Identity } from '../../../core/models/user.model';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
-import { MockUserProfileService } from '../../../mocks/services/mock-user-profile.service';
+import { NotificationPreferencesService } from '../../../core/services/notification-preferences.service';
 import { SettingsNotifications } from './settings-notifications';
 
 describe('SettingsNotifications', () => {
   let fixture: ComponentFixture<SettingsNotifications>;
-  let getProfileSpy: jasmine.Spy<(auth0UserId: string) => Observable<UserProfile | null>>;
-  let saveProfileSpy: jasmine.Spy<(profile: UserProfile) => Observable<UserProfile>>;
+  let getPreferencesSpy: jasmine.Spy<(auth0UserId: string) => Observable<UserNotificationPreferences | null>>;
+  let savePreferencesSpy: jasmine.Spy<(auth0UserId: string, preferences: UserNotificationPreferences) => Observable<UserNotificationPreferences>>;
 
   beforeEach(async () => {
-    getProfileSpy = jasmine.createSpy('getProfileByAuth0Id').and.returnValue(of(createProfile()));
-    saveProfileSpy = jasmine.createSpy('saveProfile').and.callFake((profile: UserProfile) => of(profile));
+    getPreferencesSpy = jasmine.createSpy('getPreferences').and.returnValue(of(createPreferences()));
+    savePreferencesSpy = jasmine
+      .createSpy('savePreferences')
+      .and.callFake((auth0UserId: string, preferences: UserNotificationPreferences) => of(preferences));
 
     await TestBed.configureTestingModule({
       imports: [SettingsNotifications, NoopAnimationsModule],
       providers: [provideRouter([]), 
         { provide: Auth0FacadeService, useValue: { user$: of(createIdentity()) } },
-        { provide: MockUserProfileService, useValue: { getProfileByAuth0Id: getProfileSpy, saveProfile: saveProfileSpy } },
+        { provide: NotificationPreferencesService, useValue: { getPreferences: getPreferencesSpy, savePreferences: savePreferencesSpy } },
       ],
     }).compileComponents();
 
@@ -36,7 +39,7 @@ describe('SettingsNotifications', () => {
     expect(getText()).toContain('Contenedores');
   }));
 
-  it('should save simulated preferences', fakeAsync(() => {
+  it('should save preferences', fakeAsync(() => {
     render();
 
     const checkbox = fixture.nativeElement.querySelector('input[formcontrolname="email"]') as HTMLInputElement;
@@ -46,12 +49,12 @@ describe('SettingsNotifications', () => {
     tick();
     fixture.detectChanges();
 
-    expect(saveProfileSpy).toHaveBeenCalled();
-    expect(getText()).toContain('Preferencias guardadas de forma simulada.');
+    expect(savePreferencesSpy).toHaveBeenCalled();
+    expect(getText()).toContain('Preferencias guardadas.');
   }));
 
   it('should render error state', fakeAsync(() => {
-    getProfileSpy.and.returnValue(throwError(() => new Error('fallo')));
+    getPreferencesSpy.and.returnValue(throwError(() => new Error('fallo')));
     fixture = TestBed.createComponent(SettingsNotifications);
     render();
 
@@ -78,29 +81,18 @@ describe('SettingsNotifications', () => {
 });
 
 function createIdentity(): Auth0Identity {
-  return { auth0UserId: 'auth0|123', email: 'cliente@conexion360.com', name: 'Cliente Demo', roles: ['CLIENT'] };
+  return { auth0UserId: 'auth0|123', email: 'cliente@conexion360.com', name: 'Cliente Demo', roles: [] };
 }
 
-function createProfile(): UserProfile {
+function createPreferences(): UserNotificationPreferences {
   return {
-    auth0UserId: 'auth0|123',
-    fullName: 'Cliente Demo',
-    company: 'Cliente demo',
-    email: 'cliente@conexion360.com',
-    phone: null,
-    role: 'CLIENT',
-    profileCompleted: true,
-    notificationPreferences: {
-      email: true,
-      inApp: true,
-      shipmentStatusChanges: true,
-      delays: true,
-      delivery: true,
-      documents: true,
-      containers: true,
-    },
-    acceptedDataPolicyAt: '2026-07-22T00:00:00.000Z',
-    createdAt: '2026-07-22T00:00:00.000Z',
+    email: true,
+    inApp: true,
+    shipmentStatusChanges: true,
+    delays: true,
+    delivery: true,
+    documents: true,
+    containers: true,
   };
 }
 

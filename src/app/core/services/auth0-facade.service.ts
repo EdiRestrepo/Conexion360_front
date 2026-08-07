@@ -3,8 +3,7 @@ import { AuthService } from '@auth0/auth0-angular';
 import { User as Auth0User } from '@auth0/auth0-spa-js';
 import { Observable, combineLatest, map } from 'rxjs';
 
-import { UserRole } from '../models/user.model';
-import { Auth0Identity } from '../models/user-profile.model';
+import { Auth0Identity, UserRole } from '../models/user.model';
 import { environment } from '../../../environments/environment';
 
 const rolesClaim = 'https://conexion360.space/roles';
@@ -121,12 +120,12 @@ export class Auth0FacadeService {
       document: document || undefined,
       company: company || undefined,
       picture: auth0User.picture ?? undefined,
-      roles: this.mapRoles(auth0User),
+      roles: this.mapRoles(auth0Record),
     };
   }
 
-  private mapRoles(auth0User: Auth0User): UserRole[] {
-    const candidate = (auth0User as Auth0Record)[rolesClaim];
+  private mapRoles(auth0Record: Auth0Record): UserRole[] {
+    const candidate = auth0Record[rolesClaim];
 
     if (!Array.isArray(candidate)) {
       return [];

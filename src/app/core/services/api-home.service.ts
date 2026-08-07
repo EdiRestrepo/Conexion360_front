@@ -4,7 +4,7 @@ import { Observable, filter, map, of, shareReplay, switchMap, take } from 'rxjs'
 
 import { environment } from '../../../environments/environment';
 import { PaginatedResult, SearchFilters } from '../models/common.model';
-import { Auth0Identity } from '../models/user-profile.model';
+import { Auth0Identity } from '../models/user.model';
 import {
   DashboardMetrics,
   OperationType,
@@ -85,9 +85,10 @@ export class ApiHomeService {
   }
 
   private createHomeParams(identity: Auth0Identity): HttpParams {
-    return new HttpParams()
-      .set('idClient', identity.document ?? '')
-      .set('role', identity.roles[0] ?? '');
+    const params = new HttpParams().set('idClient', identity.document ?? '');
+    const role = identity.roles[0];
+
+    return role ? params.set('role', role) : params;
   }
 
   private toHomeDashboardData(response: unknown): HomeDashboardData {
@@ -102,8 +103,10 @@ export class ApiHomeService {
       'ultimosRegistros',
       'ultimos10',
       'data',
-    ]).map((item, index) => this.toShipment(item, index));
-    const metrics = this.toDashboardMetrics(payload, recentShipments);
+    ])
+      .map((item) => this.toShipment(item))
+      .filter((shipment) => this.hasSearchResultData(shipment));
+    const metrics = this.toDashboardMetrics(payload);
 
     return {
       metrics,
@@ -126,19 +129,19 @@ export class ApiHomeService {
     return root;
   }
 
-  private toDashboardMetrics(payload: unknown, shipments: HomeShipmentSummary[]): DashboardMetrics {
+  private toDashboardMetrics(payload: unknown): DashboardMetrics {
     const record = this.asRecord(payload);
-    const totalShipments = this.readNumber(record, ['totalShipments', 'totalClientRecords', 'totalEnvios', 'totalRegistros', 'total', 'cantidadTotal'], shipments.length);
-    const totalImports = this.readNumber(record, ['totalImports', 'totalImportaciones', 'importaciones', 'totalImpo'], this.countOperation(shipments, 'IMPO'));
-    const totalExports = this.readNumber(record, ['totalExports', 'totalExportaciones', 'exportaciones', 'totalExpo'], this.countOperation(shipments, 'EXPO'));
-    const totalAir = this.readNumber(record, ['totalAir', 'totalAirShipments', 'totalAereos', 'aereos', 'totalModalidadAerea'], this.countMode(shipments, 'AIR'));
-    const totalSea = this.readNumber(record, ['totalSea', 'totalOceanShipments', 'totalMaritimos', 'maritimos', 'totalModalidadMaritima'], this.countMode(shipments, 'SEA'));
-    const totalDelivered = this.readNumber(record, ['totalDelivered', 'totalEntregados', 'entregados'], this.countStatus(shipments, 'DELIVERED'));
-    const totalWithIssue = this.readNumber(record, ['totalWithIssue', 'totalWithIssues', 'totalConNovedad', 'conNovedad', 'novedades'], this.countStatus(shipments, 'WITH_ISSUE'));
+    const totalShipments = this.readNumber(record, ['totalShipments', 'totalClientRecords', 'totalEnvios', 'totalRegistros', 'total', 'cantidadTotal'], 0);
+    const totalImports = this.readNumber(record, ['totalImports', 'totalImportaciones', 'importaciones', 'totalImpo'], 0);
+    const totalExports = this.readNumber(record, ['totalExports', 'totalExportaciones', 'exportaciones', 'totalExpo'], 0);
+    const totalAir = this.readNumber(record, ['totalAir', 'totalAirShipments', 'totalAereos', 'aereos', 'totalModalidadAerea'], 0);
+    const totalSea = this.readNumber(record, ['totalSea', 'totalOceanShipments', 'totalMaritimos', 'maritimos', 'totalModalidadMaritima'], 0);
+    const totalDelivered = this.readNumber(record, ['totalDelivered', 'totalEntregados', 'entregados'], 0);
+    const totalWithIssue = this.readNumber(record, ['totalWithIssue', 'totalWithIssues', 'totalConNovedad', 'conNovedad', 'novedades'], 0);
     const totalActive = this.readNumber(
       record,
       ['totalActive', 'totalActivos', 'activos'],
-      Math.max(totalShipments - totalDelivered, 0),
+      0,
     );
 
     return {
@@ -150,7 +153,7 @@ export class ApiHomeService {
       totalDelivered,
       totalWithIssue,
       totalActive,
-      totalPending: this.readNumber(record, ['totalPending', 'totalPendientes', 'pendientes'], this.countStatus(shipments, 'PENDING')),
+      totalPending: this.readNumber(record, ['totalPending', 'totalPendientes', 'pendientes'], 0),
     };
   }
 
@@ -159,11 +162,11 @@ export class ApiHomeService {
     const items = Array.isArray(payload) ? payload : [payload];
 
     return items
-      .map((item, index) => this.toShipment(item, index, false))
+      .map((item) => this.toShipment(item))
       .filter((shipment) => this.hasSearchResultData(shipment));
   }
 
-  private toShipment(value: unknown, index: number, useDocumentFallback = true): HomeShipmentSummary {
+  private toShipment(value: unknown): HomeShipmentSummary {
     const record = this.asRecord(value);
     const operationType = this.toOperationType(this.readString(record, ['operationType', 'tipoOperacion', 'operacion', 'operation']));
     const transportMode = this.toTransportMode(this.readString(record, ['transportMode', 'shipmentMode', 'modalidad', 'modalidadTransporte', 'mode']));
@@ -179,7 +182,7 @@ export class ApiHomeService {
         'awb',
         'mbl',
         'guia',
-      ]) || (useDocumentFallback ? `ENVIO-${index + 1}` : '');
+      ]);
 
     return {
       id: this.readString(record, ['id', 'shipmentId', 'idShipment', 'idEnvio']) || documentNumber,
@@ -340,15 +343,4 @@ export class ApiHomeService {
     return 'IN_TRANSIT';
   }
 
-  private countOperation(shipments: HomeShipmentSummary[], operationType: OperationType): number {
-    return shipments.filter((shipment) => shipment.operationType === operationType).length;
-  }
-
-  private countMode(shipments: HomeShipmentSummary[], transportMode: TransportMode): number {
-    return shipments.filter((shipment) => shipment.transportMode === transportMode).length;
-  }
-
-  private countStatus(shipments: HomeShipmentSummary[], status: ShipmentStatus): number {
-    return shipments.filter((shipment) => shipment.status === status).length;
-  }
 }

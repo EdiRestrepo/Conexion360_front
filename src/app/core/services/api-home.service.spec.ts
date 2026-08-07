@@ -151,6 +151,39 @@ describe('ApiHomeService', () => {
     });
   });
 
+  it('should not create fallback shipment documents when backend omits document data', () => {
+    service.getRecent().subscribe((shipments) => {
+      expect(shipments.length).toBe(1);
+      expect(shipments[0].id).toBe('201');
+      expect(shipments[0].documentNumber).toBe('');
+    });
+
+    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/totals`);
+
+    request.flush({
+      dataResponse: {
+        recentShipments: [
+          {
+            id: 201,
+            operationType: 'EXPO',
+            shipmentMode: 'SEA',
+            status: 'Pendiente',
+            origin: 'Colombia',
+            destination: 'Chile',
+          },
+          {
+            id: 0,
+            operationType: '',
+            shipmentMode: '',
+            status: '',
+            origin: '',
+            destination: '',
+          },
+        ],
+      },
+    });
+  });
+
   it('should request home filters with document value and map one result', () => {
     service.search({ query: '9YJB1QX6', page: 1, pageSize: 30 }).subscribe((result) => {
       expect(result.totalItems).toBe(1);

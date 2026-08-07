@@ -1,17 +1,15 @@
 ﻿import { Injectable, inject } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Observable, combineLatest, map, of, switchMap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable, map } from 'rxjs';
 
 import { AuthSession } from '../models/auth-session.model';
 import { Auth0FacadeService } from './auth0-facade.service';
-import { MockUserProfileService } from '../../mocks/services/mock-user-profile.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthSessionService {
   private readonly auth0Facade = inject(Auth0FacadeService);
-  private readonly userProfileService = inject(MockUserProfileService);
 
   readonly isAuthenticated$ = this.auth0Facade.isAuthenticated$;
   readonly isLoading$ = this.auth0Facade.isLoading$;
@@ -19,31 +17,27 @@ export class AuthSessionService {
   readonly authorizationUrl = this.auth0Facade.authorizationUrl;
 
   readonly currentSession = toSignal(
-    combineLatest([this.auth0Facade.user$, toObservable(this.userProfileService.profileChanges)]).pipe(
-      switchMap(([identity]) => {
+    this.auth0Facade.user$.pipe(
+      map((identity): AuthSession | null => {
         if (!identity) {
-          return of(null);
+          return null;
         }
 
-        return this.userProfileService.getProfileByAuth0Id(identity.auth0UserId).pipe(
-          map((profile): AuthSession => {
-            const displayName = profile?.fullName || identity.fullName || identity.name || identity.nickname || identity.email;
+        const displayName = identity.fullName || identity.name || identity.nickname || identity.email;
 
-            return {
-              user: {
-                id: identity.auth0UserId,
-                name: displayName,
-                email: identity.email,
-                role: profile?.role ?? identity.roles[0] ?? 'CLIENT',
-                document: profile?.document ?? identity.document,
-                company: profile?.company ?? identity.company,
-                picture: profile?.picture ?? identity.picture ?? null,
-              },
-              accessToken: '',
-              expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 8).toISOString(),
-            };
-          }),
-        );
+        return {
+          user: {
+            id: identity.auth0UserId,
+            name: displayName,
+            email: identity.email,
+            role: identity.roles[0] ?? null,
+            document: identity.document,
+            company: identity.company,
+            picture: identity.picture ?? null,
+          },
+          accessToken: '',
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 8).toISOString(),
+        };
       }),
     ),
     { initialValue: null },

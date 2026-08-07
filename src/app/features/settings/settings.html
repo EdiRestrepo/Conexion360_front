@@ -5,7 +5,11 @@
       <p class="page__subtitle">Administra la configuración de la plataforma.</p>
     </div>
     @if (session(); as currentSession) {
-      <span class="settings-role">Rol: {{ getRoleLabel(currentSession.user.role) }}</span>
+      @if (currentSession.user.role; as role) {
+        <span class="settings-role">Rol: {{ getRoleLabel(role) }}</span>
+      } @else {
+        <span class="settings-role">Rol no asignado en Auth0</span>
+      }
     }
   </header>
 

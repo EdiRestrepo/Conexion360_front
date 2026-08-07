@@ -3,7 +3,7 @@ import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, provideRouter } fr
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { authGuard } from './auth.guard';
-import { Auth0Identity } from '../models/user-profile.model';
+import { Auth0Identity } from '../models/user.model';
 import { Auth0FacadeService } from '../services/auth0-facade.service';
 
 describe('authGuard', () => {

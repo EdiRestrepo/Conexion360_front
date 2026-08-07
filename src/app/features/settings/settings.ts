@@ -42,10 +42,9 @@ export class Settings {
   private readonly authSession = inject(AuthSessionService);
 
   protected readonly session = this.authSession.currentSession;
-  protected readonly currentRole = computed(() => this.session()?.user.role ?? 'CLIENT');
   protected readonly cards = computed<SettingsCardView[]>(() => {
-    const role = this.currentRole();
-    return settingsCards.map((card) => ({ ...card, available: card.roles.includes(role) }));
+    const role = this.session()?.user.role ?? null;
+    return settingsCards.map((card) => ({ ...card, available: role ? card.roles.includes(role) : false }));
   });
 
   protected getRoleLabel(role: UserRole): string {
