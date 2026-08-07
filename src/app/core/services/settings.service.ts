@@ -9,7 +9,7 @@ import { MasterDataGroup } from '../models/settings.model';
 })
 export class SettingsService {
   private readonly masterData: MasterDataGroup[] = [
-    { id: 'statuses', title: 'Estados', items: ['Pendiente', 'En tránsito', 'Entregado'] },
+    { id: 'statuses', title: 'Estados', items: ['Pendiente', 'En Aduana origen', 'En tránsito', 'En Aduana destino', 'Entregado', 'Con novedad'] },
     { id: 'modes', title: 'Modalidades', items: ['Aéreo', 'Marítimo'] },
     { id: 'documents', title: 'Tipos de documento', items: ['HBL', 'AWB', 'MBL'] },
     { id: 'incoterms', title: 'Incoterms', items: ['FOB', 'DAP', 'CIF'] },

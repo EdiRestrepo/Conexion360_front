@@ -242,7 +242,7 @@ function createShipments(): Shipment[] {
     createShipment({ id: 'active-002', documentNumber: 'HBL-ACT-002', operationType: 'EXPO', transportMode: 'SEA', status: 'WITH_ISSUE', client: 'Nutresa' }),
     createShipment({ id: 'active-003', documentNumber: 'AWB-ACT-003', operationType: 'IMPO', transportMode: 'AIR', status: 'PENDING', client: 'Postobon' }),
     createShipment({ id: 'delivered-001', documentNumber: 'AWB-DEL-001', status: 'DELIVERED' }),
-    createShipment({ id: 'cancelled-001', documentNumber: 'HBL-CAN-001', status: 'CANCELLED', transportMode: 'SEA' }),
+    createShipment({ id: 'issue-001', documentNumber: 'HBL-ISS-001', status: 'WITH_ISSUE', transportMode: 'SEA' }),
   ];
 }
 

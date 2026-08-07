@@ -270,10 +270,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   protected getCurrentLocationLabel(shipment: Shipment): string {
     const stageIndex = this.getTrackingStageIndex(shipment);
 
-    if (shipment.status === 'CANCELLED') {
-      return 'operación cancelada';
-    }
-
     if (stageIndex <= 1) {
       return this.getLocationLabel(shipment.origin);
     }
@@ -288,10 +284,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   protected getStatusDescription(shipment: Shipment): string {
     if (shipment.status === 'DELIVERED') {
       return 'La operación registra entrega final en los datos simulados.';
-    }
-
-    if (shipment.status === 'CANCELLED') {
-      return 'La operación fue cancelada y no tiene avance logístico activo.';
     }
 
     if (shipment.issue) {
@@ -316,7 +308,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   }
 
   protected getNextStop(shipment: Shipment): NextStop | null {
-    if (shipment.status === 'DELIVERED' || shipment.status === 'CANCELLED') {
+    if (shipment.status === 'DELIVERED') {
       return null;
     }
 
@@ -591,10 +583,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       return 4;
     }
 
-    if (shipment.status === 'CANCELLED') {
-      return 0;
-    }
-
     const statusStage = this.getStageIndexFromStatus(shipment.status);
     const eventStage = shipment.events.reduce((max, event) => Math.max(max, this.getStageIndexFromStatus(event.status)), 0);
 
@@ -602,25 +590,24 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   }
 
   private getStageIndexFromStatus(status: ShipmentStatus): number {
-    const order = getShipmentStatusOrder(status);
-
     if (status === 'DELIVERED') {
       return 4;
-    }
-
-    if (status === 'CANCELLED' || status === 'PENDING') {
-      return 0;
-    }
-
-    if (order <= 2) {
-      return 1;
     }
 
     if (status === 'IN_TRANSIT') {
       return 2;
     }
 
-    return 3;
+    const stageByStatus: Record<ShipmentStatus, number> = {
+      PENDING: 0,
+      ORIGIN_CUSTOMS: 1,
+      IN_TRANSIT: 2,
+      DESTINATION_CUSTOMS: 3,
+      DELIVERED: 4,
+      WITH_ISSUE: 3,
+    };
+
+    return stageByStatus[status];
   }
 
   private getEstimatedDateForStage(shipment: Shipment, stageIndex: number): string | null | undefined {
@@ -817,7 +804,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       return 100;
     }
 
-    if (status === 'CANCELLED' || status === 'PENDING') {
+    if (status === 'PENDING') {
       return 0;
     }
 

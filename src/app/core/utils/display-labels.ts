@@ -15,58 +15,38 @@ const transportModeLabels: Record<TransportMode, string> = {
 
 const shipmentStatusLabels: Record<ShipmentStatus, string> = {
   PENDING: 'Pendiente',
-  ORIGIN_WAREHOUSE: 'Bodega origen',
-  ORIGIN_CUSTOMS: 'Aduana origen',
+  ORIGIN_CUSTOMS: 'En Aduana origen',
   IN_TRANSIT: 'En tránsito',
-  DESTINATION_CUSTOMS: 'Aduana destino',
-  NATIONALIZED: 'Nacionalizado',
-  DESTINATION_WAREHOUSE: 'Bodega destino',
-  DISPATCHED: 'Despachado',
+  DESTINATION_CUSTOMS: 'En Aduana destino',
   DELIVERED: 'Entregado',
   WITH_ISSUE: 'Con novedad',
-  CANCELLED: 'Cancelado',
 };
 
 const shipmentStatusChipTypes: Record<ShipmentStatus, ShipmentChipType> = {
   PENDING: 'neutral',
-  ORIGIN_WAREHOUSE: 'info',
   ORIGIN_CUSTOMS: 'warning',
   IN_TRANSIT: 'info',
   DESTINATION_CUSTOMS: 'warning',
-  NATIONALIZED: 'info',
-  DESTINATION_WAREHOUSE: 'info',
-  DISPATCHED: 'info',
   DELIVERED: 'success',
   WITH_ISSUE: 'danger',
-  CANCELLED: 'neutral',
 };
 
 const shipmentStatusIcons: Record<ShipmentStatus, string> = {
   PENDING: 'schedule',
-  ORIGIN_WAREHOUSE: 'warehouse',
   ORIGIN_CUSTOMS: 'fact_check',
   IN_TRANSIT: 'local_shipping',
   DESTINATION_CUSTOMS: 'gavel',
-  NATIONALIZED: 'verified',
-  DESTINATION_WAREHOUSE: 'inventory',
-  DISPATCHED: 'route',
   DELIVERED: 'check_circle',
   WITH_ISSUE: 'warning',
-  CANCELLED: 'cancel',
 };
 
 const shipmentStatusOrder: Record<ShipmentStatus, number> = {
   PENDING: 0,
-  ORIGIN_WAREHOUSE: 1,
-  ORIGIN_CUSTOMS: 2,
-  IN_TRANSIT: 3,
-  DESTINATION_CUSTOMS: 4,
-  NATIONALIZED: 5,
-  DESTINATION_WAREHOUSE: 6,
-  DISPATCHED: 7,
-  DELIVERED: 8,
-  WITH_ISSUE: 4,
-  CANCELLED: 9,
+  ORIGIN_CUSTOMS: 1,
+  IN_TRANSIT: 2,
+  DESTINATION_CUSTOMS: 3,
+  DELIVERED: 4,
+  WITH_ISSUE: 3,
 };
 
 const documentStatusLabels: Record<ShipmentDocumentStatus, string> = {
@@ -130,7 +110,7 @@ export function getShipmentStatusOrder(value: ShipmentStatus): number {
 }
 
 export function isTerminalShipmentStatus(value: ShipmentStatus): boolean {
-  return value === 'DELIVERED' || value === 'CANCELLED';
+  return value === 'DELIVERED';
 }
 
 export function getDocumentStatusLabel(value: ShipmentDocumentStatus): string {

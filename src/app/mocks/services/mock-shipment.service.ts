@@ -27,16 +27,11 @@ const defaultPage = 1;
 const defaultPageSize = 10;
 const shipmentStatuses: ShipmentStatus[] = [
   'PENDING',
-  'ORIGIN_WAREHOUSE',
   'ORIGIN_CUSTOMS',
   'IN_TRANSIT',
   'DESTINATION_CUSTOMS',
-  'NATIONALIZED',
-  'DESTINATION_WAREHOUSE',
-  'DISPATCHED',
   'DELIVERED',
   'WITH_ISSUE',
-  'CANCELLED',
 ];
 
 @Injectable({

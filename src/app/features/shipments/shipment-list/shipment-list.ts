@@ -45,13 +45,10 @@ const initialViewModel: ShipmentListViewModel = {
 const pageSizeOptions = [10, 25, 50] as const;
 const statusOptions: ShipmentStatus[] = [
   'PENDING',
-  'ORIGIN_WAREHOUSE',
   'ORIGIN_CUSTOMS',
   'IN_TRANSIT',
   'DESTINATION_CUSTOMS',
-  'NATIONALIZED',
-  'DESTINATION_WAREHOUSE',
-  'DISPATCHED',
+  'DELIVERED',
   'WITH_ISSUE',
 ];
 

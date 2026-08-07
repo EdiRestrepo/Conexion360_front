@@ -444,7 +444,7 @@ function createShipment(input: ShipmentInput = {}): Shipment {
       {
         id: 'shipment-001-event-1',
         dateTime: '2026-01-01T08:30:00.000Z',
-        status: 'ORIGIN_WAREHOUSE',
+        status: 'PENDING',
         location: { country: 'México', city: 'Ciudad de México' },
         description: 'Ingreso a bodega de origen.',
         source: 'Sistema mock Conexion360',

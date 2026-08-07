@@ -316,24 +316,16 @@ export class ApiHomeService {
       return 'ORIGIN_CUSTOMS';
     }
 
-    if (/BODEGA.*DEST|DESTINATION_WAREHOUSE/.test(normalized)) {
-      return 'DESTINATION_WAREHOUSE';
+    if (/BODEGA.*DEST|DESTINATION_WAREHOUSE|NACIONAL|NATIONALIZED|DESPACH|DISPATCHED/.test(normalized)) {
+      return 'DESTINATION_CUSTOMS';
     }
 
     if (/BODEGA.*ORIG|ORIGIN_WAREHOUSE/.test(normalized)) {
-      return 'ORIGIN_WAREHOUSE';
-    }
-
-    if (/NACIONAL|NATIONALIZED/.test(normalized)) {
-      return 'NATIONALIZED';
-    }
-
-    if (/DESPACH|DISPATCHED/.test(normalized)) {
-      return 'DISPATCHED';
+      return 'PENDING';
     }
 
     if (/CANCEL/.test(normalized)) {
-      return 'CANCELLED';
+      return 'WITH_ISSUE';
     }
 
     if (/PEND/.test(normalized)) {

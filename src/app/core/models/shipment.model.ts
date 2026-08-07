@@ -6,16 +6,11 @@ export type CargoType = 'FCL' | 'LCL';
 
 export type ShipmentStatus =
   | 'PENDING'
-  | 'ORIGIN_WAREHOUSE'
   | 'ORIGIN_CUSTOMS'
   | 'IN_TRANSIT'
   | 'DESTINATION_CUSTOMS'
-  | 'NATIONALIZED'
-  | 'DESTINATION_WAREHOUSE'
-  | 'DISPATCHED'
   | 'DELIVERED'
-  | 'WITH_ISSUE'
-  | 'CANCELLED';
+  | 'WITH_ISSUE';
 
 export type ShipmentDocumentStatus = 'AVAILABLE' | 'PENDING' | 'REJECTED' | 'EXPIRED';
 

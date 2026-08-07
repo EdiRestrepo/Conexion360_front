@@ -48,21 +48,21 @@ const shipmentSeeds: ShipmentSeed[] = [
   seed('IMPO', 'AIR', 'WITH_ISSUE', 'Enka', 'Global Freight Logistics S.A.S.', 'DAP', 'China', 'Colombia', 'Químicos', 'LCL', 'DHL Aviation', false, false, false, 'DOCUMENT_PENDING'),
   seed('IMPO', 'SEA', 'ORIGIN_CUSTOMS', 'Almacenes Éxito', 'SkyBridge International Freight S.A.S.', 'FOB', 'Perú', 'Colombia', 'Alimentos', 'FCL', 'Hapag-Lloyd', true, false, false),
   seed('IMPO', 'SEA', 'PENDING', 'Zenú', 'TransOceanic Shipping Group S.A.', 'CFR', 'España', 'Colombia', 'Repuestos', 'FCL', 'MSC', true, false, false),
-  seed('EXPO', 'AIR', 'ORIGIN_WAREHOUSE', 'Nutresa', 'Andes Cargo Solutions Ltda.', 'EXW', 'Colombia', 'Estados Unidos', 'Alimentos', 'LCL', 'DHL Aviation', false, true, false),
+  seed('EXPO', 'AIR', 'PENDING', 'Nutresa', 'Andes Cargo Solutions Ltda.', 'EXW', 'Colombia', 'Estados Unidos', 'Alimentos', 'LCL', 'DHL Aviation', false, true, false),
   seed('EXPO', 'AIR', 'ORIGIN_CUSTOMS', 'Enka', 'Global Freight Logistics S.A.S.', 'FCA', 'Colombia', 'Perú', 'Textiles', 'LCL', 'LATAM Cargo', false, false, false),
-  seed('IMPO', 'SEA', 'NATIONALIZED', 'Almacenes Éxito', 'TransOceanic Shipping Group S.A.', 'CIF', 'Brasil', 'Colombia', 'Electrónicos', 'FCL', 'CMA CGM', true, true, true),
-  seed('IMPO', 'SEA', 'DESTINATION_WAREHOUSE', 'Postobon', 'SkyBridge International Freight S.A.S.', 'CIP', 'China', 'Colombia', 'Repuestos', 'FCL', 'Maersk', true, true, true),
-  seed('IMPO', 'AIR', 'DISPATCHED', 'Zenú', 'Andes Cargo Solutions Ltda.', 'DAP', 'Estados Unidos', 'Colombia', 'Alimentos', 'LCL', 'Avianca Cargo', false, true, true),
-  seed('EXPO', 'SEA', 'CANCELLED', 'Enka', 'TransOceanic Shipping Group S.A.', 'FOB', 'Colombia', 'Chile', 'Químicos', 'FCL', 'MSC', true, false, false),
+  seed('IMPO', 'SEA', 'DESTINATION_CUSTOMS', 'Almacenes Éxito', 'TransOceanic Shipping Group S.A.', 'CIF', 'Brasil', 'Colombia', 'Electrónicos', 'FCL', 'CMA CGM', true, true, true),
+  seed('IMPO', 'SEA', 'DESTINATION_CUSTOMS', 'Postobon', 'SkyBridge International Freight S.A.S.', 'CIP', 'China', 'Colombia', 'Repuestos', 'FCL', 'Maersk', true, true, true),
+  seed('IMPO', 'AIR', 'DESTINATION_CUSTOMS', 'Zenú', 'Andes Cargo Solutions Ltda.', 'DAP', 'Estados Unidos', 'Colombia', 'Alimentos', 'LCL', 'Avianca Cargo', false, true, true),
+  seed('EXPO', 'SEA', 'WITH_ISSUE', 'Enka', 'TransOceanic Shipping Group S.A.', 'FOB', 'Colombia', 'Chile', 'Químicos', 'FCL', 'MSC', true, false, false),
   seed('IMPO', 'SEA', 'WITH_ISSUE', 'Nutresa', 'Global Freight Logistics S.A.S.', 'CIF', 'Alemania', 'Colombia', 'Maquinaria', 'FCL', 'Hapag-Lloyd', true, true, false, 'DELAY', true),
   seed('EXPO', 'AIR', 'IN_TRANSIT', 'Postobon', 'SkyBridge International Freight S.A.S.', 'DAP', 'Colombia', 'México', 'Electrónicos', 'LCL', 'DHL Aviation', false, false, true),
   seed('IMPO', 'AIR', 'PENDING', 'Almacenes Éxito', 'Andes Cargo Solutions Ltda.', 'EXW', 'España', 'Colombia', 'Textiles', 'LCL', 'LATAM Cargo', false, false, false),
-  seed('EXPO', 'SEA', 'NATIONALIZED', 'Zenú', 'TransOceanic Shipping Group S.A.', 'CFR', 'Colombia', 'Perú', 'Alimentos', 'FCL', 'CMA CGM', true, true, true),
+  seed('EXPO', 'SEA', 'DESTINATION_CUSTOMS', 'Zenú', 'TransOceanic Shipping Group S.A.', 'CFR', 'Colombia', 'Perú', 'Alimentos', 'FCL', 'CMA CGM', true, true, true),
   seed('IMPO', 'SEA', 'DELIVERED', 'Enka', 'Global Freight Logistics S.A.S.', 'FOB', 'México', 'Colombia', 'Químicos', 'FCL', 'Maersk', true, false, true),
   seed('EXPO', 'AIR', 'WITH_ISSUE', 'Almacenes Éxito', 'SkyBridge International Freight S.A.S.', 'FCA', 'Colombia', 'Brasil', 'Electrónicos', 'LCL', 'Avianca Cargo', false, true, false, 'DOCUMENT_PENDING'),
-  seed('IMPO', 'SEA', 'ORIGIN_WAREHOUSE', 'Postobon', 'Andes Cargo Solutions Ltda.', 'EXW', 'Chile', 'Colombia', 'Repuestos', 'FCL', 'MSC', true, false, false),
-  seed('EXPO', 'SEA', 'DISPATCHED', 'Nutresa', 'Global Freight Logistics S.A.S.', 'CIF', 'Colombia', 'Alemania', 'Alimentos', 'LCL', 'Hapag-Lloyd', true, true, true),
-  seed('IMPO', 'AIR', 'DESTINATION_WAREHOUSE', 'Enka', 'SkyBridge International Freight S.A.S.', 'CPT', 'Perú', 'Colombia', 'Textiles', 'LCL', 'LATAM Cargo', false, true, true),
+  seed('IMPO', 'SEA', 'PENDING', 'Postobon', 'Andes Cargo Solutions Ltda.', 'EXW', 'Chile', 'Colombia', 'Repuestos', 'FCL', 'MSC', true, false, false),
+  seed('EXPO', 'SEA', 'DESTINATION_CUSTOMS', 'Nutresa', 'Global Freight Logistics S.A.S.', 'CIF', 'Colombia', 'Alemania', 'Alimentos', 'LCL', 'Hapag-Lloyd', true, true, true),
+  seed('IMPO', 'AIR', 'DESTINATION_CUSTOMS', 'Enka', 'SkyBridge International Freight S.A.S.', 'CPT', 'Perú', 'Colombia', 'Textiles', 'LCL', 'LATAM Cargo', false, true, true),
   seed('EXPO', 'SEA', 'DESTINATION_CUSTOMS', 'Postobon', 'TransOceanic Shipping Group S.A.', 'FOB', 'Colombia', 'España', 'Maquinaria', 'FCL', 'CMA CGM', true, false, false, 'CUSTOMS_INSPECTION'),
 ];
 
@@ -177,7 +177,7 @@ function getCountryCoordinates(country: string): Pick<Location, 'latitude' | 'lo
 function createLogisticDates(status: ShipmentStatus, baseDay: number) {
   const originWarehouse = isoDate(baseDay);
   const etd = isoDate(baseDay + 2);
-  const atd = status === 'PENDING' || status === 'ORIGIN_WAREHOUSE' ? null : isoDate(baseDay + 3);
+  const atd = status === 'PENDING' ? null : isoDate(baseDay + 3);
   const eta = isoDate(baseDay + 9);
   const ata = getProgress(status) >= 55 ? isoDate(baseDay + 10) : null;
   const destinationWarehouse = getProgress(status) >= 70 ? isoDate(baseDay + 12) : null;
@@ -292,7 +292,7 @@ function getSecondaryDocumentStatus(sequence: number) {
 
 function createEvents(shipmentId: string, seedItem: ShipmentSeed, logisticDates: ReturnType<typeof createLogisticDates>): ShipmentEvent[] {
   const events: ShipmentEvent[] = [
-    createEvent(shipmentId, 1, logisticDates.originWarehouse, 'ORIGIN_WAREHOUSE', seedItem.origin, 'Ingreso a bodega de origen.'),
+    createEvent(shipmentId, 1, logisticDates.originWarehouse, 'PENDING', seedItem.origin, 'Ingreso a bodega de origen.'),
   ];
 
   if (logisticDates.atd) {
@@ -356,33 +356,23 @@ function createIssue(seedItem: ShipmentSeed, sequence: number): ShipmentIssue | 
 function getProgress(status: ShipmentStatus): number {
   const values: Record<ShipmentStatus, number> = {
     PENDING: 5,
-    ORIGIN_WAREHOUSE: 15,
     ORIGIN_CUSTOMS: 28,
     IN_TRANSIT: 45,
     DESTINATION_CUSTOMS: 58,
-    NATIONALIZED: 68,
-    DESTINATION_WAREHOUSE: 76,
-    DISPATCHED: 88,
     DELIVERED: 100,
     WITH_ISSUE: 52,
-    CANCELLED: 0,
   };
   return values[status];
 }
 
 function getNextStop(status: ShipmentStatus): string | null {
   const values: Record<ShipmentStatus, string | null> = {
-    PENDING: 'Bodega origen',
-    ORIGIN_WAREHOUSE: 'Aduana origen',
+    PENDING: 'Aduana origen',
     ORIGIN_CUSTOMS: 'Salida origen',
     IN_TRANSIT: 'Aduana destino',
-    DESTINATION_CUSTOMS: 'Nacionalización',
-    NATIONALIZED: 'Bodega destino',
-    DESTINATION_WAREHOUSE: 'Despacho',
-    DISPATCHED: 'Entrega',
+    DESTINATION_CUSTOMS: 'Entrega',
     DELIVERED: null,
     WITH_ISSUE: 'Gestión de novedad',
-    CANCELLED: null,
   };
   return values[status];
 }

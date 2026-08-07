@@ -28,7 +28,7 @@ describe('MockShipmentService', () => {
   it('should return active shipments excluding terminal statuses', fakeAsync(() => {
     service.getActive().subscribe((shipments) => {
       expect(shipments.length).toBeGreaterThan(0);
-      expect(shipments.every((shipment) => shipment.status !== 'DELIVERED' && shipment.status !== 'CANCELLED')).toBeTrue();
+      expect(shipments.every((shipment) => shipment.status !== 'DELIVERED')).toBeTrue();
     });
     tick();
   }));
