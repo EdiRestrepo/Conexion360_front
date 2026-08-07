@@ -2,6 +2,17 @@
   max-width: 100%;
 }
 
+.shipments-page .page__title {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.shipments-page .page__subtitle {
+  font-size: var(--font-size-text);
+  line-height: 1.25;
+}
+
 .shipments-toolbar {
   display: grid;
   grid-template-columns: minmax(260px, 1.8fr) repeat(3, minmax(150px, 1fr));
@@ -306,6 +317,10 @@
 }
 
 @media (max-width: 480px) {
+  .shipments-page .page__title {
+    font-size: 24px;
+  }
+
   .shipments-toolbar,
   .summary-card,
   .shipment-mobile-card,

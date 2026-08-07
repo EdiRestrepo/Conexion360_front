@@ -2,6 +2,21 @@
   max-width: 100%;
 }
 
+.reports-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.reports-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-text);
+  line-height: 1.25;
+}
+
 .reports-header {
   display: flex;
   justify-content: space-between;
@@ -150,6 +165,10 @@
   }
 }
 @media (max-width: 480px) {
+  .reports-title {
+    font-size: 24px;
+  }
+
   .report-card,
   .financial-summary,
   .chart-card {

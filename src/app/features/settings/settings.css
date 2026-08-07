@@ -2,6 +2,21 @@
   max-width: 100%;
 }
 
+.settings-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.settings-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-text);
+  line-height: 1.25;
+}
+
 .settings-header {
   display: flex;
   align-items: flex-start;
@@ -143,5 +158,11 @@
 
   .settings-header {
     display: grid;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-title {
+    font-size: 24px;
   }
 }
