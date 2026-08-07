@@ -33,13 +33,11 @@ import {
   getDocumentStatusChipType,
   getDocumentStatusIcon,
   getDocumentStatusLabel,
-  getOperationTypeLabel,
   getShipmentStatusChipType,
   getShipmentStatusIcon,
   getShipmentStatusLabel,
   getShipmentStatusOrder,
   getTransportModeIcon,
-  getTransportModeLabel,
 } from '../../core/utils/display-labels';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
 import type {
@@ -133,8 +131,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     tap((viewModel) => this.currentViewModel.set(viewModel)),
   );
 
-  protected readonly getOperationTypeLabel = getOperationTypeLabel;
-  protected readonly getTransportModeLabel = getTransportModeLabel;
   protected readonly getTransportModeIcon = getTransportModeIcon;
   protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
@@ -206,10 +202,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     );
   }
 
-  protected getRouteLabel(shipment: Shipment): string {
-    return `${shipment.origin.country} → ${shipment.destination.country}`;
-  }
-
   protected getLocationLabel(location: Shipment['origin']): string {
     return [location.city, location.country].filter((value): value is string => Boolean(value)).join(', ');
   }
@@ -233,11 +225,12 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   protected getShipmentInfoFields(shipment: Shipment): DetailField[] {
     return [
       { label: 'Cliente', value: shipment.client },
-      { label: 'Proveedor o agente', value: shipment.provider },
+      { label: 'Proveedor / agente', value: shipment.provider },
       { label: 'Transportista', value: shipment.carrier },
       { label: 'Descripción de mercancía', value: shipment.merchandiseDescription },
-      { label: 'Documento', value: shipment.documentNumber },
+      { label: 'Documento de transporte', value: shipment.documentNumber, accent: true },
       { label: 'Tipo de documento', value: this.getDocumentType(shipment) },
+      { label: 'Incoterms', value: 'Pendiente por integrar' },
     ];
   }
 
@@ -246,7 +239,7 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       { label: 'Origen', value: this.getLocationLabel(shipment.origin) },
       { label: 'Destino', value: this.getLocationLabel(shipment.destination) },
       { label: 'Tipo de carga', value: shipment.cargoType },
-      { label: 'Cantidad de bultos', value: shipment.packages.toLocaleString('es-CO') },
+      { label: 'Cantidad bultos', value: shipment.packages.toLocaleString('es-CO') },
       { label: 'Peso', value: `${shipment.weightKg.toLocaleString('es-CO')} kg` },
       { label: 'Volumen', value: `${shipment.volumeM3.toLocaleString('es-CO')} m³` },
     ];

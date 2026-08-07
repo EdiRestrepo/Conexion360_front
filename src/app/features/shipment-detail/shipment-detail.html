@@ -18,48 +18,36 @@
         <button mat-stroked-button type="button" (click)="goBack(viewModel.listQueryParams)">Volver a Mis envíos</button>
       </div>
     } @else if (viewModel.shipment; as shipment) {
-      <header class="surface-card detail-header">
-        <div class="detail-header__top">
-          <button mat-stroked-button type="button" (click)="goBack(viewModel.listQueryParams)">
-            <mat-icon aria-hidden="true">arrow_back</mat-icon>
-            Volver
-          </button>
+      <header class="detail-header">
+        <button mat-icon-button type="button" class="detail-header__back" aria-label="Volver" title="Volver" (click)="goBack(viewModel.listQueryParams)">
+          <mat-icon aria-hidden="true">arrow_back</mat-icon>
+        </button>
 
-          <span class="detail-header__mode" [class]="'detail-header__mode ' + getModeClass(shipment.transportMode)">
-            <mat-icon aria-hidden="true">{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
-          </span>
+        <span class="detail-header__mode" [class]="'detail-header__mode ' + getModeClass(shipment.transportMode)">
+          <mat-icon aria-hidden="true">{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
+        </span>
 
-          <div class="detail-header__title">
-            <span class="text-label">{{ getDocumentType(shipment) }}</span>
-            <h1>{{ shipment.documentNumber }}</h1>
-          </div>
+        <h1 class="detail-header__title">{{ shipment.documentNumber }}</h1>
 
-          <button mat-icon-button type="button" [attr.aria-label]="'Copiar documento ' + shipment.documentNumber" title="Copiar documento" (click)="copyDocument(shipment.documentNumber)">
-            <mat-icon aria-hidden="true">content_copy</mat-icon>
-          </button>
+        <button mat-icon-button type="button" [attr.aria-label]="'Copiar documento ' + shipment.documentNumber" title="Copiar documento" (click)="copyDocument(shipment.documentNumber)">
+          <mat-icon aria-hidden="true">content_copy</mat-icon>
+        </button>
 
-          @if (copied()) {
-            <span class="copy-feedback">Copiado</span>
-          }
-        </div>
+        @if (copied()) {
+          <span class="copy-feedback">Copiado</span>
+        }
 
-        <div class="detail-header__meta">
-          <span class="status-chip" [class]="'status-chip ' + getStatusChipClass(shipment)">
-            <mat-icon aria-hidden="true">{{ getShipmentStatusIcon(shipment.status) }}</mat-icon>
-            {{ getShipmentStatusLabel(shipment.status) }}
-          </span>
-          <span>{{ getOperationTypeLabel(shipment.operationType) }}</span>
-          <span>{{ getTransportModeLabel(shipment.transportMode) }}</span>
-          <span>Incoterm {{ shipment.incoterm }}</span>
-          <span>{{ shipment.cargoType }}</span>
-          <span>{{ getRouteLabel(shipment) }}</span>
-        </div>
+        <span class="status-chip detail-header__status" [class]="'status-chip detail-header__status ' + getStatusChipClass(shipment)">
+          <mat-icon aria-hidden="true">{{ getShipmentStatusIcon(shipment.status) }}</mat-icon>
+          {{ getShipmentStatusLabel(shipment.status) }}
+        </span>
       </header>
 
       <nav class="detail-tabs" aria-label="Secciones del envío">
         @for (tab of tabs; track tab.id) {
           <button
             type="button"
+            class="detail-tabs__button"
             [class.detail-tabs__button--active]="viewModel.selectedTab === tab.id"
             [attr.aria-current]="viewModel.selectedTab === tab.id ? 'page' : null"
             (click)="selectTab(tab.id)"
@@ -73,24 +61,24 @@
         @case ('summary') {
           <section class="detail-grid" aria-label="Resumen del envío">
             <article class="surface-card detail-section">
-              <h2>Información del envío</h2>
-              <dl class="detail-list">
+              <h2><mat-icon aria-hidden="true">inventory_2</mat-icon> Información del envío</h2>
+              <dl class="detail-list detail-list--rows">
                 @for (field of getShipmentInfoFields(shipment); track field.label) {
-                  <div>
+                  <div class="detail-list__row">
                     <dt>{{ field.label }}</dt>
-                    <dd>{{ field.value }}</dd>
+                    <dd [class.detail-list__value--accent]="field.accent">{{ field.value }}</dd>
                   </div>
                 }
               </dl>
             </article>
 
             <article class="surface-card detail-section">
-              <h2>Ruta y carga</h2>
-              <dl class="detail-list">
+              <h2><mat-icon aria-hidden="true">place</mat-icon> Ruta y carga</h2>
+              <dl class="detail-list detail-list--rows">
                 @for (field of getRouteCargoFields(shipment); track field.label) {
-                  <div>
+                  <div class="detail-list__row">
                     <dt>{{ field.label }}</dt>
-                    <dd>{{ field.value }}</dd>
+                    <dd [class.detail-list__value--accent]="field.accent">{{ field.value }}</dd>
                   </div>
                 }
               </dl>

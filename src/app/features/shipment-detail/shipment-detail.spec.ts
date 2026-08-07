@@ -63,8 +63,9 @@ describe('ShipmentDetail', () => {
 
     expect(getByIdSpy).toHaveBeenCalledWith('shipment-001');
     expect(getText()).toContain('AWB-001');
-    expect(getText()).toContain('Importación');
-    expect(getText()).toContain('México → Colombia');
+    expect(getText()).toContain('En tránsito');
+    expect(getText()).toContain('México');
+    expect(getText()).toContain('Colombia');
   }));
 
   it('should render not found state', fakeAsync(() => {
@@ -103,8 +104,9 @@ describe('ShipmentDetail', () => {
 
     expect(homeSearchSpy).toHaveBeenCalledWith({ query: 'AWB-JL9TDCC5', page: 1, pageSize: 10 });
     expect(getText()).toContain('AWB-JL9TDCC5');
-    expect(getText()).toContain('Colombia → Alemania');
-    expect(getText()).toContain('Exportación');
+    expect(getText()).toContain('En Aduana origen');
+    expect(getText()).toContain('Colombia');
+    expect(getText()).toContain('Alemania');
   }));
 
   it('should render error state and retry', fakeAsync(() => {
@@ -370,7 +372,7 @@ describe('ShipmentDetail', () => {
 
   function clickButton(label: string): void {
     const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((item) =>
-      item.textContent?.includes(label),
+      item.textContent?.includes(label) || item.getAttribute('aria-label')?.includes(label) || item.title.includes(label),
     );
     if (!button) {
       throw new Error(`No se encontró el botón ${label}`);

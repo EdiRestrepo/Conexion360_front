@@ -6,7 +6,7 @@ export type DateState = 'on-time' | 'delayed' | 'pending' | 'not-applicable' | '
 export type TrackingStageState = 'completed' | 'current' | 'pending';
 export interface DetailViewModel { state: DetailState; selectedTab: DetailTab; listQueryParams: Params; shipment: Shipment | null; message?: string; }
 export interface TabItem { id: DetailTab; label: string; }
-export interface DetailField { label: string; value: string; }
+export interface DetailField { label: string; value: string; accent?: boolean; }
 export interface LogisticDateRow { label: string; estimated: string; actual: string; state: DateState; stateLabel: string; }
 export interface TrackingStage { label: string; state: TrackingStageState; }
 export interface NextStop { location: string; date: string; }
