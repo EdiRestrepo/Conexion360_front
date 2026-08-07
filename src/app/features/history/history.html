@@ -32,21 +32,61 @@
         <option value="SEA">Marítimo</option>
       </select>
     </label>
+
+    <label>
+      <span>Estado</span>
+      <select [formControl]="statusControl" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        @for (status of statusOptions; track status) {
+          <option [value]="status">{{ getShipmentStatusLabel(status) }}</option>
+        }
+      </select>
+    </label>
   </section>
 
   @if (viewModel$ | async; as viewModel) {
     <section class="history-summary" aria-label="Resumen de envíos completados">
       <article class="surface-card summary-card">
-        <span>Total entregados</span>
-        <strong>{{ viewModel.summary.total }}</strong>
+        <div>
+          <span>Total envíos</span>
+          <strong>{{ viewModel.summary.total }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">inventory_2</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>Aéreos</span>
-        <strong>{{ viewModel.summary.air }}</strong>
+        <div>
+          <span>Exportaciones</span>
+          <strong>{{ viewModel.summary.exports }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">north_east</mat-icon>
       </article>
       <article class="surface-card summary-card">
-        <span>Marítimos</span>
-        <strong>{{ viewModel.summary.sea }}</strong>
+        <div>
+          <span>Importaciones</span>
+          <strong>{{ viewModel.summary.imports }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">south_west</mat-icon>
+      </article>
+      <article class="surface-card summary-card">
+        <div>
+          <span>Aéreos</span>
+          <strong>{{ viewModel.summary.air }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">flight</mat-icon>
+      </article>
+      <article class="surface-card summary-card">
+        <div>
+          <span>Marítimos</span>
+          <strong>{{ viewModel.summary.sea }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon" aria-hidden="true">directions_boat</mat-icon>
+      </article>
+      <article class="surface-card summary-card">
+        <div>
+          <span>con novedad</span>
+          <strong>{{ viewModel.summary.withIssues }}</strong>
+        </div>
+        <mat-icon class="summary-card__icon summary-card__icon--warning" aria-hidden="true">warning</mat-icon>
       </article>
     </section>
 
@@ -73,13 +113,16 @@
           <div class="history-table" role="table" aria-label="Historial de envíos completados">
             <div class="history-table__row history-table__row--head" role="row">
               <span role="columnheader">Modalidad</span>
-              <span role="columnheader">Documento o guía</span>
+              <span role="columnheader">Documento</span>
+              <span role="columnheader">Estado</span>
+              <span role="columnheader">Operación</span>
+              <span role="columnheader">Modalidad</span>
               <span role="columnheader">Cliente</span>
-              <span role="columnheader">Origen</span>
-              <span role="columnheader">Destino</span>
-              <span role="columnheader">Fecha real de entrega</span>
-              <span role="columnheader">Bodega destino</span>
-              <span role="columnheader">Despacho</span>
+              <span role="columnheader">Origen → Destino</span>
+              <span role="columnheader">ETD</span>
+              <span role="columnheader">ATD</span>
+              <span role="columnheader">ETA</span>
+              <span role="columnheader">ATA</span>
               <span role="columnheader">Ver</span>
             </div>
 
@@ -89,12 +132,18 @@
                   <mat-icon aria-hidden="true">{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
                 </span>
                 <strong role="cell">{{ shipment.documentNumber }}</strong>
+                <span role="cell" class="status-chip" [class]="'status-chip ' + getStatusChipClass(shipment.status)">
+                  <mat-icon aria-hidden="true">{{ getShipmentStatusIcon(shipment.status) }}</mat-icon>
+                  {{ getShipmentStatusLabel(shipment.status) }}
+                </span>
+                <span role="cell">{{ getOperationTypeLabel(shipment.operationType) }}</span>
+                <span role="cell">{{ getTransportModeLabel(shipment.transportMode) }}</span>
                 <span role="cell">{{ shipment.client }}</span>
-                <span role="cell">{{ getLocationLabel(shipment, 'origin') }}</span>
-                <span role="cell">{{ getLocationLabel(shipment, 'destination') }}</span>
-                <span role="cell">{{ formatDate(shipment.logisticDates.delivery) }}</span>
-                <span role="cell">{{ formatDate(shipment.logisticDates.destinationWarehouse) }}</span>
-                <span role="cell">{{ formatDate(shipment.logisticDates.dispatch) }}</span>
+                <span role="cell">{{ getLocationLabel(shipment) }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.etd) }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.atd) }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.eta) }}</span>
+                <span role="cell">{{ formatDate(shipment.logisticDates.ata) }}</span>
                 <span role="cell" class="detail-action">
                   <a
                     mat-icon-button
@@ -118,7 +167,7 @@
                 <span class="mode-icon" aria-hidden="true"><mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon></span>
                 <div>
                   <strong>{{ shipment.documentNumber }}</strong>
-                  <small>{{ getLocationLabel(shipment, 'origin') }} → {{ getLocationLabel(shipment, 'destination') }}</small>
+                  <small>{{ getLocationLabel(shipment) }}</small>
                 </div>
                 <a
                   mat-icon-button
@@ -131,10 +180,10 @@
                 </a>
               </header>
               <div class="history-mobile-card__meta">
+                <span class="status-chip" [class]="'status-chip ' + getStatusChipClass(shipment.status)">{{ getShipmentStatusLabel(shipment.status) }}</span>
                 <span>{{ getOperationTypeLabel(shipment.operationType) }} · {{ getTransportModeLabel(shipment.transportMode) }}</span>
                 <span>{{ shipment.client }}</span>
-                <span>Entrega {{ formatDate(shipment.logisticDates.delivery) }}</span>
-                <span>Bodega destino {{ formatDate(shipment.logisticDates.destinationWarehouse) }}</span>
+                <span>ETA {{ formatDate(shipment.logisticDates.eta) }}</span>
               </div>
             </article>
           }

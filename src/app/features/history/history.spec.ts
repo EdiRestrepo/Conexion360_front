@@ -45,13 +45,13 @@ describe('History', () => {
     expect(getText()).not.toContain('AWB-ACT-003');
   }));
 
-  it('should use real delivery date and not eta as delivery date', fakeAsync(() => {
+  it('should render the shared shipment date columns', fakeAsync(() => {
     render();
 
     const dataRows = fixture.nativeElement.querySelectorAll('.history-table__row:not(.history-table__row--head)') as NodeListOf<HTMLElement>;
     const firstRowCells = dataRows[0].querySelectorAll('[role="cell"]') as NodeListOf<HTMLElement>;
 
-    expect(firstRowCells[5].textContent).toContain('10 de ene de 2026');
+    expect(firstRowCells[10].textContent).toContain('09 de ene de 2026');
   }));
 
   it('should search by document, client, origin or destination', fakeAsync(() => {
@@ -76,14 +76,25 @@ describe('History', () => {
     expect(getText()).not.toContain('AWB-DEL-001');
   }));
 
+  it('should filter by status from query params', fakeAsync(() => {
+    setQueryParams({ status: 'DELIVERED' });
+    render();
+
+    expect(getText()).toContain('AWB-DEL-001');
+    expect(getText()).not.toContain('AWB-ACT-003');
+  }));
+
   it('should render summary from filtered delivered results', fakeAsync(() => {
     setQueryParams({ mode: 'AIR' });
     render();
 
-    expect(getText()).toContain('Total entregados');
+    expect(getText()).toContain('Total envios');
     expect(getText()).toContain('2');
+    expect(getText()).toContain('Exportaciones');
+    expect(getText()).toContain('Importaciones');
     expect(getText()).toContain('Aéreos');
     expect(getText()).toContain('Marítimos');
+    expect(getText()).toContain('con novedad');
   }));
 
   it('should paginate and preserve query params', fakeAsync(() => {
@@ -134,7 +145,7 @@ describe('History', () => {
     clickButton('Reintentar');
 
     expect(router.navigate).toHaveBeenCalledWith([], jasmine.objectContaining({
-      queryParams: { query: null, operation: null, mode: null, page: null, pageSize: null },
+      queryParams: { query: null, operation: null, mode: null, status: null, page: null, pageSize: null },
     }));
   }));
 

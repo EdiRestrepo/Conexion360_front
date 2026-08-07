@@ -7,19 +7,24 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap, tap } from 'rxjs';
 
-import { OperationType, Shipment, TransportMode } from '../../core/models/shipment.model';
+import { OperationType, Shipment, ShipmentStatus, TransportMode } from '../../core/models/shipment.model';
 import {
+  ShipmentChipType,
   getOperationTypeLabel,
+  getShipmentStatusChipType,
+  getShipmentStatusIcon,
+  getShipmentStatusLabel,
   getTransportModeIcon,
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
-import type { HistoryFilters, HistorySummary, HistoryViewModel } from './models/history-view.model';
+import type { HistoryFilters, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {
   query: '',
   operation: '',
   mode: '',
+  status: '',
   page: 1,
   pageSize: 10,
 };
@@ -28,7 +33,7 @@ const initialViewModel: HistoryViewModel = {
   state: 'loading',
   filters: defaultFilters,
   shipments: [],
-  summary: { total: 0, air: 0, sea: 0 },
+  summary: { total: 0, exports: 0, imports: 0, air: 0, sea: 0, withIssues: 0 },
   totalItems: 0,
   totalPages: 0,
   rangeStart: 0,
@@ -37,6 +42,14 @@ const initialViewModel: HistoryViewModel = {
 };
 
 const pageSizeOptions = [10, 25, 50] as const;
+const statusOptions: ShipmentStatus[] = [
+  'PENDING',
+  'ORIGIN_CUSTOMS',
+  'IN_TRANSIT',
+  'DESTINATION_CUSTOMS',
+  'DELIVERED',
+  'WITH_ISSUE',
+];
 
 @Component({
   selector: 'app-history',
@@ -54,13 +67,17 @@ export class History {
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly operationControl = new FormControl<OperationType | ''>('', { nonNullable: true });
   protected readonly modeControl = new FormControl<TransportMode | ''>('', { nonNullable: true });
+  protected readonly statusControl = new FormControl<ShipmentStatus | ''>('', { nonNullable: true });
   protected readonly pageSizeControl = new FormControl<number>(defaultFilters.pageSize, { nonNullable: true });
   protected readonly pageSizeOptions = pageSizeOptions;
+  protected readonly statusOptions = statusOptions;
   protected readonly viewModel$: Observable<HistoryViewModel>;
 
   protected readonly getOperationTypeLabel = getOperationTypeLabel;
   protected readonly getTransportModeLabel = getTransportModeLabel;
   protected readonly getTransportModeIcon = getTransportModeIcon;
+  protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
+  protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
 
   constructor() {
     this.viewModel$ = this.route.queryParamMap.pipe(
@@ -85,6 +102,7 @@ export class History {
     this.bindQueryControl();
     this.bindFilterControl(this.operationControl, 'operation');
     this.bindFilterControl(this.modeControl, 'mode');
+    this.bindFilterControl(this.statusControl, 'status');
     this.bindPageSizeControl();
   }
 
@@ -100,9 +118,8 @@ export class History {
     void this.updateQueryParams({ page: Math.max(page, 1) });
   }
 
-  protected getLocationLabel(shipment: Shipment, side: 'origin' | 'destination'): string {
-    const location = side === 'origin' ? shipment.origin : shipment.destination;
-    return [location.city, location.country].filter((value): value is string => Boolean(value)).join(', ');
+  protected getLocationLabel(shipment: Shipment): string {
+    return `${shipment.origin.country} → ${shipment.destination.country}`;
   }
 
   protected formatDate(value: string | null | undefined): string {
@@ -110,12 +127,29 @@ export class History {
       return '-';
     }
 
-    const date = new Date(`${value}T00:00:00.000Z`);
+    if (value.startsWith('0001-01-01')) {
+      return '-';
+    }
+
+    const dateValue = value.includes('T') ? value : `${value}T00:00:00.000Z`;
+    const date = new Date(dateValue);
     if (Number.isNaN(date.getTime())) {
       return '-';
     }
 
     return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+  }
+
+  protected getStatusChipClass(status: ShipmentStatus): string {
+    const type = getShipmentStatusChipType(status);
+    const classes: Record<ShipmentChipType, string> = {
+      neutral: 'status-chip--neutral',
+      info: 'status-chip--info',
+      success: 'status-chip--success',
+      warning: 'status-chip--issue',
+      danger: 'status-chip--issue',
+    };
+    return classes[type];
   }
 
   private bindQueryControl(): void {
@@ -124,7 +158,10 @@ export class History {
       .subscribe((query) => void this.updateQueryParams({ query: query.trim(), page: 1 }));
   }
 
-  private bindFilterControl<T extends OperationType | TransportMode | ''>(control: FormControl<T>, key: 'operation' | 'mode'): void {
+  private bindFilterControl<T extends OperationType | TransportMode | ShipmentStatus | ''>(
+    control: FormControl<T>,
+    key: 'operation' | 'mode' | 'status',
+  ): void {
     control.valueChanges
       .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => void this.updateQueryParams({ [key]: value || null, page: 1 }));
@@ -152,8 +189,11 @@ export class History {
       shipments: pagedShipments,
       summary: {
         total: totalItems,
+        exports: filteredShipments.filter((shipment) => shipment.operationType === 'EXPO').length,
+        imports: filteredShipments.filter((shipment) => shipment.operationType === 'IMPO').length,
         air: filteredShipments.filter((shipment) => shipment.transportMode === 'AIR').length,
         sea: filteredShipments.filter((shipment) => shipment.transportMode === 'SEA').length,
+        withIssues: filteredShipments.filter((shipment) => shipment.status === 'WITH_ISSUE').length,
       },
       totalItems,
       totalPages,
@@ -183,7 +223,8 @@ export class History {
       return (
         (!query || searchableText.includes(query)) &&
         (!filters.operation || shipment.operationType === filters.operation) &&
-        (!filters.mode || shipment.transportMode === filters.mode)
+        (!filters.mode || shipment.transportMode === filters.mode) &&
+        (!filters.status || shipment.status === filters.status)
       );
     });
   }
@@ -195,6 +236,7 @@ export class History {
       query: params.get('query') ?? params.get('q') ?? '',
       operation: this.toOperationType(params.get('operation')),
       mode: this.toTransportMode(params.get('mode')),
+      status: this.toShipmentStatus(params.get('status')),
       page: this.toPositiveNumber(params.get('page'), 1),
       pageSize,
     };
@@ -204,6 +246,7 @@ export class History {
     this.searchControl.setValue(filters.query, { emitEvent: false });
     this.operationControl.setValue(filters.operation, { emitEvent: false });
     this.modeControl.setValue(filters.mode, { emitEvent: false });
+    this.statusControl.setValue(filters.status, { emitEvent: false });
     this.pageSizeControl.setValue(filters.pageSize, { emitEvent: false });
   }
 
@@ -220,6 +263,7 @@ export class History {
       query: filters.query || null,
       operation: filters.operation || null,
       mode: filters.mode || null,
+      status: filters.status || null,
       page: filters.page === 1 ? null : filters.page,
       pageSize: filters.pageSize === defaultFilters.pageSize ? null : filters.pageSize,
     };
@@ -231,6 +275,10 @@ export class History {
 
   private toTransportMode(value: string | null): TransportMode | '' {
     return value === 'AIR' || value === 'SEA' ? value : '';
+  }
+
+  private toShipmentStatus(value: string | null): ShipmentStatus | '' {
+    return statusOptions.includes(value as ShipmentStatus) ? (value as ShipmentStatus) : '';
   }
 
   private toPageSize(value: string | null): number {
