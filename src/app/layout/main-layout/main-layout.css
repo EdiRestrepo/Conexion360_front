@@ -6,6 +6,7 @@
 
 .shell__sidebar {
   display: none;
+  height: 100%;
   background: var(--color-sidebar);
 }
 
@@ -58,19 +59,35 @@
 }
 
 @media (min-width: 900px) {
-  .shell {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-    transition: grid-template-columns 180ms ease;
-  }
-
-  .shell--sidebar-collapsed {
-    grid-template-columns: 76px minmax(0, 1fr);
-  }
-
   .shell__sidebar-frame,
   .shell__sidebar {
     display: block;
+  }
+
+  .shell__sidebar-frame {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    width: var(--sidebar-width);
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    transition: width 180ms ease;
+  }
+
+  .shell--sidebar-collapsed .shell__sidebar-frame {
+    width: 76px;
+  }
+
+  .shell__body {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 180ms ease;
+  }
+
+  .shell--sidebar-collapsed .shell__body {
+    margin-left: 76px;
   }
 }
 
