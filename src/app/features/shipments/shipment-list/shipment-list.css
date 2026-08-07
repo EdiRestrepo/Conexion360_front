@@ -307,6 +307,7 @@
   align-items: center;
   color: var(--color-text-muted);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .shipments-pagination p,
@@ -318,9 +319,10 @@
 }
 
 .shipments-pagination select {
-  min-width: 72px;
+  width: 76px;
+  min-width: 76px;
   min-height: 36px;
-  padding: 0 30px 0 12px;
+  padding: 0 28px 0 12px;
 }
 
 .shipments-pagination__buttons {
