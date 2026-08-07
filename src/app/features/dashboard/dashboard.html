@@ -8,6 +8,7 @@
     <form class="dashboard-search" (submit)="searchShipment($event)" role="search" aria-label="Buscar envío por documento de transporte">
       <mat-icon aria-hidden="true">search</mat-icon>
       <label class="dashboard-search__field">
+        <span class="sr-only">Documento de transporte</span>
         <input
           type="search"
           [formControl]="searchControl"
@@ -182,6 +183,7 @@
         <header class="recent-card__header">
           <div>
             <h2 id="recent-title">Envíos recientes</h2>
+            <p class="sr-only">Últimos movimientos registrados para el usuario autenticado.</p>
           </div>
           <a class="recent-card__link" routerLink="/shipments">
             <span>Ver todos</span>
