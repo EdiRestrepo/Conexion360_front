@@ -97,4 +97,59 @@ describe('ApiMyShipmentsService', () => {
       },
     });
   });
+
+  it('should request filtered shipments with optional filter params', () => {
+    service.search({ query: 'China', operationType: 'EXPO', transportMode: 'AIR', status: 'IN_TRANSIT', page: 1, pageSize: 10 }).subscribe((result) => {
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0].documentNumber).toBe('AWB-FILTER-001');
+      expect(result.items[0].status).toBe('IN_TRANSIT');
+    });
+
+    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/myshipments/filterShipments`);
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('idClient')).toBe('8909006089');
+    expect(request.request.params.get('role')).toBe('CLIENT');
+    expect(request.request.params.get('page')).toBe('1');
+    expect(request.request.params.get('size')).toBe('10');
+    expect(request.request.params.get('ValueFilter')).toBe('China');
+    expect(request.request.params.get('OperationType')).toBe('EXPO');
+    expect(request.request.params.get('ShipmentMode')).toBe('AIR');
+    expect(request.request.params.get('State')).toBe('En tránsito');
+
+    request.flush({
+      dataResponse: [
+        {
+          totalClientRecords: 1,
+          totalImports: 0,
+          totalExports: 1,
+          totalAirShipments: 1,
+          totalOceanShipments: 0,
+          totalWithIssues: 0,
+          myShipments: [
+            {
+              id: 8,
+              shipmentMode: 'AIR',
+              documentNumber: 'AWB-FILTER-001',
+              state: 'En tránsito',
+              operationType: 'EXPO',
+              clientName: 'Zenu',
+              origin: 'Colombia',
+              destination: 'China',
+              etdDate: '2026-01-01T00:00:00',
+              atdDate: '2026-01-02T00:00:00',
+              etaDate: '2026-01-10T00:00:00',
+              ataDate: '0001-01-01T00:00:00',
+            },
+          ],
+        },
+      ],
+      meta: {
+        totalItems: 1,
+        totalPages: 1,
+        currentPage: 1,
+        limit: 10,
+      },
+    });
+  });
 });

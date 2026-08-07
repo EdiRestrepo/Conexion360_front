@@ -5,6 +5,7 @@ import { Observable, filter, map, switchMap, take } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PaginatedResult, SearchFilters } from '../models/common.model';
 import { OperationType, Shipment, ShipmentStatus, TransportMode } from '../models/shipment.model';
+import { getShipmentStatusLabel } from '../utils/display-labels';
 import { Auth0Identity } from '../models/user.model';
 import { Auth0FacadeService } from './auth0-facade.service';
 
@@ -30,11 +31,12 @@ export class ApiMyShipmentsService {
   private readonly http = inject(HttpClient);
   private readonly auth0Facade = inject(Auth0FacadeService);
   private readonly shipmentsUrl = `${environment.api.baseUrl}/myshipments/allshipments`;
+  private readonly filteredShipmentsUrl = `${environment.api.baseUrl}/myshipments/filterShipments`;
 
   search(filters: SearchFilters): Observable<MyShipmentsPage> {
     return this.getIdentity().pipe(
       switchMap((identity) =>
-        this.http.get<unknown>(this.shipmentsUrl, {
+        this.http.get<unknown>(this.getSearchUrl(filters), {
           params: this.createParams(identity, filters),
         }),
       ),
@@ -53,11 +55,49 @@ export class ApiMyShipmentsService {
     const page = Math.max(filters.page ?? 1, 1);
     const pageSize = Math.max(filters.pageSize ?? 10, 1);
 
-    return new HttpParams()
+    const params = new HttpParams()
       .set('idClient', identity.document ?? '')
       .set('role', identity.roles[0] ?? '')
       .set('page', String(page))
       .set('size', String(pageSize));
+
+    return this.addFilterParams(params, filters);
+  }
+
+  private getSearchUrl(filters: SearchFilters): string {
+    return this.hasFilters(filters) ? this.filteredShipmentsUrl : this.shipmentsUrl;
+  }
+
+  private hasFilters(filters: SearchFilters): boolean {
+    return Boolean(
+      filters.query?.trim() ||
+        filters.operationType ||
+        filters.transportMode ||
+        filters.status,
+    );
+  }
+
+  private addFilterParams(params: HttpParams, filters: SearchFilters): HttpParams {
+    let nextParams = params;
+    const valueFilter = filters.query?.trim();
+
+    if (valueFilter) {
+      nextParams = nextParams.set('ValueFilter', valueFilter);
+    }
+
+    if (filters.operationType) {
+      nextParams = nextParams.set('OperationType', filters.operationType);
+    }
+
+    if (filters.transportMode) {
+      nextParams = nextParams.set('ShipmentMode', filters.transportMode);
+    }
+
+    if (filters.status) {
+      nextParams = nextParams.set('State', getShipmentStatusLabel(filters.status));
+    }
+
+    return nextParams;
   }
 
   private toMyShipmentsPage(response: unknown, filters: SearchFilters): MyShipmentsPage {

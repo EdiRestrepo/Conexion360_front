@@ -4,6 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Params, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
+import { SearchFilters } from '../../../core/models/common.model';
 import {
   LogisticDates,
   OperationType,
@@ -18,7 +19,7 @@ describe('ShipmentList', () => {
   let fixture: ComponentFixture<ShipmentList>;
   let component: ShipmentListTestComponent;
   let router: Router;
-  let searchSpy: jasmine.Spy<(filters: { page?: number; pageSize?: number }) => Observable<MyShipmentsPage>>;
+  let searchSpy: jasmine.Spy<(filters: SearchFilters) => Observable<MyShipmentsPage>>;
   let queryParamSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let currentParams: Record<string, string>;
 
@@ -81,15 +82,18 @@ describe('ShipmentList', () => {
     }));
   }));
 
-  it('should apply combined operation, mode and status filters from query params', fakeAsync(() => {
+  it('should request backend data with combined query params', fakeAsync(() => {
     render();
-    setQueryParams({ operation: 'IMPO', mode: 'AIR', status: 'IN_TRANSIT' });
+    setQueryParams({ query: 'China', operation: 'EXPO', mode: 'AIR', status: 'IN_TRANSIT' });
 
-    const text = getText();
-
-    expect(text).toContain('AWB-ACT-001');
-    expect(text).not.toContain('HBL-ACT-002');
-    expect(text).not.toContain('AWB-ACT-003');
+    expect(searchSpy).toHaveBeenCalledWith(jasmine.objectContaining({
+      query: 'China',
+      operationType: 'EXPO',
+      transportMode: 'AIR',
+      status: 'IN_TRANSIT',
+      page: 1,
+      pageSize: 10,
+    }));
   }));
 
   it('should restore query params in controls', fakeAsync(() => {
@@ -162,10 +166,13 @@ describe('ShipmentList', () => {
   }));
 
   it('should render an empty state when filters have no results', fakeAsync(() => {
+    searchSpy.and.returnValue(of(createPage([], 0, 1, 10)));
+    fixture = TestBed.createComponent(ShipmentList);
+    component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
     setQueryParams({ query: 'NO-EXISTE' });
 
-    expect(getText()).toContain('No hay envíos activos que coincidan con los filtros.');
+    expect(getText()).toContain('No hay envíos que coincidan con los filtros.');
   }));
 
   it('should render controlled error state', fakeAsync(() => {

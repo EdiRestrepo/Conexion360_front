@@ -84,7 +84,14 @@ export class ShipmentList {
       map((params) => this.getFiltersFromParams(params)),
       tap((filters) => this.patchControls(filters)),
       switchMap((filters) =>
-        this.shipmentService.search({ page: filters.page, pageSize: filters.pageSize }).pipe(
+        this.shipmentService.search({
+          query: filters.query,
+          operationType: filters.operation || null,
+          transportMode: filters.mode || null,
+          status: filters.status || null,
+          page: filters.page,
+          pageSize: filters.pageSize,
+        }).pipe(
           map((result) => this.createViewModel(result, filters)),
           startWith({ ...initialViewModel, filters } satisfies ShipmentListViewModel),
           catchError(() =>
@@ -177,17 +184,16 @@ export class ShipmentList {
   }
 
   private createViewModel(result: MyShipmentsPage, filters: ShipmentListFilters): ShipmentListViewModel {
-    const filteredShipments = this.filterShipments(result.items, filters);
     const totalItems = result.totalItems;
     const totalPages = Math.max(result.totalPages, 1);
     const page = Math.min(Math.max(result.page, 1), totalPages);
     const start = (page - 1) * result.pageSize;
-    const state = result.items.length === 0 || filteredShipments.length === 0 ? 'empty' : 'success';
+    const state = result.items.length === 0 ? 'empty' : 'success';
 
     return {
       state,
       filters: { ...filters, page, pageSize: result.pageSize },
-      shipments: filteredShipments,
+      shipments: result.items,
       summary: {
         total: result.summary.total,
         air: result.summary.air,
@@ -198,38 +204,8 @@ export class ShipmentList {
       rangeStart: totalItems === 0 ? 0 : start + 1,
       rangeEnd: totalItems === 0 ? 0 : Math.min(start + result.items.length, totalItems),
       queryParams: this.buildQueryParams({ ...filters, page }),
-      message:
-        result.items.length === 0
-          ? 'No hay envíos para mostrar.'
-          : filteredShipments.length === 0
-            ? 'No hay envíos en esta página que coincidan con los filtros.'
-            : undefined,
+      message: result.items.length === 0 ? 'No hay envíos que coincidan con los filtros.' : undefined,
     };
-  }
-
-  private filterShipments(shipments: Shipment[], filters: ShipmentListFilters): Shipment[] {
-    const query = filters.query.toLowerCase();
-
-    return shipments.filter((shipment) => {
-      const searchableText = [
-        shipment.documentNumber,
-        shipment.client,
-        shipment.origin.country,
-        shipment.origin.city,
-        shipment.destination.country,
-        shipment.destination.city,
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(' ')
-        .toLowerCase();
-
-      return (
-        (!query || searchableText.includes(query)) &&
-        (!filters.operation || shipment.operationType === filters.operation) &&
-        (!filters.mode || shipment.transportMode === filters.mode) &&
-        (!filters.status || shipment.status === filters.status)
-      );
-    });
   }
 
   private getFiltersFromParams(params: ParamMap): ShipmentListFilters {
