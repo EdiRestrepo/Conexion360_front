@@ -31,7 +31,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-primary);
+  color: #0057b8;
   font-weight: 800;
   line-height: 1;
   text-decoration: none;
@@ -45,50 +45,78 @@
 
 .recent-card__link:hover,
 .recent-card__link:focus-visible {
-  color: var(--color-primary);
+  color: #0057b8;
   text-decoration: underline;
   outline-color: var(--color-secondary);
 }
 
 .m-s {
+  position: relative;
   display: grid;
   min-height: 98px;
   padding: 0;
   align-items: stretch;
+  overflow: hidden;
+}
+
+.m-s::after {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--color-border);
+  content: "";
+}
+
+.m-s::before {
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--color-border);
+  content: "";
 }
 
 .m-s > div {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: 50px minmax(0, 1fr);
+  align-content: stretch;
   width: 100%;
   height: 100%;
   gap: 0;
 }
 
 .m-s .metric-card__header {
-  display: grid;
-  place-items: center;
-  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  height: 50px;
   width: 100%;
-  padding: 0;
-  border-bottom: 1px solid var(--color-border);
+  padding: 0 0 2px;
+  border-bottom: 0;
+}
+
+.m-s .metric-card__header p {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  line-height: 1;
+  transform: translateY(-2px);
 }
 
 .ms {
   position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-height: 58px;
+  height: 100%;
+  min-height: 0;
 }
 
 .ms::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  background: var(--color-border);
-  content: "";
+  content: none;
 }
 
 .ms-i + span {
