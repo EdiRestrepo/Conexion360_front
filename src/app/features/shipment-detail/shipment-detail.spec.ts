@@ -159,6 +159,14 @@ describe('ShipmentDetail', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/shipments'], { queryParams: { query: 'Enka', page: '2', pageSize: '25' } });
   }));
 
+  it('should return to history when detail was opened from history', fakeAsync(() => {
+    setQueryParams({ from: 'history', query: 'Enka', page: '2', document: 'AWB-001', tab: 'summary' });
+    render();
+    clickButton('Volver');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/history'], { queryParams: { query: 'Enka', page: '2' } });
+  }));
+
   it('should render issue only when shipment has issue', fakeAsync(() => {
     getByIdSpy.and.returnValue(of(createShipment({ issue: { type: 'DELAY', comment: 'Retraso operativo.', date: '2026-01-06', resolved: false } })));
     fixture = TestBed.createComponent(ShipmentDetail);

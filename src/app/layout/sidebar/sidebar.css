@@ -80,6 +80,18 @@
   box-shadow: 0 8px 22px rgba(0, 184, 169, 0.26);
 }
 
+:host-context(.shell--detail-from-dashboard) .sidebar__link--active,
+:host-context(.shell--detail-from-history) .sidebar__link--active {
+  background: transparent;
+  box-shadow: none;
+}
+
+:host-context(.shell--detail-from-dashboard) .sidebar__link[href="/dashboard"],
+:host-context(.shell--detail-from-history) .sidebar__link[href="/history"] {
+  background: var(--color-sidebar-active);
+  box-shadow: 0 8px 22px rgba(0, 184, 169, 0.26);
+}
+
 .sidebar__link mat-icon {
   width: 22px;
   height: 22px;

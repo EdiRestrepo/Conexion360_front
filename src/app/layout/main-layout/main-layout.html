@@ -1,4 +1,9 @@
-<div class="shell" [class.shell--sidebar-collapsed]="sidebarCollapsed()">
+<div
+  class="shell"
+  [class.shell--sidebar-collapsed]="sidebarCollapsed()"
+  [class.shell--detail-from-dashboard]="detailOrigin() === 'dashboard'"
+  [class.shell--detail-from-history]="detailOrigin() === 'history'"
+>
   <div class="shell__sidebar-frame">
     <app-sidebar class="shell__sidebar" [session]="session()" [collapsed]="sidebarCollapsed()" (logout)="logout()" />
     <button

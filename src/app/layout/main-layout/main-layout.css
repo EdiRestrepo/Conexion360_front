@@ -123,6 +123,16 @@
     color: var(--color-secondary);
   }
 
+  .shell--detail-from-dashboard .shell__bottom-link--active,
+  .shell--detail-from-history .shell__bottom-link--active {
+    color: var(--color-text-muted);
+  }
+
+  .shell--detail-from-dashboard .shell__bottom-link[href="/dashboard"],
+  .shell--detail-from-history .shell__bottom-link[href="/history"] {
+    color: var(--color-secondary);
+  }
+
   .shell__bottom-link:focus-visible {
     outline: 2px solid var(--color-secondary);
     outline-offset: -2px;

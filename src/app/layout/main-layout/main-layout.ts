@@ -11,6 +11,8 @@ import { layoutNavItems } from '../layout-navigation';
 import { MobileNavigation } from '../mobile-navigation/mobile-navigation';
 import { Sidebar } from '../sidebar/sidebar';
 
+type NavigationOrigin = 'dashboard' | 'history' | 'shipments';
+
 @Component({
   selector: 'app-main-layout',
   imports: [AsyncPipe, Header, MatIconModule, MobileNavigation, RouterLink, RouterLinkActive, RouterOutlet, Sidebar],
@@ -27,6 +29,7 @@ export class MainLayout {
   protected readonly authError$ = this.authSession.authError$;
   protected readonly mobileNavigationOpen = signal(false);
   protected readonly sidebarCollapsed = signal(false);
+  protected readonly detailOrigin = signal<NavigationOrigin | null>(null);
   protected readonly bottomNavItems = layoutNavItems
     .filter((item) => item.route !== '/settings')
     .map((item) => ({
@@ -35,12 +38,16 @@ export class MainLayout {
     }));
 
   constructor() {
+    this.updateDetailOrigin();
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.closeMobileNavigation());
+      .subscribe(() => {
+        this.closeMobileNavigation();
+        this.updateDetailOrigin();
+      });
   }
 
   protected openMobileNavigation(): void {
@@ -57,5 +64,18 @@ export class MainLayout {
 
   protected logout(): void {
     this.authSession.logout().pipe(take(1)).subscribe();
+  }
+
+  private updateDetailOrigin(): void {
+    const tree = this.router.parseUrl(this.router.url);
+    const primarySegments = tree.root.children['primary']?.segments ?? [];
+    const isShipmentDetail = primarySegments.length === 2 && primarySegments[0].path === 'shipments';
+    const from = tree.queryParams['from'];
+
+    this.detailOrigin.set(isShipmentDetail && this.isNavigationOrigin(from) ? from : null);
+  }
+
+  private isNavigationOrigin(value: unknown): value is NavigationOrigin {
+    return value === 'dashboard' || value === 'history' || value === 'shipments';
   }
 }

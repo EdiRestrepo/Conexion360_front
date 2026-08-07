@@ -176,7 +176,12 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       return;
     }
 
-    void this.router.navigate(['/shipments'], { queryParams });
+    if (queryParams['from'] === 'history') {
+      void this.router.navigate(['/history'], { queryParams: this.getReturnQueryParams(queryParams) });
+      return;
+    }
+
+    void this.router.navigate(['/shipments'], { queryParams: this.getReturnQueryParams(queryParams) });
   }
 
   protected selectTab(tab: DetailTab): void {
@@ -685,6 +690,13 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
       }
       return result;
     }, {});
+  }
+
+  private getReturnQueryParams(queryParams: Params): Params {
+    const returnQueryParams = { ...queryParams };
+    delete returnQueryParams['from'];
+    delete returnQueryParams['document'];
+    return returnQueryParams;
   }
 
   private getShipmentFromHomeSearch(

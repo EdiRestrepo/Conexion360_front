@@ -212,7 +212,7 @@ export class ShipmentList {
       totalPages,
       rangeStart: totalItems === 0 ? 0 : start + 1,
       rangeEnd: totalItems === 0 ? 0 : Math.min(start + result.items.length, totalItems),
-      queryParams: this.buildQueryParams({ ...filters, page }),
+      queryParams: { ...this.buildQueryParams({ ...filters, page }), from: 'shipments' },
       message: result.items.length === 0 ? 'No hay envíos que coincidan con los filtros.' : undefined,
     };
   }

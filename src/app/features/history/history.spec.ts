@@ -119,6 +119,7 @@ describe('History', () => {
 
     expect(link.getAttribute('href')).toContain('/shipments/');
     expect(link.getAttribute('href')).toContain('query=Enka');
+    expect(link.getAttribute('href')).toContain('from=history');
   }));
 
   it('should render empty state when there are no matching results', fakeAsync(() => {

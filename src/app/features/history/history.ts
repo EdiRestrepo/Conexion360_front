@@ -194,7 +194,7 @@ export class History {
       totalPages,
       rangeStart: totalItems === 0 ? 0 : start + 1,
       rangeEnd: Math.min(start + filters.pageSize, totalItems),
-      queryParams: this.buildQueryParams({ ...filters, page }),
+      queryParams: { ...this.buildQueryParams({ ...filters, page }), from: 'history' },
       message: totalItems === 0 ? 'No hay envíos completados que coincidan con los filtros.' : undefined,
     };
   }

@@ -93,6 +93,16 @@
   outline: none;
 }
 
+:host-context(.shell--detail-from-dashboard) .mobile-nav__link--active,
+:host-context(.shell--detail-from-history) .mobile-nav__link--active {
+  background: transparent;
+}
+
+:host-context(.shell--detail-from-dashboard) .mobile-nav__link[href="/dashboard"],
+:host-context(.shell--detail-from-history) .mobile-nav__link[href="/history"] {
+  background: var(--color-secondary);
+}
+
 .mobile-nav__user {
   margin-top: auto;
   padding: 16px;
