@@ -18,7 +18,7 @@ import {
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
 import { ApiHistoryService } from '../../core/services/api-history.service';
-import { MyShipmentsPage } from '../../core/services/shipments-page.mapper';
+import { MyShipmentsPage } from '../../core/mappers/shipments-page.mapper';
 import type { HistoryFilters, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {

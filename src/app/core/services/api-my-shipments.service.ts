@@ -7,9 +7,9 @@ import { SearchFilters } from '../models/common.model';
 import { getShipmentStatusLabel } from '../utils/display-labels';
 import { Auth0Identity } from '../models/user.model';
 import { Auth0FacadeService } from './auth0-facade.service';
-import { MyShipmentsPage, mapShipmentsPageResponse } from './shipments-page.mapper';
+import { MyShipmentsPage, mapShipmentsPageResponse } from '../mappers/shipments-page.mapper';
 
-export type { MyShipmentsPage, MyShipmentsSummary } from './shipments-page.mapper';
+export type { MyShipmentsPage, MyShipmentsSummary } from '../mappers/shipments-page.mapper';
 
 @Injectable({
   providedIn: 'root',

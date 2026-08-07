@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, delay, map, of, throwError } from 'rxjs';
 
 import { Notification, NotificationPreference, NotificationType } from '../../core/models/notification.model';
 import { Shipment } from '../../core/models/shipment.model';
-import { NotificationDataSource } from '../../core/services/notification-data-source';
+import { NotificationDataSource } from '../../core/contracts/notification-data-source';
 import { getShipmentStatusLabel } from '../../core/utils/display-labels';
 import { mockShipments } from '../data/mock-shipments';
 

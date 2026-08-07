@@ -11,7 +11,7 @@ import {
   ShipmentStatus,
   TransportMode,
 } from '../../core/models/shipment.model';
-import { ShipmentDataSource } from '../../core/services/shipment-data-source';
+import { ShipmentDataSource } from '../../core/contracts/shipment-data-source';
 import { isTerminalShipmentStatus } from '../../core/utils/display-labels';
 import { mockShipments } from '../data/mock-shipments';
 

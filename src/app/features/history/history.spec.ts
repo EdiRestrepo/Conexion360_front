@@ -7,7 +7,7 @@ import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { SearchFilters } from '../../core/models/common.model';
 import { LogisticDates, OperationType, Shipment, TransportMode } from '../../core/models/shipment.model';
 import { ApiHistoryService } from '../../core/services/api-history.service';
-import { MyShipmentsPage } from '../../core/services/shipments-page.mapper';
+import { MyShipmentsPage } from '../../core/mappers/shipments-page.mapper';
 import { History } from './history';
 
 describe('History', () => {

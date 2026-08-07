@@ -244,8 +244,10 @@ Usar una arquitectura por funcionalidades:
 
 src/app/
   core/
+    contracts/
     guards/
     interceptors/
+    mappers/
     models/
     services/
     tokens/
@@ -365,16 +367,26 @@ algo sigue mockeado):
   `/myshipments/filterhistory`) con el mismo patrón. A diferencia de
   `ApiMyShipmentsService`, no admite filtro por estado (`State`); solo
   `ValueFilter`, `OperationType` y `ShipmentMode` como opcionales.
-- `mapShipmentsPageResponse` (`shipments-page.mapper.ts`): función compartida
-  que traduce la respuesta del backend (`dataResponse`/`meta`) al modelo
-  `MyShipmentsPage`. La usan tanto `ApiMyShipmentsService` como
-  `ApiHistoryService` porque ambos endpoints devuelven la misma forma de
-  respuesta; no duplicar este mapeo al conectar un endpoint nuevo con la
-  misma forma de respuesta.
-- `MockShipmentService` (implementa `ShipmentDataSource`): sigue en uso para
-  detalle del envío y reportes, mientras no exista integración con el backend
-  para esas pantallas.
-- `MockNotificationService`: sigue en uso para notificaciones.
+- `mapShipmentsPageResponse` (`core/mappers/shipments-page.mapper.ts`):
+  función compartida que traduce la respuesta del backend
+  (`dataResponse`/`meta`) al modelo `MyShipmentsPage`. La usan tanto
+  `ApiMyShipmentsService` como `ApiHistoryService` porque ambos endpoints
+  devuelven la misma forma de respuesta; no duplicar este mapeo al conectar
+  un endpoint nuevo con la misma forma de respuesta. Los mappers de
+  funciones puras (sin `@Injectable`) viven en `core/mappers/`, separados de
+  los servicios inyectables.
+- `MockShipmentService` (implementa `ShipmentDataSource`, definida en
+  `core/contracts/shipment-data-source.ts`): sigue en uso para detalle del
+  envío y reportes, mientras no exista integración con el backend para esas
+  pantallas.
+- `MockNotificationService` (implementa `NotificationDataSource`, definida
+  en `core/contracts/notification-data-source.ts`): sigue en uso para
+  notificaciones.
+
+Las interfaces/contratos de acceso a datos (`ShipmentDataSource`,
+`NotificationDataSource`) viven en `core/contracts/`, separadas de las
+implementaciones (`core/services/` para las reales, `mocks/services/` para
+las simuladas).
 
 Simular latencia usando RxJS en los servicios que sigan siendo mock.
 
