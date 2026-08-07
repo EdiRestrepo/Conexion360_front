@@ -26,7 +26,7 @@ describe('ShipmentList', () => {
   beforeEach(async () => {
     currentParams = {};
     queryParamSubject = new BehaviorSubject(convertToParamMap(currentParams));
-    searchSpy = jasmine.createSpy('search').and.returnValue(of(createPage(createShipments())));
+    searchSpy = jasmine.createSpy('search').and.returnValue(of(createApiPage(createApiShipments())));
 
     await TestBed.configureTestingModule({
       imports: [ShipmentList, NoopAnimationsModule],
@@ -109,7 +109,7 @@ describe('ShipmentList', () => {
 
   it('should paginate with 10 items by default and navigate pages', fakeAsync(() => {
     searchSpy.and.callFake((filters) =>
-      of(createPage(createPaginatedShipments(Number(filters.page ?? 1), Number(filters.pageSize ?? 10)), 12, Number(filters.page ?? 1), Number(filters.pageSize ?? 10))),
+      of(createApiPage(createPaginatedApiShipments(Number(filters.page ?? 1), Number(filters.pageSize ?? 10)), 12, Number(filters.page ?? 1), Number(filters.pageSize ?? 10))),
     );
     fixture = TestBed.createComponent(ShipmentList);
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
@@ -139,7 +139,7 @@ describe('ShipmentList', () => {
   }));
 
   it('should render dashes for unavailable dates', fakeAsync(() => {
-    searchSpy.and.returnValue(of(createPage([createShipment({ documentNumber: 'AWB-NODATE', logisticDates: {} })])));
+    searchSpy.and.returnValue(of(createApiPage([createApiShipment({ documentNumber: 'AWB-NODATE', logisticDates: {} })])));
     fixture = TestBed.createComponent(ShipmentList);
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
@@ -166,7 +166,7 @@ describe('ShipmentList', () => {
   }));
 
   it('should render an empty state when filters have no results', fakeAsync(() => {
-    searchSpy.and.returnValue(of(createPage([], 0, 1, 10)));
+    searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
     fixture = TestBed.createComponent(ShipmentList);
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
@@ -244,21 +244,21 @@ interface ShipmentInput extends Partial<Omit<Shipment, 'logisticDates'>> {
   logisticDates?: Partial<LogisticDates>;
 }
 
-function createShipments(): Shipment[] {
+function createApiShipments(): Shipment[] {
   return [
-    createShipment({ id: 'active-001', documentNumber: 'AWB-ACT-001', operationType: 'IMPO', transportMode: 'AIR', status: 'IN_TRANSIT', client: 'Enka' }),
-    createShipment({ id: 'active-002', documentNumber: 'HBL-ACT-002', operationType: 'EXPO', transportMode: 'SEA', status: 'WITH_ISSUE', client: 'Nutresa' }),
-    createShipment({ id: 'active-003', documentNumber: 'AWB-ACT-003', operationType: 'IMPO', transportMode: 'AIR', status: 'PENDING', client: 'Postobon' }),
-    createShipment({ id: 'delivered-001', documentNumber: 'AWB-DEL-001', status: 'DELIVERED' }),
-    createShipment({ id: 'issue-001', documentNumber: 'HBL-ISS-001', status: 'WITH_ISSUE', transportMode: 'SEA' }),
+    createApiShipment({ id: 'active-001', documentNumber: 'AWB-ACT-001', operationType: 'IMPO', transportMode: 'AIR', status: 'IN_TRANSIT', client: 'Enka' }),
+    createApiShipment({ id: 'active-002', documentNumber: 'HBL-ACT-002', operationType: 'EXPO', transportMode: 'SEA', status: 'WITH_ISSUE', client: 'Nutresa' }),
+    createApiShipment({ id: 'active-003', documentNumber: 'AWB-ACT-003', operationType: 'IMPO', transportMode: 'AIR', status: 'PENDING', client: 'Postobon' }),
+    createApiShipment({ id: 'delivered-001', documentNumber: 'AWB-DEL-001', status: 'DELIVERED' }),
+    createApiShipment({ id: 'issue-001', documentNumber: 'HBL-ISS-001', status: 'WITH_ISSUE', transportMode: 'SEA' }),
   ];
 }
 
-function createPaginatedShipments(page: number, pageSize: number): Shipment[] {
+function createPaginatedApiShipments(page: number, pageSize: number): Shipment[] {
   const start = (page - 1) * pageSize;
 
   return Array.from({ length: 12 }, (_, index) =>
-    createShipment({
+    createApiShipment({
       id: `active-page-${index + 1}`,
       documentNumber: `AWB-PAGE-${(index + 1).toString().padStart(3, '0')}`,
       client: index % 2 === 0 ? 'Enka' : 'Nutresa',
@@ -267,7 +267,7 @@ function createPaginatedShipments(page: number, pageSize: number): Shipment[] {
   ).slice(start, start + pageSize);
 }
 
-function createPage(items: Shipment[], totalItems = items.length, page = 1, pageSize = 10): MyShipmentsPage {
+function createApiPage(items: Shipment[], totalItems = items.length, page = 1, pageSize = 10): MyShipmentsPage {
   return {
     items,
     page,
@@ -285,7 +285,7 @@ function createPage(items: Shipment[], totalItems = items.length, page = 1, page
   };
 }
 
-function createShipment(input: ShipmentInput = {}): Shipment {
+function createApiShipment(input: ShipmentInput = {}): Shipment {
   return {
     id: 'active-base',
     documentNumber: 'AWB-BASE-001',
