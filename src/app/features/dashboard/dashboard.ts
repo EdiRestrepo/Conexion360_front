@@ -76,7 +76,7 @@ export class Dashboard {
     }
 
     this.searchState.set('loading');
-    this.searchMessage.set('Buscando documento de transporte...');
+    this.searchMessage.set('');
 
     this.shipmentService.search({ query, page: 1, pageSize: 30 }).pipe(take(1)).subscribe({
       next: (result) => {

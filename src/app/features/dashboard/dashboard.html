@@ -21,7 +21,13 @@
     </form>
   </header>
 
-  @if (searchMessage()) {
+  @if (searchState() === 'loading') {
+    <section id="dashboard-search-message" class="surface-card search-loading" role="status" aria-live="polite" aria-busy="true">
+      <span aria-hidden="true"></span>
+      <strong>Buscando envío...</strong>
+      <small>Consultando documento de transporte</small>
+    </section>
+  } @else if (searchMessage()) {
     <p id="dashboard-search-message" class="dashboard-message" role="status">{{ searchMessage() }}</p>
   } @else {
     <span id="dashboard-search-message" class="sr-only">Ingrese un documento para consultar envíos.</span>
@@ -38,7 +44,7 @@
     </section>
   }
 
-  @if (searchResults().length > 0) {
+  @if (searchState() !== 'loading' && searchResults().length > 0) {
     <section class="surface-card dashboard-search-results" aria-label="Resultado de búsqueda por documento">
       @for (shipment of searchResults(); track shipment.id) {
         <a class="dashboard-search-result" [routerLink]="['/shipments', shipment.id]" [queryParams]="{ document: shipment.documentNumber, from: 'dashboard' }">

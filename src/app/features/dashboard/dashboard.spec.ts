@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
 import { DashboardMetrics } from '../../core/models/shipment.model';
@@ -112,6 +112,27 @@ describe('Dashboard', () => {
     expect(getText()).toContain('Búsquedas recientes');
   }));
 
+  it('should show a compact loader while search is pending', fakeAsync(() => {
+    const searchResult$ = new Subject<{ items: HomeShipmentSummary[]; page: number; pageSize: number; totalItems: number; totalPages: number }>();
+    searchSpy.and.returnValue(searchResult$);
+    fixture.detectChanges();
+    tick();
+    component.searchControl.setValue('AWB-001');
+    component.searchShipment();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('Buscando envío...');
+    expect(getText()).not.toContain('HBL-LOADER');
+
+    searchResult$.next({ items: [createShipment({ id: 'loader-001', documentNumber: 'HBL-LOADER', transportMode: 'SEA' })], page: 1, pageSize: 30, totalItems: 1, totalPages: 1 });
+    searchResult$.complete();
+    tick();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('HBL-LOADER');
+    expect(getText()).not.toContain('Buscando envío...');
+  }));
+
   it('should render all search results in dashboard when search has multiple results', fakeAsync(() => {
     searchSpy.and.returnValue(of({ items: createShipments().slice(0, 2), page: 1, pageSize: 30, totalItems: 2, totalPages: 1 }));
     fixture.detectChanges();
@@ -209,14 +230,25 @@ function createDashboardMetrics(): DashboardMetrics {
   };
 }
 
+function createShipment(overrides: Partial<HomeShipmentSummary> = {}): HomeShipmentSummary {
+  return {
+    id: 'shipment-001',
+    documentNumber: 'AWB-001',
+    operationType: 'IMPO',
+    transportMode: 'AIR',
+    status: 'IN_TRANSIT',
+    origin: { country: 'México' },
+    destination: { country: 'Colombia' },
+    ...overrides,
+  };
+}
+
 function createShipments(): HomeShipmentSummary[] {
-  return Array.from({ length: 5 }, (_, index) => ({
+  return Array.from({ length: 5 }, (_, index) => createShipment({
     id: `shipment-00${index + 1}`,
     documentNumber: `AWB-00${index + 1}`,
     operationType: index % 2 === 0 ? 'IMPO' : 'EXPO',
     transportMode: index % 2 === 0 ? 'AIR' : 'SEA',
     status: index === 0 ? 'IN_TRANSIT' : 'DELIVERED',
-    origin: { country: 'México' },
-    destination: { country: 'Colombia' },
   }));
 }

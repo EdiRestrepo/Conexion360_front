@@ -166,7 +166,7 @@ export class ApiHomeService {
   private toShipment(value: unknown, index: number, useDocumentFallback = true): HomeShipmentSummary {
     const record = this.asRecord(value);
     const operationType = this.toOperationType(this.readString(record, ['operationType', 'tipoOperacion', 'operacion', 'operation']));
-    const transportMode = this.toTransportMode(this.readString(record, ['transportMode', 'modalidad', 'modalidadTransporte', 'mode']));
+    const transportMode = this.toTransportMode(this.readString(record, ['transportMode', 'shipmentMode', 'modalidad', 'modalidadTransporte', 'mode']));
     const status = this.toShipmentStatus(this.readString(record, ['status', 'estado', 'estadoLogistico']));
     const documentNumber =
       this.readString(record, [

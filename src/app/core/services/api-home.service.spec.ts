@@ -68,7 +68,7 @@ describe('ApiHomeService', () => {
             id: '1',
             nroDocumento: 'AWB-001',
             tipoOperacion: 'IMPO',
-            modalidad: 'AIR',
+            shipmentMode: 'AIR',
             estado: 'En transito',
             origen: 'Mexico',
             destino: 'Colombia',
@@ -77,7 +77,7 @@ describe('ApiHomeService', () => {
             id: '2',
             nroDocumento: 'HBL-002',
             tipoOperacion: 'EXPO',
-            modalidad: 'SEA',
+            shipmentMode: 'SEA',
             estado: 'Con novedad',
             origen: 'Colombia',
             destino: 'Espana',
@@ -106,7 +106,7 @@ describe('ApiHomeService', () => {
             id: 10,
             nroDocumento: 'HBL-010',
             tipoOperacion: 'Exportacion',
-            modalidad: 'SEA',
+            shipmentMode: 'SEA',
             estado: 'Entregado',
             origen: 'Colombia',
             destino: 'Alemania',
@@ -121,6 +121,7 @@ describe('ApiHomeService', () => {
       expect(result.totalItems).toBe(1);
       expect(result.items[0].id).toBe('157');
       expect(result.items[0].documentNumber).toBe('9YJB1QX6');
+      expect(result.items[0].transportMode).toBe('SEA');
       expect(result.items[0].origin.country).toBe('Colombia');
       expect(result.items[0].destination.country).toBe('Mexico');
     });
@@ -140,7 +141,7 @@ describe('ApiHomeService', () => {
         destino: 'Mexico',
         estado: 'En transito',
         tipoOperacion: 'IMPO',
-        modalidad: 'AIR',
+        shipmentMode: 'SEA',
       },
     });
   });
