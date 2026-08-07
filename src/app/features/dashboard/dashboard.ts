@@ -160,6 +160,10 @@ export class Dashboard {
         icon: 'call_received',
         detail: `${metrics.totalImports} import · ${metrics.totalExports} export`,
         tone: 'secondary',
+        items: [
+          { label: 'Importación', value: metrics.totalImports, icon: 'south_west' },
+          { label: 'Exportación', value: metrics.totalExports, icon: 'north_east' },
+        ],
       },
       {
         label: 'Modalidad',
@@ -167,6 +171,10 @@ export class Dashboard {
         icon: 'flight',
         detail: `${metrics.totalAir} aéreos · ${metrics.totalSea} marítimos`,
         tone: 'primary',
+        items: [
+          { label: 'Aérea', value: metrics.totalAir, icon: 'flight' },
+          { label: 'Marítima', value: metrics.totalSea, icon: 'directions_boat' },
+        ],
       },
       {
         label: 'Estado',
