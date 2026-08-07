@@ -185,16 +185,20 @@ export class Dashboard {
   }
 
   private createOperationDistribution(metrics: DashboardMetrics): DashboardDistributionItem[] {
+    const operationTotal = metrics.totalImports + metrics.totalExports;
+
     return [
-      this.createDistributionItem('EXPO — Exportación', metrics.totalExports, metrics.totalShipments, 'north_east'),
-      this.createDistributionItem('IMPO — Importación', metrics.totalImports, metrics.totalShipments, 'south_west'),
+      this.createDistributionItem('IMPO — Importación', metrics.totalImports, operationTotal, 'south_west'),
+      this.createDistributionItem('EXPO — Exportación', metrics.totalExports, operationTotal, 'north_east'),
     ];
   }
 
   private createModeDistribution(metrics: DashboardMetrics): DashboardDistributionItem[] {
+    const modeTotal = metrics.totalAir + metrics.totalSea;
+
     return [
-      this.createDistributionItem('AIR — Aéreo', metrics.totalAir, metrics.totalShipments, 'flight'),
-      this.createDistributionItem('SEA — Marítimo', metrics.totalSea, metrics.totalShipments, 'directions_boat'),
+      this.createDistributionItem('AIR — Aéreo', metrics.totalAir, modeTotal, 'flight'),
+      this.createDistributionItem('SEA — Marítimo', metrics.totalSea, modeTotal, 'directions_boat'),
     ];
   }
 

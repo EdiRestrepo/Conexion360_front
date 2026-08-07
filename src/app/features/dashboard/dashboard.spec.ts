@@ -82,7 +82,9 @@ describe('Dashboard', () => {
 
     expect(progressbars.length).toBe(4);
     expect(progressbars[0].getAttribute('aria-valuenow')).toBe('50');
+    expect(progressbars[1].getAttribute('aria-valuenow')).toBe('50');
     expect(progressbars[2].getAttribute('aria-valuenow')).toBe('40');
+    expect(progressbars[3].getAttribute('aria-valuenow')).toBe('60');
   }));
 
   it('should render at least five recent shipments with detail links', fakeAsync(() => {
