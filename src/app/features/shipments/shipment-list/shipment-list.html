@@ -6,7 +6,6 @@
 
   <section class="shipments-toolbar" aria-label="Filtros de envíos">
     <label class="shipments-toolbar__search">
-      <span class="sr-only">Buscar envíos</span>
       <span class="search-field">
         <mat-icon aria-hidden="true">search</mat-icon>
         <input
@@ -19,7 +18,6 @@
     </label>
 
     <label>
-      <span class="sr-only">Filtrar por operación</span>
       <select [formControl]="operationControl" aria-label="Filtrar por operación">
         <option value="">IMPO + EXPO</option>
         <option value="IMPO">Importaciones</option>
@@ -28,7 +26,6 @@
     </label>
 
     <label>
-      <span class="sr-only">Filtrar por modalidad</span>
       <select [formControl]="modeControl" aria-label="Filtrar por modalidad">
         <option value="">AIR + SEA</option>
         <option value="AIR">Aéreo</option>
@@ -37,7 +34,6 @@
     </label>
 
     <label>
-      <span class="sr-only">Filtrar por estado</span>
       <select [formControl]="statusControl" aria-label="Filtrar por estado">
         <option value="">Todos los estados</option>
         @for (status of statusOptions; track status) {
