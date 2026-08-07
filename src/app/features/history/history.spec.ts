@@ -94,7 +94,7 @@ describe('History', () => {
     render();
 
     expect(getText()).toContain('Página 2 de 2');
-    expect(getText()).toContain('Mostrando 11-12 de 12');
+    expect(getText()).toContain('11-12 de 12');
   }));
 
   it('should update query params when page size changes', fakeAsync(() => {
@@ -159,7 +159,7 @@ describe('History', () => {
 
   function clickButton(label: string): void {
     const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((item) =>
-      item.textContent?.includes(label),
+      item.textContent?.includes(label) || item.getAttribute('aria-label')?.includes(label) || item.title.includes(label),
     );
     if (!button) {
       throw new Error(`No se encontró el botón ${label}`);

@@ -184,23 +184,31 @@
         </div>
 
         <footer class="history-pagination" aria-label="Paginación de historial">
-          <p>
-            Mostrando {{ viewModel.rangeStart }}-{{ viewModel.rangeEnd }} de {{ viewModel.totalItems }} · Página
-            {{ viewModel.filters.page }} de {{ viewModel.totalPages }}
-          </p>
-          <label>
-            <span>Por página</span>
-            <select [formControl]="pageSizeControl" aria-label="Resultados por página">
-              @for (size of pageSizeOptions; track size) {
-                <option [value]="size">{{ size }}</option>
-              }
-            </select>
-          </label>
+          <div class="history-pagination__meta">
+            <label>
+              <span>Filas por página</span>
+              <select [formControl]="pageSizeControl" aria-label="Resultados por página">
+                @for (size of pageSizeOptions; track size) {
+                  <option [value]="size">{{ size }}</option>
+                }
+              </select>
+            </label>
+            <p>{{ viewModel.rangeStart }}-{{ viewModel.rangeEnd }} de {{ viewModel.totalItems }}</p>
+          </div>
           <div class="history-pagination__buttons">
-            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(1)">Primera</button>
-            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(viewModel.filters.page - 1)">Anterior</button>
-            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.filters.page + 1)">Siguiente</button>
-            <button mat-stroked-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.totalPages)">Última</button>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(1)" aria-label="Primera página" title="Primera página">
+              <mat-icon aria-hidden="true">first_page</mat-icon>
+            </button>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(viewModel.filters.page - 1)" aria-label="Página anterior" title="Página anterior">
+              <mat-icon aria-hidden="true">chevron_left</mat-icon>
+            </button>
+            <span class="history-pagination__page">Página {{ viewModel.filters.page }} de {{ viewModel.totalPages }}</span>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.filters.page + 1)" aria-label="Página siguiente" title="Página siguiente">
+              <mat-icon aria-hidden="true">chevron_right</mat-icon>
+            </button>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.totalPages)" aria-label="Última página" title="Última página">
+              <mat-icon aria-hidden="true">last_page</mat-icon>
+            </button>
           </div>
         </footer>
       }

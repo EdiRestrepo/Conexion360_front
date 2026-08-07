@@ -132,14 +132,14 @@ describe('ShipmentList', () => {
     render();
 
     expect(getTableRows().length).toBe(10);
-    expect(getText()).toContain('Mostrando 1-10 de 12');
+    expect(getText()).toContain('1-10 de 12');
 
-    clickButton('Siguiente');
+    clickButton('Página siguiente');
     tick();
     fixture.detectChanges();
 
     expect(getTableRows().length).toBe(2);
-    expect(getText()).toContain('Mostrando 11-12 de 12');
+    expect(getText()).toContain('11-12 de 12');
   }));
 
   it('should reset page when page size changes', fakeAsync(() => {
@@ -246,7 +246,7 @@ describe('ShipmentList', () => {
 
   function clickButton(label: string): void {
     const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((item) =>
-      item.textContent?.includes(label),
+      item.textContent?.includes(label) || item.getAttribute('aria-label')?.includes(label) || item.title.includes(label),
     );
     if (!button) {
       throw new Error(`No se encontró el botón ${label}`);
