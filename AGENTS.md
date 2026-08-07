@@ -32,16 +32,37 @@ Frontend:
 - Leaflet y OpenStreetMap únicamente para mapas
 - CSS o SCSS responsive
 
-Backend futuro:
+Backend:
 
-- C# .NET 8
+- C# .NET
 - API REST
-- PostgreSQL
-- JWT y OAuth 2.0
+- Repositorio en `C:\TCCWebApiCore\Apis`
 
-En esta etapa no existe backend. Toda la aplicación debe funcionar con datos
-simulados, pero debe quedar preparada para reemplazar los servicios mock por
-servicios HTTP sin modificar los componentes visuales.
+El backend ya existe y ya está parcialmente integrado. No toda la aplicación
+funciona con datos simulados.
+
+Integrado con el backend real:
+
+- Dashboard / Inicio (`ApiHomeService`, endpoints `/home/totals` y
+  `/home/filters`).
+- Mis envíos (`ApiMyShipmentsService`, endpoints `/myshipments/allshipments`
+  y `/myshipments/filterShipments`).
+
+Pendiente de integrar, aunque el backend ya expone endpoints listos para
+usarse:
+
+- Historial (actualmente sigue usando `MockShipmentService`).
+
+Todavía con datos simulados, sin endpoints de backend confirmados:
+
+- Detalle del envío (pestañas más allá del resumen)
+- Reportes
+- Notificaciones
+- Ajustes
+
+Las pantallas que aún no tienen backend deben seguir funcionando con
+servicios mock, pero preparadas para reemplazar esos mocks por servicios HTTP
+sin modificar los componentes visuales.
 
 ## 3. Fuentes funcionales y visuales
 
@@ -328,36 +349,40 @@ Los componentes no deben importar directamente archivos mock.
 
 Todo acceso a datos debe realizarse mediante servicios.
 
-Definir contratos o abstracciones como:
+Estado real de los servicios (verificar contra el código antes de asumir que
+algo sigue mockeado):
 
-- UserProfileDataSource
-- ShipmentDataSource
-- NotificationDataSource
-- ReportDataSource
-- UserDataSource
+- `Auth0FacadeService`: identidad y sesión de Auth0. Real, no simulado.
+- `AuthSessionService`: expone la sesión (`AuthSession`) derivada
+  directamente de `Auth0Identity`, incluyendo el rol real asignado en Auth0.
+  No existe `MockUserProfileService` ni `UserProfileDataSource`: el perfil
+  complementario ya no se simula, viene de Auth0.
+- `ApiHomeService`: real, consume el backend (`/home/totals`,
+  `/home/filters`) usando `idClient` (documento) y `role` obtenidos de la
+  identidad de Auth0 como parámetros.
+- `ApiMyShipmentsService`: real, consume el backend
+  (`/myshipments/allshipments`, `/myshipments/filterShipments`) con el mismo
+  patrón de identidad Auth0 + backend.
+- `MockShipmentService` (implementa `ShipmentDataSource`): sigue en uso para
+  detalle del envío, historial y reportes, mientras no exista integración con
+  el backend para esas pantallas.
+- `MockNotificationService`: sigue en uso para notificaciones.
 
-Implementar inicialmente:
-
-- Auth0FacadeService
-- MockUserProfileService
-- MockShipmentService
-- MockNotificationService
-- MockReportService
-- MockUserService
-
-Simular latencia usando RxJS.
+Simular latencia usando RxJS en los servicios que sigan siendo mock.
 
 Los servicios deben devolver `Observable`.
 
-Preparar la arquitectura para reemplazarlos posteriormente por:
-
-- ApiAuthService
-- ApiShipmentService
-- ApiNotificationService
-- ApiReportService
-- ApiUserService
+Al conectar una pantalla nueva al backend real, seguir el patrón ya
+establecido por `ApiHomeService` y `ApiMyShipmentsService`: inyectar
+`Auth0FacadeService` para obtener `idClient`/`role`, llamar al endpoint con
+`HttpClient`, y mapear la respuesta a los modelos de dominio existentes sin
+cambiar los componentes visuales.
 
 ## 9. Datos simulados
+
+Esta sección aplica únicamente a las pantallas que todavía usan servicios
+mock (ver sección 8). El dashboard y "Mis envíos" ya consumen datos reales
+del backend y no deben tratarse como simulados.
 
 Construir los datos simulados a partir de la sábana de datos.
 
@@ -385,7 +410,7 @@ Los datos deben incluir casos variados:
 Los indicadores del dashboard y reportes deben calcularse desde los datos mock,
 no escribirse como valores fijos en el HTML.
 
-## 10. Autenticación con Auth0 y perfil simulado
+## 10. Autenticación y perfil con Auth0
 
 La aplicación utiliza Auth0 como proveedor externo de identidad.
 
@@ -399,17 +424,17 @@ Auth0 gestiona actualmente:
 - Verificación de correo
 - Sesión de autenticación
 - Cierre de sesión
-- Identidad básica del usuario
+- Identidad del usuario, incluyendo el perfil complementario y el rol
 
-En esta etapa todavía no existe una integración con el backend propio en
-C# .NET 8 ni una persistencia real en PostgreSQL para los datos internos de
-la aplicación.
+El perfil complementario de Conexion360 (rol, documento, empresa, nombre) ya
+no se simula en el frontend. Se obtiene directamente de la identidad
+autenticada de Auth0 (`Auth0Identity`) a través de `Auth0FacadeService` y se
+expone mediante `AuthSessionService`. No existe `MockUserProfileService` ni
+`UserProfileDataSource` en el código.
 
-Por este motivo, debe diferenciarse entre:
+### Identidad, autenticación y perfil
 
-### Identidad y autenticación
-
-Son administradas por Auth0.
+Son administrados por Auth0.
 
 Angular no debe:
 
@@ -419,36 +444,21 @@ Angular no debe:
 - Crear tokens propios
 - Persistir secretos
 - Reemplazar Auth0 con autenticación mock
+- Simular el perfil o el rol del usuario cuando ya están disponibles en la
+  identidad de Auth0
 
-### Perfil complementario de Conexion360
+Roles reales (configurados en el tenant de Auth0, no son valores simulados):
 
-Mientras no exista backend, los datos propios de la aplicación se gestionarán
-de forma simulada en el frontend.
+- ADMIN — admin
+- ANALISTAOPE — analista operativo
+- ANALISTASAC — analista de servicio al cliente
+- CLIENT — cliente
 
-Datos complementarios:
+Estos roles reemplazan cualquier referencia previa a `CLIENT / OPERATOR /
+ADMIN` como roles simulados. Los guards de rol (`roleGuard`) deben validar
+contra estos valores reales.
 
-- Identificador de Auth0
-- Nombre completo
-- Empresa
-- Correo electrónico
-- Teléfono
-- Rol
-- Estado del perfil
-- Preferencias de notificación
-- Fecha de creación simulada
-
-Roles iniciales:
-
-- CLIENT
-- OPERATOR
-- ADMIN
-
-El perfil complementario podrá mantenerse temporalmente mediante un servicio
-mock y almacenamiento local controlado.
-
-Este almacenamiento es únicamente para fines de desarrollo y prototipo.
-
-No debe incluir:
+No debe incluirse en almacenamiento local ni en logs:
 
 - Contraseñas
 - Tokens de Auth0
@@ -458,27 +468,16 @@ No debe incluir:
 
 ## Servicios de autenticación y perfil
 
-La arquitectura debe separar las responsabilidades:
+La arquitectura separa las responsabilidades:
 
-- Auth0FacadeService:
-  encapsula el inicio de sesión, registro, logout, estado de autenticación y
-  lectura de la identidad básica proporcionada por Auth0.
-
-- UserProfileDataSource:
-  contrato para consultar y actualizar los datos complementarios del usuario.
-
-- MockUserProfileService:
-  implementación temporal del perfil mientras no exista backend.
-
-En el futuro, MockUserProfileService será reemplazado por:
-
-- ApiUserProfileService
-
-Este servicio consumirá una API REST desarrollada en C# .NET 8 y almacenará
-los perfiles en PostgreSQL.
+- `Auth0FacadeService`: encapsula el inicio de sesión, registro, logout,
+  estado de autenticación y lectura de la identidad completa (incluyendo rol,
+  documento y empresa) proporcionada por Auth0.
+- `AuthSessionService`: deriva la sesión (`AuthSession`) de esa identidad
+  para consumo del resto de la aplicación.
 
 Los componentes no deben depender directamente de localStorage ni del SDK de
-Auth0. Deben consumir servicios o fachadas.
+Auth0. Deben consumir `AuthSessionService` o `Auth0FacadeService`.
 
 ## Flujo temporal de registro
 
@@ -499,21 +498,18 @@ Auth0. Deben consumir servicios o fachadas.
    - verificación
    - recuperación de acceso
 
-5. Al regresar a Angular, la aplicación obtiene la identidad autenticada.
+5. Al regresar a Angular, la aplicación obtiene la identidad autenticada,
+   incluyendo el perfil complementario y el rol reales gestionados en Auth0.
 
-6. Angular asocia esa identidad con el perfil complementario simulado.
-
-7. El usuario accede al dashboard.
-
-Cuando el backend esté disponible, el paso 6 deberá realizarse mediante una
-API REST.
+6. El usuario accede al dashboard, que consulta datos reales del backend
+   (`ApiHomeService`) usando esa identidad.
 
 ## Rutas y protección
 
 Requisitos:
 
 - Rutas privadas protegidas mediante el estado de autenticación de Auth0
-- Control de acceso por rol basado temporalmente en el perfil simulado
+- Control de acceso por rol basado en el rol real asignado en Auth0
 - Cierre de sesión mediante Auth0
 - Redirección segura después del login
 - Manejo de callback
@@ -521,18 +517,20 @@ Requisitos:
 - Ruta para perfil incompleto
 - No confiar únicamente en ocultar elementos visuales para controlar permisos
 
-## Usuarios y roles simulados
+## Usuarios y roles
 
 No crear usuarios con contraseña dentro de Angular.
 
-Los roles pueden asignarse temporalmente en el perfil simulado para validar
-las funcionalidades:
+Los roles se asignan en Auth0 (tenant del proyecto, User Management → Roles)
+y se validan en Angular a partir de la identidad autenticada:
 
-- CLIENT
-- OPERATOR
 - ADMIN
+- ANALISTAOPE
+- ANALISTASAC
+- CLIENT
 
-La simulación de roles no reemplaza la autenticación de Auth0.
+Angular no gestiona ni simula la asignación de roles; solo los consume desde
+la identidad de Auth0.
 
 ## Seguridad
 
