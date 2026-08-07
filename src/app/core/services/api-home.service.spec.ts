@@ -39,7 +39,7 @@ describe('ApiHomeService', () => {
     httpMock.verify();
   });
 
-  it('should request home totals with Auth0 document and role', () => {
+  it('should request home totals with Auth0 document', () => {
     service.getDashboardMetrics().subscribe((metrics) => {
       expect(metrics.totalShipments).toBe(105);
       expect(metrics.totalImports).toBe(51);
@@ -53,7 +53,7 @@ describe('ApiHomeService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8110357412');
-    expect(request.request.params.get('role')).toBe('CLIENT');
+    expect(request.request.params.has('role')).toBe(false);
 
     request.flush({
       dataResponse: {
@@ -198,7 +198,7 @@ describe('ApiHomeService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8110357412');
-    expect(request.request.params.get('role')).toBe('CLIENT');
+    expect(request.request.params.has('role')).toBe(false);
     expect(request.request.params.get('filterValue')).toBe('9YJB1QX6');
 
     request.flush({
@@ -221,7 +221,7 @@ describe('ApiHomeService', () => {
     });
 
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/filters`);
-    expect(request.request.params.get('role')).toBe('CLIENT');
+    expect(request.request.params.has('role')).toBe(false);
 
     request.flush({
       dataResponse: {

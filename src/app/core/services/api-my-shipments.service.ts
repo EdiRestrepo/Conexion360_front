@@ -57,7 +57,6 @@ export class ApiMyShipmentsService {
 
     const params = new HttpParams()
       .set('idClient', identity.document ?? '')
-      .set('role', identity.roles[0] ?? '')
       .set('page', String(page))
       .set('size', String(pageSize));
 

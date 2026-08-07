@@ -358,11 +358,12 @@ algo sigue mockeado):
   No existe `MockUserProfileService` ni `UserProfileDataSource`: el perfil
   complementario ya no se simula, viene de Auth0.
 - `ApiHomeService`: real, consume el backend (`/home/totals`,
-  `/home/filters`) usando `idClient` (documento) y `role` obtenidos de la
-  identidad de Auth0 como parámetros.
+  `/home/filters`) usando `idClient` (documento) obtenido de la identidad de
+  Auth0 como parámetro. El rol ya no se envía por parámetro: el backend lo
+  obtiene del token JWT (`Authorization: Bearer`).
 - `ApiMyShipmentsService`: real, consume el backend
   (`/myshipments/allshipments`, `/myshipments/filterShipments`) con el mismo
-  patrón de identidad Auth0 + backend.
+  patrón: `idClient` como parámetro, rol tomado del token por el backend.
 - `MockShipmentService` (implementa `ShipmentDataSource`): sigue en uso para
   detalle del envío, historial y reportes, mientras no exista integración con
   el backend para esas pantallas.
@@ -374,9 +375,11 @@ Los servicios deben devolver `Observable`.
 
 Al conectar una pantalla nueva al backend real, seguir el patrón ya
 establecido por `ApiHomeService` y `ApiMyShipmentsService`: inyectar
-`Auth0FacadeService` para obtener `idClient`/`role`, llamar al endpoint con
-`HttpClient`, y mapear la respuesta a los modelos de dominio existentes sin
-cambiar los componentes visuales.
+`Auth0FacadeService` para obtener `idClient`, llamar al endpoint con
+`HttpClient` (el token de Auth0 va en la cabecera `Authorization` y el
+backend deriva el rol de ahí, no se envía como parámetro), y mapear la
+respuesta a los modelos de dominio existentes sin cambiar los componentes
+visuales.
 
 ## 9. Datos simulados
 

@@ -85,10 +85,7 @@ export class ApiHomeService {
   }
 
   private createHomeParams(identity: Auth0Identity): HttpParams {
-    const params = new HttpParams().set('idClient', identity.document ?? '');
-    const role = identity.roles[0];
-
-    return role ? params.set('role', role) : params;
+    return new HttpParams().set('idClient', identity.document ?? '');
   }
 
   private toHomeDashboardData(response: unknown): HomeDashboardData {

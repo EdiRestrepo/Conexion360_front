@@ -39,7 +39,7 @@ describe('ApiMyShipmentsService', () => {
     httpMock.verify();
   });
 
-  it('should request backend shipments with Auth0 document, role and pagination', () => {
+  it('should request backend shipments with Auth0 document and pagination', () => {
     service.search({ page: 1, pageSize: 10 }).subscribe((result) => {
       expect(result.totalItems).toBe(107);
       expect(result.totalPages).toBe(6);
@@ -58,7 +58,7 @@ describe('ApiMyShipmentsService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8909006089');
-    expect(request.request.params.get('role')).toBe('CLIENT');
+    expect(request.request.params.has('role')).toBe(false);
     expect(request.request.params.get('page')).toBe('1');
     expect(request.request.params.get('size')).toBe('10');
 
@@ -109,7 +109,7 @@ describe('ApiMyShipmentsService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8909006089');
-    expect(request.request.params.get('role')).toBe('CLIENT');
+    expect(request.request.params.has('role')).toBe(false);
     expect(request.request.params.get('page')).toBe('1');
     expect(request.request.params.get('size')).toBe('10');
     expect(request.request.params.get('ValueFilter')).toBe('China');
