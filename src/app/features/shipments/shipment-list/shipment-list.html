@@ -7,12 +7,15 @@
   <section class="surface-card shipments-toolbar" aria-label="Filtros de envíos">
     <label class="shipments-toolbar__search">
       <span>Buscar</span>
-      <input
-        type="search"
-        [formControl]="searchControl"
-        placeholder="HBL, AWB, MBL, cliente, origen o destino"
-        aria-label="Buscar envíos"
-      />
+      <span class="search-field">
+        <mat-icon aria-hidden="true">search</mat-icon>
+        <input
+          type="search"
+          [formControl]="searchControl"
+          placeholder="HBL, AWB, MBL, cliente, origen o destino"
+          aria-label="Buscar envíos"
+        />
+      </span>
     </label>
 
     <label>

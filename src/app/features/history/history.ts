@@ -24,7 +24,6 @@ const defaultFilters: HistoryFilters = {
   query: '',
   operation: '',
   mode: '',
-  status: '',
   page: 1,
   pageSize: 10,
 };
@@ -42,15 +41,6 @@ const initialViewModel: HistoryViewModel = {
 };
 
 const pageSizeOptions = [10, 25, 50] as const;
-const statusOptions: ShipmentStatus[] = [
-  'PENDING',
-  'ORIGIN_CUSTOMS',
-  'IN_TRANSIT',
-  'DESTINATION_CUSTOMS',
-  'DELIVERED',
-  'WITH_ISSUE',
-];
-
 @Component({
   selector: 'app-history',
   imports: [AsyncPipe, MatButtonModule, MatIconModule, ReactiveFormsModule, RouterLink],
@@ -67,10 +57,8 @@ export class History {
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly operationControl = new FormControl<OperationType | ''>('', { nonNullable: true });
   protected readonly modeControl = new FormControl<TransportMode | ''>('', { nonNullable: true });
-  protected readonly statusControl = new FormControl<ShipmentStatus | ''>('', { nonNullable: true });
   protected readonly pageSizeControl = new FormControl<number>(defaultFilters.pageSize, { nonNullable: true });
   protected readonly pageSizeOptions = pageSizeOptions;
-  protected readonly statusOptions = statusOptions;
   protected readonly viewModel$: Observable<HistoryViewModel>;
 
   protected readonly getOperationTypeLabel = getOperationTypeLabel;
@@ -102,7 +90,6 @@ export class History {
     this.bindQueryControl();
     this.bindFilterControl(this.operationControl, 'operation');
     this.bindFilterControl(this.modeControl, 'mode');
-    this.bindFilterControl(this.statusControl, 'status');
     this.bindPageSizeControl();
   }
 
@@ -166,9 +153,9 @@ export class History {
       .subscribe((query) => void this.updateQueryParams({ query: query.trim(), page: 1 }));
   }
 
-  private bindFilterControl<T extends OperationType | TransportMode | ShipmentStatus | ''>(
+  private bindFilterControl<T extends OperationType | TransportMode | ''>(
     control: FormControl<T>,
-    key: 'operation' | 'mode' | 'status',
+    key: 'operation' | 'mode',
   ): void {
     control.valueChanges
       .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
@@ -231,8 +218,7 @@ export class History {
       return (
         (!query || searchableText.includes(query)) &&
         (!filters.operation || shipment.operationType === filters.operation) &&
-        (!filters.mode || shipment.transportMode === filters.mode) &&
-        (!filters.status || shipment.status === filters.status)
+        (!filters.mode || shipment.transportMode === filters.mode)
       );
     });
   }
@@ -244,7 +230,6 @@ export class History {
       query: params.get('query') ?? params.get('q') ?? '',
       operation: this.toOperationType(params.get('operation')),
       mode: this.toTransportMode(params.get('mode')),
-      status: this.toShipmentStatus(params.get('status')),
       page: this.toPositiveNumber(params.get('page'), 1),
       pageSize,
     };
@@ -254,7 +239,6 @@ export class History {
     this.searchControl.setValue(filters.query, { emitEvent: false });
     this.operationControl.setValue(filters.operation, { emitEvent: false });
     this.modeControl.setValue(filters.mode, { emitEvent: false });
-    this.statusControl.setValue(filters.status, { emitEvent: false });
     this.pageSizeControl.setValue(filters.pageSize, { emitEvent: false });
   }
 
@@ -271,7 +255,6 @@ export class History {
       query: filters.query || null,
       operation: filters.operation || null,
       mode: filters.mode || null,
-      status: filters.status || null,
       page: filters.page === 1 ? null : filters.page,
       pageSize: filters.pageSize === defaultFilters.pageSize ? null : filters.pageSize,
     };
@@ -283,10 +266,6 @@ export class History {
 
   private toTransportMode(value: string | null): TransportMode | '' {
     return value === 'AIR' || value === 'SEA' ? value : '';
-  }
-
-  private toShipmentStatus(value: string | null): ShipmentStatus | '' {
-    return statusOptions.includes(value as ShipmentStatus) ? (value as ShipmentStatus) : '';
   }
 
   private toPageSize(value: string | null): number {

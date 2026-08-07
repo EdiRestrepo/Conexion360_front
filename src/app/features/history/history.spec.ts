@@ -76,14 +76,6 @@ describe('History', () => {
     expect(getText()).not.toContain('AWB-DEL-001');
   }));
 
-  it('should filter by status from query params', fakeAsync(() => {
-    setQueryParams({ status: 'DELIVERED' });
-    render();
-
-    expect(getText()).toContain('AWB-DEL-001');
-    expect(getText()).not.toContain('AWB-ACT-003');
-  }));
-
   it('should render summary from filtered delivered results', fakeAsync(() => {
     setQueryParams({ mode: 'AIR' });
     render();
@@ -145,7 +137,7 @@ describe('History', () => {
     clickButton('Reintentar');
 
     expect(router.navigate).toHaveBeenCalledWith([], jasmine.objectContaining({
-      queryParams: { query: null, operation: null, mode: null, status: null, page: null, pageSize: null },
+      queryParams: { query: null, operation: null, mode: null, page: null, pageSize: null },
     }));
   }));
 

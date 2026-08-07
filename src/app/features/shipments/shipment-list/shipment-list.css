@@ -43,9 +43,39 @@
   outline: none;
 }
 
+.shipments-toolbar .search-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.shipments-toolbar .search-field mat-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  color: var(--color-primary);
+  font-size: 18px;
+}
+
+.shipments-toolbar .search-field input {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+}
+
 .shipments-toolbar input:focus,
 .shipments-toolbar select:focus,
 .shipments-pagination select:focus {
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px var(--color-secondary-soft);
+}
+
+.shipments-toolbar .search-field:focus-within {
   border-color: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--color-secondary-soft);
 }

@@ -7,12 +7,15 @@
   <section class="surface-card history-toolbar" aria-label="Filtros de historial">
     <label class="history-toolbar__search">
       <span>Buscar</span>
-      <input
-        type="search"
-        [formControl]="searchControl"
-        placeholder="Guía, documento, cliente, origen o destino"
-        aria-label="Buscar envíos completados"
-      />
+      <span class="search-field">
+        <mat-icon aria-hidden="true">search</mat-icon>
+        <input
+          type="search"
+          [formControl]="searchControl"
+          placeholder="Guía, documento, cliente, origen o destino"
+          aria-label="Buscar envíos completados"
+        />
+      </span>
     </label>
 
     <label>
@@ -33,15 +36,6 @@
       </select>
     </label>
 
-    <label>
-      <span>Estado</span>
-      <select [formControl]="statusControl" aria-label="Filtrar por estado">
-        <option value="">Todos los estados</option>
-        @for (status of statusOptions; track status) {
-          <option [value]="status">{{ getShipmentStatusLabel(status) }}</option>
-        }
-      </select>
-    </label>
   </section>
 
   @if (viewModel$ | async; as viewModel) {
