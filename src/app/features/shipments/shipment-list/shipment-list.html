@@ -64,7 +64,7 @@
       @if (viewModel.state === 'loading') {
         <div class="loading-state">
           <strong>Cargando envíos...</strong>
-          <p>Consultando operaciones activas.</p>
+          <p>Consultando operaciones registradas.</p>
         </div>
       } @else if (viewModel.state === 'error') {
         <div class="error-state">
@@ -74,7 +74,7 @@
         </div>
       } @else if (viewModel.state === 'empty') {
         <div class="empty-state">
-          <strong>No hay envíos activos para mostrar</strong>
+          <strong>No hay envíos para mostrar</strong>
           <p>{{ viewModel.message }}</p>
           <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
         </div>

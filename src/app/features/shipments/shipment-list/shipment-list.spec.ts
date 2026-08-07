@@ -11,21 +11,21 @@ import {
   ShipmentStatus,
   TransportMode,
 } from '../../../core/models/shipment.model';
-import { MockShipmentService } from '../../../mocks/services/mock-shipment.service';
+import { ApiMyShipmentsService, MyShipmentsPage } from '../../../core/services/api-my-shipments.service';
 import { ShipmentList } from './shipment-list';
 
 describe('ShipmentList', () => {
   let fixture: ComponentFixture<ShipmentList>;
   let component: ShipmentListTestComponent;
   let router: Router;
-  let getActiveSpy: jasmine.Spy<() => Observable<Shipment[]>>;
+  let searchSpy: jasmine.Spy<(filters: { page?: number; pageSize?: number }) => Observable<MyShipmentsPage>>;
   let queryParamSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let currentParams: Record<string, string>;
 
   beforeEach(async () => {
     currentParams = {};
     queryParamSubject = new BehaviorSubject(convertToParamMap(currentParams));
-    getActiveSpy = jasmine.createSpy('getActive').and.returnValue(of(createShipments()));
+    searchSpy = jasmine.createSpy('search').and.returnValue(of(createPage(createShipments())));
 
     await TestBed.configureTestingModule({
       imports: [ShipmentList, NoopAnimationsModule],
@@ -39,8 +39,8 @@ describe('ShipmentList', () => {
           },
         },
         {
-          provide: MockShipmentService,
-          useValue: { getActive: getActiveSpy },
+          provide: ApiMyShipmentsService,
+          useValue: { search: searchSpy },
         },
       ],
     }).compileComponents();
@@ -57,15 +57,14 @@ describe('ShipmentList', () => {
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
   });
 
-  it('should render active shipments only', fakeAsync(() => {
+  it('should render backend shipments', fakeAsync(() => {
     render();
 
     const text = getText();
 
     expect(text).toContain('AWB-ACT-001');
     expect(text).toContain('HBL-ACT-002');
-    expect(text).not.toContain('AWB-DEL-001');
-    expect(text).not.toContain('HBL-CAN-001');
+    expect(text).toContain('AWB-DEL-001');
   }));
 
   it('should debounce search and keep query params', fakeAsync(() => {
@@ -105,7 +104,9 @@ describe('ShipmentList', () => {
   }));
 
   it('should paginate with 10 items by default and navigate pages', fakeAsync(() => {
-    getActiveSpy.and.returnValue(of(createPaginatedShipments()));
+    searchSpy.and.callFake((filters) =>
+      of(createPage(createPaginatedShipments(Number(filters.page ?? 1), Number(filters.pageSize ?? 10)), 12, Number(filters.page ?? 1), Number(filters.pageSize ?? 10))),
+    );
     fixture = TestBed.createComponent(ShipmentList);
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
@@ -134,7 +135,7 @@ describe('ShipmentList', () => {
   }));
 
   it('should render dashes for unavailable dates', fakeAsync(() => {
-    getActiveSpy.and.returnValue(of([createShipment({ documentNumber: 'AWB-NODATE', logisticDates: {} })]));
+    searchSpy.and.returnValue(of(createPage([createShipment({ documentNumber: 'AWB-NODATE', logisticDates: {} })])));
     fixture = TestBed.createComponent(ShipmentList);
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
@@ -168,7 +169,7 @@ describe('ShipmentList', () => {
   }));
 
   it('should render controlled error state', fakeAsync(() => {
-    getActiveSpy.and.returnValue(throwError(() => new Error('fallo')));
+    searchSpy.and.returnValue(throwError(() => new Error('fallo')));
     fixture = TestBed.createComponent(ShipmentList);
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
@@ -246,7 +247,9 @@ function createShipments(): Shipment[] {
   ];
 }
 
-function createPaginatedShipments(): Shipment[] {
+function createPaginatedShipments(page: number, pageSize: number): Shipment[] {
+  const start = (page - 1) * pageSize;
+
   return Array.from({ length: 12 }, (_, index) =>
     createShipment({
       id: `active-page-${index + 1}`,
@@ -254,7 +257,25 @@ function createPaginatedShipments(): Shipment[] {
       client: index % 2 === 0 ? 'Enka' : 'Nutresa',
       transportMode: index % 2 === 0 ? 'AIR' : 'SEA',
     }),
-  );
+  ).slice(start, start + pageSize);
+}
+
+function createPage(items: Shipment[], totalItems = items.length, page = 1, pageSize = 10): MyShipmentsPage {
+  return {
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages: Math.max(Math.ceil(totalItems / pageSize), 1),
+    summary: {
+      total: totalItems,
+      air: items.filter((shipment) => shipment.transportMode === 'AIR').length,
+      sea: items.filter((shipment) => shipment.transportMode === 'SEA').length,
+      imports: items.filter((shipment) => shipment.operationType === 'IMPO').length,
+      exports: items.filter((shipment) => shipment.operationType === 'EXPO').length,
+      withIssues: items.filter((shipment) => shipment.status === 'WITH_ISSUE').length,
+    },
+  };
 }
 
 function createShipment(input: ShipmentInput = {}): Shipment {

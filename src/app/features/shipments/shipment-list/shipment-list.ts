@@ -16,10 +16,9 @@ import {
   getShipmentStatusLabel,
   getTransportModeIcon,
   getTransportModeLabel,
-  isTerminalShipmentStatus,
 } from '../../../core/utils/display-labels';
-import { MockShipmentService } from '../../../mocks/services/mock-shipment.service';
-import type { ShipmentListFilters, ShipmentListSummary, ShipmentListViewModel } from './models/shipment-list-view.model';
+import { ApiMyShipmentsService, MyShipmentsPage } from '../../../core/services/api-my-shipments.service';
+import type { ShipmentListFilters, ShipmentListViewModel } from './models/shipment-list-view.model';
 
 const defaultFilters: ShipmentListFilters = {
   query: '',
@@ -63,7 +62,7 @@ export class ShipmentList {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly shipmentService = inject(MockShipmentService);
+  private readonly shipmentService = inject(ApiMyShipmentsService);
 
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly operationControl = new FormControl<OperationType | ''>('', { nonNullable: true });
@@ -85,15 +84,15 @@ export class ShipmentList {
       map((params) => this.getFiltersFromParams(params)),
       tap((filters) => this.patchControls(filters)),
       switchMap((filters) =>
-        this.shipmentService.getActive().pipe(
-          map((shipments) => this.createViewModel(shipments, filters)),
+        this.shipmentService.search({ page: filters.page, pageSize: filters.pageSize }).pipe(
+          map((result) => this.createViewModel(result, filters)),
           startWith({ ...initialViewModel, filters } satisfies ShipmentListViewModel),
           catchError(() =>
             of({
               ...initialViewModel,
               state: 'error',
               filters,
-              message: 'No fue posible cargar los envíos activos. Intenta nuevamente.',
+              message: 'No fue posible cargar los envíos. Intenta nuevamente.',
             } satisfies ShipmentListViewModel),
           ),
         ),
@@ -124,7 +123,13 @@ export class ShipmentList {
       return '-';
     }
 
-    const date = new Date(`${value}T00:00:00.000Z`);
+    if (value.startsWith('0001-01-01')) {
+      return '-';
+    }
+
+    const dateValue = value.includes('T') ? value : `${value}T00:00:00.000Z`;
+    const date = new Date(dateValue);
+
     if (Number.isNaN(date.getTime())) {
       return '-';
     }
@@ -171,30 +176,34 @@ export class ShipmentList {
       .subscribe((pageSize) => void this.updateQueryParams({ pageSize, page: 1 }));
   }
 
-  private createViewModel(shipments: Shipment[], filters: ShipmentListFilters): ShipmentListViewModel {
-    const filteredShipments = this.filterShipments(shipments, filters);
-    const totalItems = filteredShipments.length;
-    const totalPages = Math.max(Math.ceil(totalItems / filters.pageSize), 1);
-    const page = Math.min(filters.page, totalPages);
-    const start = (page - 1) * filters.pageSize;
-    const pagedShipments = filteredShipments.slice(start, start + filters.pageSize);
-    const state = shipments.length === 0 ? 'empty' : totalItems === 0 ? 'empty' : 'success';
+  private createViewModel(result: MyShipmentsPage, filters: ShipmentListFilters): ShipmentListViewModel {
+    const filteredShipments = this.filterShipments(result.items, filters);
+    const totalItems = result.totalItems;
+    const totalPages = Math.max(result.totalPages, 1);
+    const page = Math.min(Math.max(result.page, 1), totalPages);
+    const start = (page - 1) * result.pageSize;
+    const state = result.items.length === 0 || filteredShipments.length === 0 ? 'empty' : 'success';
 
     return {
       state,
-      filters: { ...filters, page },
-      shipments: pagedShipments,
+      filters: { ...filters, page, pageSize: result.pageSize },
+      shipments: filteredShipments,
       summary: {
-        total: totalItems,
-        air: filteredShipments.filter((shipment) => shipment.transportMode === 'AIR').length,
-        sea: filteredShipments.filter((shipment) => shipment.transportMode === 'SEA').length,
+        total: result.summary.total,
+        air: result.summary.air,
+        sea: result.summary.sea,
       },
       totalItems,
       totalPages,
       rangeStart: totalItems === 0 ? 0 : start + 1,
-      rangeEnd: Math.min(start + filters.pageSize, totalItems),
+      rangeEnd: totalItems === 0 ? 0 : Math.min(start + result.items.length, totalItems),
       queryParams: this.buildQueryParams({ ...filters, page }),
-      message: totalItems === 0 ? 'No hay envíos activos que coincidan con los filtros.' : undefined,
+      message:
+        result.items.length === 0
+          ? 'No hay envíos para mostrar.'
+          : filteredShipments.length === 0
+            ? 'No hay envíos en esta página que coincidan con los filtros.'
+            : undefined,
     };
   }
 
@@ -215,7 +224,6 @@ export class ShipmentList {
         .toLowerCase();
 
       return (
-        !isTerminalShipmentStatus(shipment.status) &&
         (!query || searchableText.includes(query)) &&
         (!filters.operation || shipment.operationType === filters.operation) &&
         (!filters.mode || shipment.transportMode === filters.mode) &&
