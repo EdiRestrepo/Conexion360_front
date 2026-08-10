@@ -384,6 +384,16 @@ algo sigue mockeado):
 - `MockShipmentService` (implementa `ShipmentDataSource`, definida en
   `core/contracts/shipment-data-source.ts`): sigue en uso únicamente para
   reportes, mientras no exista integración con el backend para esa pantalla.
+  Su superficie pública se redujo a `getReportMetrics()` más la configuración
+  de simulación (`configureSimulation` / `resetSimulation`) usada para
+  ejercitar los estados vacío y de error. Las operaciones de listado,
+  búsqueda, paginación, detalle y métricas de dashboard se eliminaron al
+  conectar esas pantallas al backend real; no volver a agregarlas.
+- `mocks/data/mock-shipments.ts` y `mocks/factories/mock-shipment.factory.ts`
+  siguen siendo necesarios: alimentan tanto a `MockShipmentService`
+  (reportes) como a `MockNotificationService` (notificaciones), que deriva
+  las notificaciones simuladas de esos envíos. No eliminarlos mientras
+  cualquiera de esas dos pantallas siga sin backend.
 - `MockNotificationService` (implementa `NotificationDataSource`, definida
   en `core/contracts/notification-data-source.ts`): sigue en uso para
   notificaciones.

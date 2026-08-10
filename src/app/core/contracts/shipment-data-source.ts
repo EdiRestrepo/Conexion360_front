@@ -1,16 +1,15 @@
-﻿import { Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { PaginatedResult, SearchFilters } from '../models/common.model';
-import { DashboardMetrics, ReportMetrics, Shipment, ShipmentEvent } from '../models/shipment.model';
+import { ReportMetrics } from '../models/shipment.model';
 
+/**
+ * Contrato de acceso a datos de envíos que todavía no tiene endpoint en el backend.
+ *
+ * Inicio, Mis envíos, Historial y Detalle del envío ya consumen el backend real
+ * (`ApiHomeService`, `ApiMyShipmentsService`, `ApiHistoryService` y
+ * `ApiShipmentDetailService`), por lo que sus operaciones salieron de este contrato.
+ * Solo queda Reportes, servido por `MockShipmentService` hasta que exista su endpoint.
+ */
 export interface ShipmentDataSource {
-  getAll(): Observable<Shipment[]>;
-  getActive(): Observable<Shipment[]>;
-  getDelivered(): Observable<Shipment[]>;
-  getById(id: string): Observable<Shipment | null>;
-  search(filters: SearchFilters): Observable<PaginatedResult<Shipment>>;
-  getRecent(limit: number): Observable<Shipment[]>;
-  getDashboardMetrics(): Observable<DashboardMetrics>;
   getReportMetrics(): Observable<ReportMetrics>;
-  getEvents(shipmentId: string): Observable<ShipmentEvent[]>;
 }

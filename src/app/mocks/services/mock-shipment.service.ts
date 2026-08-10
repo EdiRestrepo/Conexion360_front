@@ -1,13 +1,11 @@
 ﻿import { Injectable } from '@angular/core';
 import { Observable, delay, map, of, throwError } from 'rxjs';
 
-import { PaginatedResult, SearchFilters } from '../../core/models/common.model';
 import {
   DashboardMetrics,
   OperationType,
   ReportMetrics,
   Shipment,
-  ShipmentEvent,
   ShipmentStatus,
   TransportMode,
 } from '../../core/models/shipment.model';
@@ -23,8 +21,6 @@ export interface MockShipmentSimulationConfig {
 }
 
 const defaultLatencyMs = 350;
-const defaultPage = 1;
-const defaultPageSize = 10;
 const shipmentStatuses: ShipmentStatus[] = [
   'PENDING',
   'ORIGIN_CUSTOMS',
@@ -57,122 +53,18 @@ export class MockShipmentService implements ShipmentDataSource {
     };
   }
 
-  getAll(): Observable<Shipment[]> {
-    return this.respondWith(mockShipments);
-  }
-
-  getActive(): Observable<Shipment[]> {
-    return this.getAll().pipe(map((shipments) => shipments.filter((shipment) => !isTerminalShipmentStatus(shipment.status))));
-  }
-
-  getDelivered(): Observable<Shipment[]> {
-    return this.getAll().pipe(map((shipments) => shipments.filter((shipment) => shipment.status === 'DELIVERED')));
-  }
-
-  getById(id: string): Observable<Shipment | null> {
-    return this.respondWith(mockShipments.find((shipment) => shipment.id === id) ?? null);
-  }
-
-  search(filters: SearchFilters): Observable<PaginatedResult<Shipment>> {
-    return this.getAll().pipe(map((shipments) => this.paginate(this.filterShipments(shipments, filters), filters)));
-  }
-
-  getRecent(limit: number): Observable<Shipment[]> {
-    return this.getAll().pipe(
-      map((shipments) =>
-        [...shipments]
-          .sort((first, second) => this.getLatestTimestamp(second) - this.getLatestTimestamp(first))
-          .slice(0, Math.max(limit, 0)),
-      ),
-    );
-  }
-
-  getDashboardMetrics(): Observable<DashboardMetrics> {
-    return this.getAll().pipe(map((shipments) => this.calculateDashboardMetrics(shipments)));
-  }
-
   getReportMetrics(): Observable<ReportMetrics> {
     return this.getAll().pipe(map((shipments) => this.calculateReportMetrics(shipments)));
   }
 
-  getEvents(shipmentId: string): Observable<ShipmentEvent[]> {
-    return this.getById(shipmentId).pipe(map((shipment) => shipment?.events ?? []));
-  }
-
-  getShipments(): Observable<Shipment[]> {
-    return this.getAll();
-  }
-
-  getShipmentById(id: string): Observable<Shipment | null> {
-    return this.getById(id);
-  }
-
-  private respondWith<T>(value: T): Observable<T> {
+  private getAll(): Observable<Shipment[]> {
     if (this.simulationConfig.responseMode === 'error') {
       return throwError(() => new Error('Error simulado al consultar envíos')).pipe(delay(this.simulationConfig.latencyMs));
     }
 
-    if (this.simulationConfig.responseMode === 'empty') {
-      return of(this.emptyValue(value)).pipe(delay(this.simulationConfig.latencyMs));
-    }
+    const shipments = this.simulationConfig.responseMode === 'empty' ? [] : mockShipments;
 
-    return of(value).pipe(delay(this.simulationConfig.latencyMs));
-  }
-
-  private emptyValue<T>(value: T): T {
-    if (Array.isArray(value)) {
-      return [] as T;
-    }
-
-    return null as T;
-  }
-
-  private filterShipments(shipments: Shipment[], filters: SearchFilters): Shipment[] {
-    const normalizedQuery = filters.query?.trim().toLowerCase() ?? '';
-
-    return shipments.filter((shipment) => {
-      const matchesQuery = normalizedQuery ? this.getSearchableText(shipment).includes(normalizedQuery) : true;
-      const matchesOperation = filters.operationType ? shipment.operationType === filters.operationType : true;
-      const matchesMode = filters.transportMode ? shipment.transportMode === filters.transportMode : true;
-      const matchesStatus = filters.status ? shipment.status === filters.status : true;
-      const matchesClient = filters.client ? shipment.client === filters.client : true;
-
-      return matchesQuery && matchesOperation && matchesMode && matchesStatus && matchesClient;
-    });
-  }
-
-  private paginate(shipments: Shipment[], filters: SearchFilters): PaginatedResult<Shipment> {
-    const page = Math.max(filters.page ?? defaultPage, 1);
-    const pageSize = Math.max(filters.pageSize ?? defaultPageSize, 1);
-    const start = (page - 1) * pageSize;
-    const items = shipments.slice(start, start + pageSize);
-
-    return {
-      items,
-      page,
-      pageSize,
-      totalItems: shipments.length,
-      totalPages: Math.ceil(shipments.length / pageSize),
-    };
-  }
-
-  private getSearchableText(shipment: Shipment): string {
-    return [
-      shipment.documentNumber,
-      shipment.client,
-      shipment.provider,
-      shipment.origin.country,
-      shipment.origin.city,
-      shipment.destination.country,
-      shipment.destination.city,
-      shipment.status,
-      shipment.operationType,
-      shipment.transportMode,
-      shipment.merchandiseDescription,
-    ]
-      .filter((value): value is string => Boolean(value))
-      .join(' ')
-      .toLowerCase();
+    return of(shipments).pipe(delay(this.simulationConfig.latencyMs));
   }
 
   private calculateDashboardMetrics(shipments: Shipment[]): DashboardMetrics {
@@ -246,12 +138,6 @@ export class MockShipmentService implements ShipmentDataSource {
       .map(([client, total]) => ({ client, total }))
       .sort((first, second) => second.total - first.total || first.client.localeCompare(second.client))
       .slice(0, 5);
-  }
-
-  private getLatestTimestamp(shipment: Shipment): number {
-    const latestEvent = shipment.events.at(-1);
-    const value = latestEvent?.dateTime ?? shipment.logisticDates.etd ?? '1970-01-01T00:00:00.000Z';
-    return new Date(value).getTime();
   }
 
   private roundCurrency(value: number): number {

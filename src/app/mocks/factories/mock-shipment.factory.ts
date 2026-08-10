@@ -259,11 +259,6 @@ function createEvents(shipmentId: string, seedItem: ShipmentSeed, logisticDates:
 
   if (seedItem.status === 'WITH_ISSUE') {
     events.push(createEvent(shipmentId, 4, isoDate(28), 'WITH_ISSUE', seedItem.destination, 'Novedad logística registrada.'));
-    events.push({
-      ...createEvent(shipmentId, 6, isoDate(29), 'WITH_ISSUE', seedItem.destination, 'Se informó al cliente sobre la novedad y se ajustó la fecha estimada.'),
-      type: 'COMMENT',
-      title: 'Novedad comunicada al cliente',
-    });
   }
 
   if (logisticDates.delivery) {
