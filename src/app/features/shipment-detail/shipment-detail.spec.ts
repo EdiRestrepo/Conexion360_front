@@ -115,6 +115,26 @@ describe('ShipmentDetail', () => {
     expect(getText()).toContain('Resumen');
   }));
 
+  it('should not request the detail again when only the tab changes', fakeAsync(() => {
+    setQueryParams({ document: 'AWB-001', tab: 'summary' });
+    render();
+
+    expect(getDetailSpy).toHaveBeenCalledTimes(1);
+
+    setQueryParams({ document: 'AWB-001', tab: 'financial' });
+    tick();
+    fixture.detectChanges();
+
+    expect(getDetailSpy).toHaveBeenCalledTimes(1);
+    expect(getText()).toContain('Facturación');
+
+    setQueryParams({ document: 'AWB-002', tab: 'financial' });
+    tick();
+    fixture.detectChanges();
+
+    expect(getDetailSpy).toHaveBeenCalledTimes(2);
+  }));
+
   it('should return to list preserving listing query params', fakeAsync(() => {
     setQueryParams({ query: 'Enka', page: '2', pageSize: '25', tab: 'summary' });
     render();

@@ -3,7 +3,18 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  of,
+  shareReplay,
+  startWith,
+  switchMap,
+} from 'rxjs';
 
 import {
   Container,
@@ -38,6 +49,13 @@ import type {
 const historyEntryIcons: Record<HistoryEntryType, string> = { STATUS: 'sync', COMMENT: 'chat_bubble', DATE: 'event' };
 const historyEntryLabels: Record<HistoryEntryType, string> = { STATUS: 'Estado', COMMENT: 'Comentario', DATE: 'Fecha' };
 
+interface DetailRequest {
+  id: string;
+  documentNumber: string;
+}
+
+type DetailData = Pick<DetailViewModel, 'state' | 'shipment' | 'message'>;
+
 const defaultTab: DetailTab = 'summary';
 const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'history'];
 
@@ -64,43 +82,59 @@ export class ShipmentDetail {
     { id: 'history', label: 'Historial' },
   ];
 
-  protected readonly viewModel$: Observable<DetailViewModel> = combineLatest([
+  // El envío consultado solo depende de la ruta y del documento: la pestaña activa es
+  // estado de interfaz y no debe disparar una nueva consulta al backend.
+  private readonly detailRequest$: Observable<DetailRequest> = combineLatest([
     this.route.paramMap,
     this.route.queryParamMap,
-    this.retry$.pipe(startWith(undefined)),
   ]).pipe(
-    switchMap(([params, queryParams]) => {
+    map(([params, queryParams]) => {
       const id = params.get('id') ?? '';
-      const selectedTab = this.getTabFromParams(queryParams);
-      const listQueryParams = this.getListQueryParams(queryParams);
+
       // Los listados navegan con el id del envío y el documento de transporte; el detalle
       // se consulta por documento, así que el id sirve de respaldo cuando no viaja el query param.
-      const documentNumber = queryParams.get('document') ?? id;
+      return { id, documentNumber: queryParams.get('document') ?? id };
+    }),
+    distinctUntilChanged((previous, current) => previous.id === current.id && previous.documentNumber === current.documentNumber),
+  );
 
-      return this.shipmentDetailService.getDetail(documentNumber, id).pipe(
+  private readonly detailData$: Observable<DetailData> = combineLatest([
+    this.detailRequest$,
+    this.retry$.pipe(startWith(undefined)),
+  ]).pipe(
+    switchMap(([request]) =>
+      this.shipmentDetailService.getDetail(request.documentNumber, request.id).pipe(
         map((shipment) =>
           shipment
-            ? ({ state: 'success', selectedTab, listQueryParams, shipment } satisfies DetailViewModel)
+            ? ({ state: 'success', shipment } satisfies DetailData)
             : ({
                 state: 'not-found',
-                selectedTab,
-                listQueryParams,
                 shipment: null,
                 message: 'No encontramos información para el documento de transporte solicitado.',
-              } satisfies DetailViewModel),
+              } satisfies DetailData),
         ),
-        startWith({ state: 'loading', selectedTab, listQueryParams, shipment: null } satisfies DetailViewModel),
+        startWith({ state: 'loading', shipment: null } satisfies DetailData),
         catchError(() =>
           of({
             state: 'error',
-            selectedTab,
-            listQueryParams,
             shipment: null,
             message: 'No fue posible cargar el detalle del envío. Intenta nuevamente.',
-          } satisfies DetailViewModel),
+          } satisfies DetailData),
         ),
-      );
-    }),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly viewModel$: Observable<DetailViewModel> = combineLatest([
+    this.detailData$,
+    this.route.queryParamMap,
+  ]).pipe(
+    map(([data, queryParams]) => ({
+      ...data,
+      selectedTab: this.getTabFromParams(queryParams),
+      listQueryParams: this.getListQueryParams(queryParams),
+    })),
   );
 
   protected readonly getTransportModeIcon = getTransportModeIcon;
