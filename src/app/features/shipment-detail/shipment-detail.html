@@ -141,60 +141,41 @@
         }
 
         @case ('financial') {
-          <section class="financial-grid" aria-label="Información financiera">
-            @if (hasFinancialInfo(shipment.financialInfo)) {
-              <article class="surface-card detail-section">
-                <h2>Anticipo</h2>
-                @if (getAdvanceFields(shipment.financialInfo).length) {
-                  <dl class="detail-list">
-                    @for (field of getAdvanceFields(shipment.financialInfo); track field.label) {
-                      <div>
-                        <dt>{{ field.label }}</dt>
-                        <dd>{{ field.value }}</dd>
-                      </div>
-                    }
-                  </dl>
-                } @else {
-                  <p class="section-empty-text">Sin anticipo registrado.</p>
+          <section class="detail-grid" aria-label="Información financiera">
+            <article class="surface-card detail-section">
+              <h2><mat-icon aria-hidden="true">attach_money</mat-icon> Anticipo</h2>
+              <dl class="detail-list detail-list--rows">
+                @for (field of getAdvanceFields(shipment.financialInfo); track field.label) {
+                  <div class="detail-list__row">
+                    <dt>{{ field.label }}</dt>
+                    <dd [class.detail-list__value--accent]="field.accent" [class.detail-list__value--empty]="field.empty">{{ field.value }}</dd>
+                  </div>
                 }
-              </article>
+              </dl>
+            </article>
 
-              <article class="surface-card detail-section">
-                <h2>Facturación</h2>
-                @if (getInvoiceFields(shipment.financialInfo).length) {
-                  <dl class="detail-list">
-                    @for (field of getInvoiceFields(shipment.financialInfo); track field.label) {
-                      <div>
-                        <dt>{{ field.label }}</dt>
-                        <dd>{{ field.value }}</dd>
-                      </div>
-                    }
-                  </dl>
-                } @else {
-                  <p class="section-empty-text">Sin facturación registrada.</p>
+            <article class="surface-card detail-section">
+              <h2><mat-icon aria-hidden="true">description</mat-icon> Facturación</h2>
+              <dl class="detail-list detail-list--rows">
+                @for (field of getInvoiceFields(shipment.financialInfo); track field.label) {
+                  <div class="detail-list__row">
+                    <dt>{{ field.label }}</dt>
+                    <dd [class.detail-list__value--accent]="field.accent" [class.detail-list__value--empty]="field.empty">{{ field.value }}</dd>
+                  </div>
                 }
-              </article>
+              </dl>
+            </article>
 
-              <article class="surface-card detail-section financial-summary">
-                <h2>Resumen</h2>
-                @if (getFinancialSummaryFields(shipment.financialInfo).length) {
-                  <dl class="detail-list">
-                    @for (field of getFinancialSummaryFields(shipment.financialInfo); track field.label) {
-                      <div>
-                        <dt>{{ field.label }}</dt>
-                        <dd>{{ field.value }}</dd>
-                      </div>
-                    }
-                  </dl>
-                } @else {
-                  <p class="section-empty-text">Sin resumen financiero disponible.</p>
+            <article class="surface-card detail-section financial-summary" aria-label="Resumen financiero">
+              <dl class="financial-summary__list">
+                @for (field of getFinancialSummaryFields(shipment.financialInfo); track field.label) {
+                  <div>
+                    <dt>{{ field.label }}</dt>
+                    <dd [class.detail-list__value--empty]="field.empty">{{ field.value }}</dd>
+                  </div>
                 }
-              </article>
-            } @else {
-              <article class="surface-card empty-section">
-                <strong>Sin información financiera disponible.</strong>
-              </article>
-            }
+              </dl>
+            </article>
           </section>
         }
 

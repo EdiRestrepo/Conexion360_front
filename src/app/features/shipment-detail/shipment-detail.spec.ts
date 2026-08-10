@@ -213,21 +213,29 @@ describe('ShipmentDetail', () => {
     expect(text).toContain('No disponible');
   }));
 
-  it('should show empty financial section when financial data is absent', fakeAsync(() => {
+  it('should show the financial cards with placeholders when financial data is absent', fakeAsync(() => {
     getByIdSpy.and.returnValue(of(createShipment({ financialInfo: { advancePayment: null, invoice: null } })));
     setQueryParams({ tab: 'financial' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
-    expect(getText()).toContain('Sin información financiera disponible.');
+    const text = getText();
+
+    expect(text).toContain('Anticipo');
+    expect(text).toContain('Facturación');
+    expect(text).toContain('Fecha solicitud anticipo');
+    expect(text).toContain('Subtotal factura');
+    expect(text).toContain('Total factura');
+    expect(text).toContain('Descripción gasto');
+    expect(text).toContain('No disponible');
   }));
 
   it('should render currency format consistently', fakeAsync(() => {
     setQueryParams({ tab: 'financial' });
     render();
 
-    expect(getText()).toContain('US$');
-    expect(getText()).toContain('1.980');
+    expect(getText()).toContain('USD 1.980');
+    expect(getText()).toContain('USD 1.200');
   }));
 
   it('should calculate tracking progress and active stage', fakeAsync(() => {

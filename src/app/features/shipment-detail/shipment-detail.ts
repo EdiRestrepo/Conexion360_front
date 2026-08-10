@@ -298,74 +298,54 @@ export class ShipmentDetail {
 
   protected getContainerFields(container: Container | null | undefined): DetailField[] {
     return [
-      this.createContainerField('Tipo de contenedor', container?.type),
-      this.createContainerField('Cantidad de contenedores', this.formatCount(container?.quantity)),
-      this.createContainerField('Número de contenedor', container?.number),
-      this.createContainerField('Días libres', this.formatDays(container?.freeDays)),
-      this.createContainerField('Días restantes para entrega', this.formatDays(container?.remainingDays)),
-      this.createContainerField('Fecha devolución real', this.formatOptionalDate(container?.returnDate)),
-      this.createContainerField('Días de demora', this.formatDays(container?.delayDays)),
-      this.createContainerField('Valor por día de demora', this.formatUsd(container?.delayValuePerDay)),
-      this.createContainerField('Total demoras', this.formatUsd(container?.totalDelayValue)),
-      this.createContainerField('Depósito contenedor', container?.deposit),
+      this.createOptionalField('Tipo de contenedor', container?.type),
+      this.createOptionalField('Cantidad de contenedores', this.formatCount(container?.quantity)),
+      this.createOptionalField('Número de contenedor', container?.number),
+      this.createOptionalField('Días libres', this.formatDays(container?.freeDays)),
+      this.createOptionalField('Días restantes para entrega', this.formatDays(container?.remainingDays)),
+      this.createOptionalField('Fecha devolución real', this.formatOptionalDate(container?.returnDate)),
+      this.createOptionalField('Días de demora', this.formatDays(container?.delayDays)),
+      this.createOptionalField('Valor por día de demora', this.formatUsd(container?.delayValuePerDay)),
+      this.createOptionalField('Total demoras', this.formatUsd(container?.totalDelayValue)),
+      this.createOptionalField('Depósito contenedor', container?.deposit),
     ];
-  }
-
-  protected hasFinancialInfo(financialInfo: ShipmentFinancialInfo): boolean {
-    return Boolean(financialInfo.advancePayment || financialInfo.invoice);
   }
 
   protected getAdvanceFields(financialInfo: ShipmentFinancialInfo): DetailField[] {
     const advance = financialInfo.advancePayment;
-
-    if (!advance) {
-      return [];
-    }
+    const invoice = financialInfo.invoice;
 
     return [
-      { label: 'Fecha solicitud', value: this.formatDate(advance.requestedAt) },
-      { label: 'Fecha pago', value: this.formatDate(advance.paidAt) },
-      { label: 'Valor', value: this.formatCurrency(advance.amount) },
+      this.createOptionalField('Fecha solicitud anticipo', this.formatOptionalDate(advance?.requestedAt)),
+      this.createOptionalField('Fecha pago anticipo', this.formatOptionalDate(advance?.paidAt)),
+      this.createOptionalField('Valor anticipo', this.formatUsd(advance?.amount)),
+      this.createOptionalField('Subtotal factura', this.formatUsd(invoice?.subtotal)),
+      this.createOptionalField('IVA', this.formatUsd(invoice?.tax)),
+      this.createOptionalField('Total factura', this.formatUsd(invoice?.total)),
     ];
   }
 
   protected getInvoiceFields(financialInfo: ShipmentFinancialInfo): DetailField[] {
     const invoice = financialInfo.invoice;
 
-    if (!invoice) {
-      return [];
-    }
-
     return [
-      { label: 'Factura proveedor', value: this.formatOptional(invoice.providerInvoice) },
-      { label: 'Factura TCC', value: this.formatOptional(invoice.tccInvoice) },
-      { label: 'Número de factura', value: this.formatOptional(invoice.invoiceNumber) },
-      { label: 'Fecha', value: this.formatDate(invoice.invoiceDate) },
-      { label: 'Descripción del gasto', value: this.formatOptional(invoice.expenseDescription) },
-      { label: 'Valor', value: this.formatCurrency(invoice.expenseValue) },
+      this.createOptionalField('Factura proveedor', invoice?.providerInvoice, true),
+      this.createOptionalField('Factura TCC', invoice?.tccInvoice, true),
+      this.createOptionalField('Número de factura', invoice?.invoiceNumber, true),
+      this.createOptionalField('Fecha de factura', this.formatOptionalDate(invoice?.invoiceDate)),
+      this.createOptionalField('Descripción gasto', invoice?.expenseDescription),
+      this.createOptionalField('Valor gasto', this.formatUsd(invoice?.expenseValue)),
     ];
   }
 
   protected getFinancialSummaryFields(financialInfo: ShipmentFinancialInfo): DetailField[] {
     const invoice = financialInfo.invoice;
 
-    if (!invoice) {
-      return [];
-    }
-
     return [
-      { label: 'Subtotal', value: this.formatCurrency(invoice.subtotal) },
-      { label: 'IVA', value: this.formatCurrency(invoice.tax) },
-      { label: 'Total', value: this.formatCurrency(invoice.total) },
+      this.createOptionalField('Subtotal', this.formatUsd(invoice?.subtotal)),
+      this.createOptionalField('IVA', this.formatUsd(invoice?.tax)),
+      this.createOptionalField('Total factura', this.formatUsd(invoice?.total)),
     ];
-  }
-
-  protected formatCurrency(value: number | null | undefined): string {
-    if (value === null || value === undefined) {
-      return '-';
-    }
-
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value);
   }
 
   protected getModeClass(mode: TransportMode): string {
@@ -529,14 +509,10 @@ export class ShipmentDetail {
       .replace(/^-|-$/g, '')
       .toLowerCase();
   }
-  private formatOptional(value: string | null | undefined): string {
-    return value?.trim() ? value : '-';
-  }
-
-  private createContainerField(label: string, value: string | null | undefined): DetailField {
+  private createOptionalField(label: string, value: string | null | undefined, accent = false): DetailField {
     const text = value?.trim();
 
-    return text ? { label, value: text } : { label, value: 'No disponible', empty: true };
+    return text ? { label, value: text, accent } : { label, value: 'No disponible', empty: true };
   }
 
   private formatCount(value: number | null | undefined): string | null {
@@ -548,7 +524,7 @@ export class ShipmentDetail {
   }
 
   private formatUsd(value: number | null | undefined): string | null {
-    return value === null || value === undefined ? null : `USD ${value.toLocaleString('es-CO')}`;
+    return value === null || value === undefined ? null : `USD ${value.toLocaleString('es-CO', { maximumFractionDigits: 2 })}`;
   }
 
   private formatOptionalDate(value: string | null | undefined): string | null {
