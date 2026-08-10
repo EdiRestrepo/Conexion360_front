@@ -127,7 +127,7 @@ describe('MockShipmentService', () => {
   it('should model null when conceptual data is unavailable', fakeAsync(() => {
     service.getById('shipment-001').subscribe((shipment) => {
       expect(shipment?.financialInfo.advancePayment?.paidAt === null || typeof shipment?.financialInfo.advancePayment?.paidAt === 'string').toBeTrue();
-      expect(shipment?.documents.some((document) => document.date === null || typeof document.date === 'string')).toBeTrue();
+      expect(shipment?.financialInfo.invoice === null || typeof shipment?.financialInfo.invoice === 'object').toBeTrue();
     });
     tick();
   }));
@@ -136,7 +136,6 @@ describe('MockShipmentService', () => {
     service.getAll().subscribe((shipments) => {
       const dates = shipments.flatMap((shipment) => [
         ...Object.values(shipment.logisticDates),
-        ...shipment.documents.map((document) => document.date),
         ...shipment.events.map((event) => event.dateTime),
         shipment.issue?.date,
         shipment.container?.returnDate,

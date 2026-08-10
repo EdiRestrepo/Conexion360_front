@@ -8,8 +8,6 @@ import { Observable, Subject, catchError, combineLatest, map, of, startWith, swi
 import {
   Container,
   Shipment,
-  ShipmentDocument,
-  ShipmentDocumentStatus,
   ShipmentEvent,
   ShipmentFinancialInfo,
   ShipmentIssue,
@@ -19,9 +17,6 @@ import {
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import {
   ShipmentChipType,
-  getDocumentStatusChipType,
-  getDocumentStatusIcon,
-  getDocumentStatusLabel,
   getShipmentIssueTitle,
   getShipmentStatusChipType,
   getShipmentStatusIcon,
@@ -41,7 +36,7 @@ import type {
 } from './models/shipment-detail-view.model';
 
 const defaultTab: DetailTab = 'summary';
-const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'documents', 'history'];
+const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'history'];
 
 @Component({
   selector: 'app-shipment-detail',
@@ -58,8 +53,6 @@ export class ShipmentDetail {
   private readonly retry$ = new Subject<void>();
 
   protected readonly copied = signal(false);
-  protected readonly selectedDocument = signal<ShipmentDocument | null>(null);
-  protected readonly downloadMessage = signal<string | null>(null);
   protected readonly historyDescending = signal(true);
   protected readonly tabs: TabItem[] = [
     { id: 'summary', label: 'Resumen' },
@@ -67,7 +60,6 @@ export class ShipmentDetail {
     { id: 'dates', label: 'Fechas logísticas' },
     { id: 'container', label: 'Contenedor' },
     { id: 'financial', label: 'Financiero' },
-    { id: 'documents', label: 'Documentos' },
     { id: 'history', label: 'Historial' },
   ];
 
@@ -112,8 +104,6 @@ export class ShipmentDetail {
   protected readonly getTransportModeIcon = getTransportModeIcon;
   protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
-  protected readonly getDocumentStatusLabel = getDocumentStatusLabel;
-  protected readonly getDocumentStatusIcon = getDocumentStatusIcon;
   protected readonly getIssueTitle = getShipmentIssueTitle;
   protected readonly getLocationLabel = getLocationLabel;
   protected readonly formatDate = formatShipmentDate;
@@ -199,57 +189,6 @@ export class ShipmentDetail {
 
   protected getIssueSeverity(issue: ShipmentIssue): string {
     return issue.resolved ? 'Resuelta' : 'Activa';
-  }
-
-  protected getDocumentStatusChipClass(status: ShipmentDocumentStatus): string {
-    const classes: Record<ShipmentChipType, string> = {
-      neutral: 'status-chip--neutral',
-      info: 'status-chip--info',
-      success: 'status-chip--success',
-      warning: 'status-chip--issue',
-      danger: 'status-chip--issue',
-    };
-
-    return classes[getDocumentStatusChipType(status)];
-  }
-
-  protected getDocumentSizeLabel(sizeKb: number | null): string {
-    if (sizeKb === null) {
-      return '-';
-    }
-
-    if (sizeKb >= 1024) {
-      return `${(sizeKb / 1024).toLocaleString('es-CO', { maximumFractionDigits: 1 })} MB`;
-    }
-
-    return `${sizeKb.toLocaleString('es-CO')} KB`;
-  }
-
-  protected previewDocument(documentItem: ShipmentDocument): void {
-    this.selectedDocument.set(documentItem);
-  }
-
-  protected closeDocumentPreview(): void {
-    this.selectedDocument.set(null);
-  }
-
-  protected downloadDocument(documentItem: ShipmentDocument, shipment: Shipment): void {
-    const content = [
-      'Conexion360 - descarga simulada',
-      `Documento: ${documentItem.name}`,
-      `Tipo: ${documentItem.type}`,
-      `Envío: ${shipment.documentNumber}`,
-      'Este archivo fue generado localmente para el prototipo. No proviene de un endpoint real.',
-    ].join('\n');
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = globalThis.URL.createObjectURL(blob);
-    const link = globalThis.document.createElement('a');
-
-    link.href = url;
-    link.download = `${this.toSafeFileName(shipment.documentNumber)}-${this.toSafeFileName(documentItem.type)}.txt`;
-    link.click();
-    globalThis.URL.revokeObjectURL(url);
-    this.downloadMessage.set(`Descarga simulada generada para ${documentItem.name}.`);
   }
 
   protected getSortedEvents(shipment: Shipment): ShipmentEvent[] {
@@ -455,7 +394,6 @@ export class ShipmentDetail {
         advancePayment: null,
         invoice: null,
       },
-      documents: [],
       events: [
         {
           id: `${summary.id || summary.documentNumber}-home-search`,
@@ -501,14 +439,6 @@ export class ShipmentDetail {
     return Math.min(getShipmentStatusOrder(status) * 12, 90);
   }
 
-  private toSafeFileName(value: string): string {
-    return value
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9-]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .toLowerCase();
-  }
   private createOptionalField(label: string, value: string | null | undefined, accent = false): DetailField {
     const text = value?.trim();
 

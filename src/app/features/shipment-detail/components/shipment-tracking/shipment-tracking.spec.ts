@@ -118,7 +118,6 @@ function createShipment(input: ShipmentInput = {}): Shipment {
     logisticDates: { etd: '2026-01-02', eta: '2026-01-05', ...input.logisticDates },
     container: undefined,
     financialInfo: input.financialInfo ?? { advancePayment: null, invoice: null },
-    documents: [],
     events: [
       {
         id: 'shipment-001-event-1',

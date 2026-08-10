@@ -139,7 +139,6 @@ function createShipment(seedItem: ShipmentSeed, sequence: number): Shipment {
     logisticDates,
     container: createContainer(seedItem, sequence),
     financialInfo: createFinancialInfo(seedItem, sequence),
-    documents: createDocuments(id, documentNumber, sequence),
     events: createEvents(id, seedItem, logisticDates),
     issue,
     progress: getProgress(seedItem.status),
@@ -243,51 +242,6 @@ function createFinancialInfo(seedItem: ShipmentSeed, sequence: number): Shipment
         }
       : null,
   };
-}
-
-function createDocuments(shipmentId: string, documentNumber: string, sequence: number) {
-  return [
-    {
-      id: `${shipmentId}-doc-transport`,
-      type: documentNumber.startsWith('AWB') ? 'AWB' : 'HBL',
-      name: `Documento de transporte ${documentNumber}`,
-      date: isoDate(sequence + 2),
-      status: 'AVAILABLE' as const,
-      sizeKb: 420 + sequence * 9,
-    },
-    {
-      id: `${shipmentId}-doc-invoice`,
-      type: 'Factura',
-      name: `Factura comercial ${stableCode(sequence + 200)}`,
-      date: sequence % 5 === 0 ? null : isoDate(sequence + 5),
-      status: getSecondaryDocumentStatus(sequence),
-      sizeKb: sequence % 5 === 0 ? null : 260 + sequence * 7,
-    },
-    {
-      id: `${shipmentId}-doc-packing`,
-      type: 'Packing list',
-      name: `Lista de empaque ${stableCode(sequence + 260)}`,
-      date: sequence % 7 === 0 ? null : isoDate(sequence + 6),
-      status: sequence % 7 === 0 ? ('PENDING' as const) : ('AVAILABLE' as const),
-      sizeKb: sequence % 7 === 0 ? null : 180 + sequence * 5,
-    },
-  ];
-}
-
-function getSecondaryDocumentStatus(sequence: number) {
-  if (sequence % 11 === 0) {
-    return 'EXPIRED' as const;
-  }
-
-  if (sequence % 8 === 0) {
-    return 'REJECTED' as const;
-  }
-
-  if (sequence % 5 === 0) {
-    return 'PENDING' as const;
-  }
-
-  return 'AVAILABLE' as const;
 }
 
 function createEvents(shipmentId: string, seedItem: ShipmentSeed, logisticDates: ReturnType<typeof createLogisticDates>): ShipmentEvent[] {

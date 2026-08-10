@@ -84,7 +84,6 @@ function toShipment(value: unknown): Shipment {
       ata: toDateValue(readString(record, ['ataDate', 'ata'])),
     },
     financialInfo: { advancePayment: null, invoice: null },
-    documents: [],
     events: [],
     issue: null,
     progress: 0,

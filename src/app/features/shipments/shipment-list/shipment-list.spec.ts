@@ -332,7 +332,6 @@ function createApiShipment(input: ShipmentInput = {}): Shipment {
       ...input.logisticDates,
     },
     financialInfo: { advancePayment: null, invoice: null },
-    documents: [],
     events: [],
     issue: null,
     progress: 50,

@@ -1,7 +1,7 @@
 import type { Params } from '@angular/router';
 import type { Shipment } from '../../../core/models/shipment.model';
 export type DetailState = 'loading' | 'error' | 'not-found' | 'success';
-export type DetailTab = 'summary' | 'tracking' | 'dates' | 'container' | 'financial' | 'documents' | 'history';
+export type DetailTab = 'summary' | 'tracking' | 'dates' | 'container' | 'financial' | 'history';
 export type TrackingStageState = 'completed' | 'current' | 'pending';
 export interface DetailViewModel { state: DetailState; selectedTab: DetailTab; listQueryParams: Params; shipment: Shipment | null; message?: string; }
 export interface TabItem { id: DetailTab; label: string; }

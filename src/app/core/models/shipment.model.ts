@@ -12,8 +12,6 @@ export type ShipmentStatus =
   | 'DELIVERED'
   | 'WITH_ISSUE';
 
-export type ShipmentDocumentStatus = 'AVAILABLE' | 'PENDING' | 'REJECTED' | 'EXPIRED';
-
 export type ShipmentIssueType = 'DELAY' | 'CUSTOMS_INSPECTION' | 'DOCUMENT_PENDING' | 'WEATHER' | 'NONE';
 
 export interface Location {
@@ -73,15 +71,6 @@ export interface ShipmentFinancialInfo {
   invoice: Invoice | null;
 }
 
-export interface ShipmentDocument {
-  id: string;
-  type: string;
-  name: string;
-  date: string | null;
-  status: ShipmentDocumentStatus;
-  sizeKb: number | null;
-}
-
 export interface ShipmentIssue {
   type: ShipmentIssueType;
   comment: string;
@@ -119,7 +108,6 @@ export interface Shipment {
   logisticDates: LogisticDates;
   container?: Container | null;
   financialInfo: ShipmentFinancialInfo;
-  documents: ShipmentDocument[];
   events: ShipmentEvent[];
   issue?: ShipmentIssue | null;
   progress: number;

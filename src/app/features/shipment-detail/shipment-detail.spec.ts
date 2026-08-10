@@ -310,50 +310,11 @@ describe('ShipmentDetail', () => {
     expect(getText()).toContain('Ubicación simulada para fines del prototipo.');
   }));
 
-  it('should render documents with status labels and size', fakeAsync(() => {
+  it('should fall back to the summary tab when an unknown tab is requested', fakeAsync(() => {
     setQueryParams({ tab: 'documents' });
     render();
 
-    expect(getText()).toContain('Documento de transporte AWB-001');
-    expect(getText()).toContain('Disponible');
-    expect(getText()).toContain('512 KB');
-    expect(getText()).toContain('Rechazado');
-  }));
-
-  it('should render empty documents state', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ documents: [] })));
-    setQueryParams({ tab: 'documents' });
-    fixture = TestBed.createComponent(ShipmentDetail);
-    render();
-
-    expect(getText()).toContain('Sin documentos registrados.');
-  }));
-
-  it('should open simulated document preview', fakeAsync(() => {
-    setQueryParams({ tab: 'documents' });
-    render();
-
-    const button = fixture.nativeElement.querySelector('button[title="Visualizar"]') as HTMLButtonElement;
-    button.click();
-    fixture.detectChanges();
-
-    expect(getText()).toContain('Vista de prototipo');
-    expect(getText()).toContain('No abre archivos reales ni consume endpoints');
-  }));
-
-  it('should generate a simulated document download', fakeAsync(() => {
-    const createUrlSpy = spyOn(globalThis.URL, 'createObjectURL').and.returnValue('blob:conexion360-mock');
-    const revokeUrlSpy = spyOn(globalThis.URL, 'revokeObjectURL');
-    setQueryParams({ tab: 'documents' });
-    render();
-
-    const button = fixture.nativeElement.querySelector('button[title="Descargar"]') as HTMLButtonElement;
-    button.click();
-    fixture.detectChanges();
-
-    expect(createUrlSpy).toHaveBeenCalled();
-    expect(revokeUrlSpy).toHaveBeenCalledWith('blob:conexion360-mock');
-    expect(getText()).toContain('Descarga simulada generada');
+    expect(getText()).toContain('Información del envío');
   }));
 
   it('should render history newest first and allow order change', fakeAsync(() => {
@@ -457,24 +418,6 @@ function createShipment(input: ShipmentInput = {}): Shipment {
         total: 2356.2,
       },
     },
-    documents: [
-      {
-        id: 'shipment-001-doc-transport',
-        type: 'AWB',
-        name: 'Documento de transporte AWB-001',
-        date: '2026-01-02',
-        status: 'AVAILABLE',
-        sizeKb: 512,
-      },
-      {
-        id: 'shipment-001-doc-invoice',
-        type: 'Factura',
-        name: 'Factura comercial FAC-001',
-        date: null,
-        status: 'REJECTED',
-        sizeKb: null,
-      },
-    ],
     events: [
       {
         id: 'shipment-001-event-1',
