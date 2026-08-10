@@ -1,0 +1,78 @@
+@let shipment = shipmentData();
+
+<section class="tracking-grid" aria-label="Seguimiento del envío">
+  <div class="tracking-main">
+    <article class="surface-card tracking-map-card">
+      @if (hasTrackingCoordinates(shipment) && !mapError()) {
+        <div #trackingMap class="tracking-map" role="img" [attr.aria-label]="getTrackingSummary(shipment)"></div>
+        <p class="tracking-warning">Ubicación simulada para fines del prototipo.</p>
+      } @else {
+        <div class="tracking-fallback">
+          <mat-icon aria-hidden="true">location_off</mat-icon>
+          <strong>Mapa no disponible</strong>
+          <p>{{ getTrackingSummary(shipment) }}</p>
+          <p>No hay coordenadas suficientes para representar la ruta.</p>
+        </div>
+      }
+    </article>
+
+    <article class="surface-card tracking-progress-card">
+      <div class="tracking-progress-card__head">
+        <h2>Progreso del envío</h2>
+        <strong class="tracking-progress__value">{{ getTrackingProgress(shipment) }}%</strong>
+      </div>
+      <div
+        class="tracking-progress"
+        role="progressbar"
+        aria-label="Progreso logístico"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="getTrackingProgress(shipment)"
+      >
+        <span [style.width.%]="getTrackingProgress(shipment)"></span>
+      </div>
+      <div class="tracking-progress-card__endpoints">
+        <span>{{ getLocationLabel(shipment.origin) }}</span>
+        <span>{{ getLocationLabel(shipment.destination) }}</span>
+      </div>
+    </article>
+  </div>
+
+  <aside class="tracking-panel">
+    <article class="surface-card tracking-status-card">
+      <h2>Estado actual</h2>
+      <ol class="tracking-stages">
+        @for (stage of getTrackingStages(shipment); track stage.label) {
+          <li [class]="'tracking-stages__item tracking-stages__item--' + stage.state">
+            <span class="tracking-stages__badge" aria-hidden="true">
+              <mat-icon>{{ stage.icon }}</mat-icon>
+            </span>
+            <span class="tracking-stages__text">
+              <span class="tracking-stages__label">{{ stage.label }}</span>
+              @if (stage.state === 'current') {
+                <span class="tracking-stages__now">Ahora</span>
+              }
+            </span>
+          </li>
+        }
+      </ol>
+
+      @if (getNextStop(shipment); as nextStop) {
+        <p class="tracking-next-stop">
+          <span class="tracking-next-stop__label">Próxima parada</span>
+          <span class="tracking-next-stop__value">{{ nextStop.location }}</span>
+          <span class="tracking-next-stop__date">{{ nextStop.date }}</span>
+        </p>
+      } @else {
+        <p class="tracking-next-stop tracking-next-stop--empty">No hay próxima parada para este estado.</p>
+      }
+
+      @if (shipment.issue; as issue) {
+        <div class="tracking-issue">
+          <strong>{{ getIssueTitle(issue) }}</strong>
+          <span>{{ issue.comment }}</span>
+        </div>
+      }
+    </article>
+  </aside>
+</section>

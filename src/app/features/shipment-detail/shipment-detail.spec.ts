@@ -238,6 +238,8 @@ describe('ShipmentDetail', () => {
 
     expect(progress.getAttribute('aria-valuenow')).toBe('50');
     expect(currentStage.textContent).toContain('En tránsito');
+    expect(currentStage.textContent).toContain('Ahora');
+    expect(currentStage.querySelector('.tracking-stages__badge mat-icon')?.textContent?.trim()).toBe('flight');
   }));
 
   it('should calculate next stop from logistic dates and destination', fakeAsync(() => {
@@ -277,11 +279,16 @@ describe('ShipmentDetail', () => {
     expect(getText()).toContain('No hay coordenadas suficientes');
   }));
 
-  it('should render textual tracking summary independent from the map', fakeAsync(() => {
+  it('should describe the tracking route on the map and its endpoints', fakeAsync(() => {
     setQueryParams({ tab: 'tracking' });
     render();
 
-    expect(getText()).toContain('Envío desde Ciudad de México, México hacia Bogotá, Colombia');
+    const map = fixture.nativeElement.querySelector('.tracking-map') as HTMLElement;
+    const endpoints = fixture.nativeElement.querySelector('.tracking-progress-card__endpoints') as HTMLElement;
+
+    expect(map.getAttribute('aria-label')).toContain('Envío desde Ciudad de México, México hacia Bogotá, Colombia');
+    expect(endpoints.textContent).toContain('Ciudad de México, México');
+    expect(endpoints.textContent).toContain('Bogotá, Colombia');
     expect(getText()).toContain('Ubicación simulada para fines del prototipo.');
   }));
 

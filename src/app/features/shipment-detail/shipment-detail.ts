@@ -1,23 +1,12 @@
 ﻿import { AsyncPipe } from '@angular/common';
-import {
-  AfterViewChecked,
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  OnDestroy,
-  ViewChild,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import * as L from 'leaflet';
 import { Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import {
   Container,
-  Location,
   Shipment,
   ShipmentDocument,
   ShipmentDocumentStatus,
@@ -33,52 +22,43 @@ import {
   getDocumentStatusChipType,
   getDocumentStatusIcon,
   getDocumentStatusLabel,
+  getShipmentIssueTitle,
   getShipmentStatusChipType,
   getShipmentStatusIcon,
   getShipmentStatusLabel,
   getShipmentStatusOrder,
   getTransportModeIcon,
 } from '../../core/utils/display-labels';
+import { formatShipmentDate, getLocationLabel } from '../../core/utils/shipment-format';
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
+import { ShipmentTracking } from './components/shipment-tracking/shipment-tracking';
 import type {
-  Coordinates,
   DateState,
   DetailField,
-  DetailState,
   DetailTab,
   DetailViewModel,
   LogisticDateRow,
-  NextStop,
   TabItem,
-  TrackingStage,
-  TrackingStageState,
 } from './models/shipment-detail-view.model';
 
 const defaultTab: DetailTab = 'summary';
 const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'documents', 'history'];
-const trackingStageLabels = ['Pendiente', 'Aduana origen', 'En tránsito', 'Aduana destino', 'Entregado'] as const;
 
 @Component({
   selector: 'app-shipment-detail',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, ShipmentTracking],
   templateUrl: './shipment-detail.html',
   styleUrl: './shipment-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ShipmentDetail implements AfterViewChecked, OnDestroy {
-  @ViewChild('trackingMap') private readonly trackingMapElement?: ElementRef<HTMLElement>;
-
+export class ShipmentDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly shipmentService = inject(MockShipmentService);
   private readonly apiHomeService = inject(ApiHomeService);
   private readonly retry$ = new Subject<void>();
-  private readonly currentViewModel = signal<DetailViewModel | null>(null);
-  private map: L.Map | null = null;
-  private mapKey = '';
 
   protected readonly copied = signal(false);
-  protected readonly mapError = signal(false);
   protected readonly selectedDocument = signal<ShipmentDocument | null>(null);
   protected readonly downloadMessage = signal<string | null>(null);
   protected readonly historyDescending = signal(true);
@@ -128,7 +108,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
         ),
       );
     }),
-    tap((viewModel) => this.currentViewModel.set(viewModel)),
   );
 
   protected readonly getTransportModeIcon = getTransportModeIcon;
@@ -136,31 +115,9 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
   protected readonly getDocumentStatusLabel = getDocumentStatusLabel;
   protected readonly getDocumentStatusIcon = getDocumentStatusIcon;
-
-  ngAfterViewChecked(): void {
-    const viewModel = this.currentViewModel();
-    const shipment = viewModel?.shipment;
-    const element = this.trackingMapElement?.nativeElement;
-
-    if (viewModel?.selectedTab !== 'tracking' || !shipment || !element || !this.hasTrackingCoordinates(shipment)) {
-      if (viewModel?.selectedTab !== 'tracking') {
-        this.destroyMap();
-      }
-      return;
-    }
-
-    const key = `${shipment.id}-${this.getTrackingProgress(shipment)}`;
-    if (this.map && this.mapKey === key) {
-      this.map.invalidateSize();
-      return;
-    }
-
-    this.renderMap(element, shipment, key);
-  }
-
-  ngOnDestroy(): void {
-    this.destroyMap();
-  }
+  protected readonly getIssueTitle = getShipmentIssueTitle;
+  protected readonly getLocationLabel = getLocationLabel;
+  protected readonly formatDate = formatShipmentDate;
 
   protected retry(): void {
     this.retry$.next();
@@ -202,10 +159,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     );
   }
 
-  protected getLocationLabel(location: Shipment['origin']): string {
-    return [location.city, location.country].filter((value): value is string => Boolean(value)).join(', ');
-  }
-
   protected getDocumentType(shipment: Shipment): string {
     return shipment.transportMode === 'AIR' ? 'AWB' : 'HBL';
   }
@@ -245,82 +198,8 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     ];
   }
 
-  protected getIssueTitle(issue: ShipmentIssue): string {
-    const titles: Record<ShipmentIssue['type'], string> = {
-      DELAY: 'Retraso logístico',
-      CUSTOMS_INSPECTION: 'Inspección aduanera',
-      DOCUMENT_PENDING: 'Documento pendiente',
-      WEATHER: 'Condición climática',
-      NONE: 'Sin novedad',
-    };
-
-    return titles[issue.type];
-  }
-
   protected getIssueSeverity(issue: ShipmentIssue): string {
     return issue.resolved ? 'Resuelta' : 'Activa';
-  }
-
-  protected getTrackingSummary(shipment: Shipment): string {
-    return `Envío desde ${this.getLocationLabel(shipment.origin)} hacia ${this.getLocationLabel(shipment.destination)}, actualmente en ${this.getCurrentLocationLabel(shipment)}.`;
-  }
-
-  protected getCurrentLocationLabel(shipment: Shipment): string {
-    const stageIndex = this.getTrackingStageIndex(shipment);
-
-    if (stageIndex <= 1) {
-      return this.getLocationLabel(shipment.origin);
-    }
-
-    if (stageIndex === 2) {
-      return shipment.transportMode === 'AIR' ? 'ruta aérea internacional' : 'ruta marítima internacional';
-    }
-
-    return this.getLocationLabel(shipment.destination);
-  }
-
-  protected getStatusDescription(shipment: Shipment): string {
-    if (shipment.status === 'DELIVERED') {
-      return 'La operación registra entrega final en los datos simulados.';
-    }
-
-    if (shipment.issue) {
-      return shipment.issue.comment;
-    }
-
-    return `El envío se encuentra en ${getShipmentStatusLabel(shipment.status).toLowerCase()} según los eventos simulados.`;
-  }
-
-  protected getTrackingProgress(shipment: Shipment): number {
-    const stageIndex = this.getTrackingStageIndex(shipment);
-    return Math.round((stageIndex / (trackingStageLabels.length - 1)) * 100);
-  }
-
-  protected getTrackingStages(shipment: Shipment): TrackingStage[] {
-    const currentIndex = this.getTrackingStageIndex(shipment);
-
-    return trackingStageLabels.map((label, index) => ({
-      label,
-      state: shipment.status === 'DELIVERED' || index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'pending',
-    }));
-  }
-
-  protected getNextStop(shipment: Shipment): NextStop | null {
-    if (shipment.status === 'DELIVERED') {
-      return null;
-    }
-
-    const nextStageIndex = Math.min(this.getTrackingStageIndex(shipment) + 1, trackingStageLabels.length - 1);
-    const location = nextStageIndex <= 1 ? shipment.origin : shipment.destination;
-
-    return {
-      location: this.getLocationLabel(location),
-      date: this.formatDate(this.getEstimatedDateForStage(shipment, nextStageIndex)),
-    };
-  }
-
-  protected hasTrackingCoordinates(shipment: Shipment): boolean {
-    return Boolean(this.getCoordinates(shipment.origin) && this.getCoordinates(shipment.destination));
   }
 
   protected getDocumentStatusChipClass(status: ShipmentDocumentStatus): string {
@@ -481,19 +360,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
     ];
   }
 
-  protected formatDate(value: string | null | undefined): string {
-    if (!value) {
-      return '-';
-    }
-
-    const date = new Date(value.includes('T') ? value : `${value}T00:00:00.000Z`);
-    if (Number.isNaN(date.getTime())) {
-      return '-';
-    }
-
-    return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
-  }
-
   protected formatCurrency(value: number | null | undefined): string {
     if (value === null || value === undefined) {
       return '-';
@@ -504,120 +370,6 @@ export class ShipmentDetail implements AfterViewChecked, OnDestroy {
 
   protected getModeClass(mode: TransportMode): string {
     return mode === 'AIR' ? 'detail-header__mode--air' : 'detail-header__mode--sea';
-  }
-
-  private renderMap(element: HTMLElement, shipment: Shipment, key: string): void {
-    this.destroyMap();
-    const origin = this.getCoordinates(shipment.origin);
-    const destination = this.getCoordinates(shipment.destination);
-
-    if (!origin || !destination) {
-      return;
-    }
-
-    try {
-      this.map = L.map(element, { zoomControl: true, attributionControl: true });
-      this.mapKey = key;
-      this.mapError.set(false);
-
-      const originPoint = L.latLng(origin.latitude, origin.longitude);
-      const destinationPoint = L.latLng(destination.latitude, destination.longitude);
-      const current = this.getCurrentCoordinates(origin, destination, this.getTrackingProgress(shipment));
-      const currentPoint = L.latLng(current.latitude, current.longitude);
-      const route = [originPoint, currentPoint, destinationPoint];
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(this.map);
-
-      L.polyline(route, { color: '#00B8A9', weight: 4, dashArray: shipment.transportMode === 'AIR' ? '8 10' : undefined }).addTo(this.map);
-      this.createMarker(originPoint, 'Origen').addTo(this.map);
-      this.createMarker(destinationPoint, 'Destino').addTo(this.map);
-      this.createMarker(currentPoint, 'Posición actual simulada', '#F97316').addTo(this.map);
-      this.map.fitBounds(L.latLngBounds(route), { padding: [28, 28], maxZoom: 5 });
-    } catch {
-      this.mapError.set(true);
-      this.destroyMap();
-    }
-  }
-
-  private createMarker(point: L.LatLng, label: string, color = '#12355B'): L.CircleMarker {
-    return L.circleMarker(point, {
-      radius: 8,
-      color,
-      fillColor: color,
-      fillOpacity: 0.9,
-      weight: 2,
-    }).bindTooltip(label);
-  }
-
-  private destroyMap(): void {
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
-      this.mapKey = '';
-    }
-  }
-
-  private getCurrentCoordinates(origin: Coordinates, destination: Coordinates, progress: number): Coordinates {
-    const ratio = Math.min(Math.max(progress / 100, 0), 1);
-    return {
-      latitude: origin.latitude + (destination.latitude - origin.latitude) * ratio,
-      longitude: origin.longitude + (destination.longitude - origin.longitude) * ratio,
-    };
-  }
-
-  private getCoordinates(location: Location): Coordinates | null {
-    if (typeof location.latitude !== 'number' || typeof location.longitude !== 'number') {
-      return null;
-    }
-
-    return { latitude: location.latitude, longitude: location.longitude };
-  }
-
-  private getTrackingStageIndex(shipment: Shipment): number {
-    if (shipment.status === 'DELIVERED') {
-      return 4;
-    }
-
-    const statusStage = this.getStageIndexFromStatus(shipment.status);
-    const eventStage = shipment.events.reduce((max, event) => Math.max(max, this.getStageIndexFromStatus(event.status)), 0);
-
-    return Math.max(statusStage, eventStage);
-  }
-
-  private getStageIndexFromStatus(status: ShipmentStatus): number {
-    if (status === 'DELIVERED') {
-      return 4;
-    }
-
-    if (status === 'IN_TRANSIT') {
-      return 2;
-    }
-
-    const stageByStatus: Record<ShipmentStatus, number> = {
-      PENDING: 0,
-      ORIGIN_CUSTOMS: 1,
-      IN_TRANSIT: 2,
-      DESTINATION_CUSTOMS: 3,
-      DELIVERED: 4,
-      WITH_ISSUE: 3,
-    };
-
-    return stageByStatus[status];
-  }
-
-  private getEstimatedDateForStage(shipment: Shipment, stageIndex: number): string | null | undefined {
-    const dates = shipment.logisticDates;
-    const values: Record<number, string | null | undefined> = {
-      1: dates.etd ?? dates.originWarehouse,
-      2: dates.eta ?? dates.etd,
-      3: dates.nationalization ?? dates.eta,
-      4: dates.delivery ?? dates.eta,
-    };
-
-    return values[stageIndex];
   }
 
   private createDateRow(label: string, estimated: string | null | undefined, actual: string | null | undefined, applies: boolean): LogisticDateRow {

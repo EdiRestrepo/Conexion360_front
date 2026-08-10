@@ -1,0 +1,61 @@
+:host{display:block}
+.tracking-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,.6fr);gap:18px;align-items:start}
+.tracking-main{display:grid;gap:18px;min-width:0}
+
+.tracking-map-card{display:grid;gap:8px;padding:10px}
+.tracking-map{min-height:420px;border-radius:var(--radius-card);overflow:hidden;background:var(--color-surface-muted)}
+.tracking-warning{margin:0;padding:0 6px 2px;color:var(--color-text-muted);font-size:12px;font-weight:500}
+.tracking-fallback{display:grid;min-height:260px;place-items:center;gap:8px;padding:28px;border:1px dashed var(--color-border);border-radius:var(--radius-card);background:var(--color-surface-muted);text-align:center}
+.tracking-fallback mat-icon{width:32px;height:32px;font-size:32px;color:var(--color-primary)}
+.tracking-fallback p{margin:0;color:var(--color-text-muted)}
+
+.tracking-progress-card{display:grid;gap:10px;padding:18px 20px}
+.tracking-progress-card__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tracking-progress-card__endpoints{display:flex;justify-content:space-between;gap:12px;color:var(--color-text-muted);font-size:13px;font-weight:500}
+.tracking-progress{height:8px;overflow:hidden;border-radius:999px;background:var(--color-surface-muted)}
+.tracking-progress span{display:block;height:100%;border-radius:inherit;background:var(--color-secondary)}
+.tracking-progress__value{color:var(--color-secondary);font-size:15px;font-weight:700}
+
+.tracking-panel{display:grid;gap:18px}
+.tracking-status-card{padding:20px}
+.tracking-progress-card__head h2,.tracking-status-card h2{margin:0;color:var(--color-text-muted);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.tracking-status-card h2{margin-bottom:18px}
+
+.tracking-stages{margin:0;padding:0;list-style:none}
+.tracking-stages__item{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding-bottom:22px}
+.tracking-stages__item:last-child{padding-bottom:0}
+.tracking-stages__item::before{content:"";position:absolute;left:17px;top:38px;bottom:-2px;width:2px;background:var(--color-border)}
+.tracking-stages__item:last-child::before{display:none}
+.tracking-stages__item--completed::before{background:var(--color-secondary)}
+.tracking-stages__badge{display:inline-grid;place-items:center;width:36px;height:36px;border:2px solid var(--color-border);border-radius:999px;background:var(--color-surface);color:var(--color-text-muted)}
+.tracking-stages__badge mat-icon{width:18px;height:18px;font-size:18px}
+.tracking-stages__item--completed .tracking-stages__badge,.tracking-stages__item--current .tracking-stages__badge{border-color:var(--color-secondary);background:var(--color-secondary);color:var(--color-on-primary)}
+.tracking-stages__text{display:grid;gap:2px;min-width:0}
+.tracking-stages__label{color:var(--color-text);font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.tracking-stages__item--pending .tracking-stages__label{color:var(--color-text-muted);font-weight:500}
+.tracking-stages__now{color:var(--color-secondary);font-size:12px;font-weight:600}
+.tracking-stages__now::before{content:"\2022 "}
+
+.tracking-next-stop{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin:18px 0 0;padding-top:14px;border-top:1px solid var(--color-border);font-size:13px}
+.tracking-next-stop__label{flex:0 0 100%;color:var(--color-text-muted);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.tracking-next-stop__value{color:var(--color-text);font-weight:600}
+.tracking-next-stop__date{color:var(--color-text-muted)}
+.tracking-next-stop__date::before{content:"\00b7 "}
+.tracking-next-stop--empty{color:var(--color-text-muted)}
+
+.tracking-issue{display:grid;gap:4px;margin-top:14px;padding:12px;border:1px solid var(--color-alert);border-radius:var(--radius-control);background:var(--color-alert-soft);color:var(--color-alert);font-size:var(--font-size-label);font-weight:800}
+
+@media (max-width:980px){
+  .tracking-grid{grid-template-columns:1fr}
+  .tracking-map{min-height:340px}
+}
+
+@media (max-width:640px){
+  .tracking-map-card{padding:8px}
+  .tracking-map{min-height:280px}
+  .tracking-progress-card,.tracking-status-card{padding:16px}
+}
+
+@media (max-width:480px){
+  .tracking-map{min-height:240px}
+}

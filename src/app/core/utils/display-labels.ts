@@ -1,4 +1,4 @@
-﻿import { OperationType, ShipmentDocumentStatus, ShipmentStatus, TransportMode } from '../models/shipment.model';
+﻿import { OperationType, ShipmentDocumentStatus, ShipmentIssue, ShipmentStatus, TransportMode } from '../models/shipment.model';
 import { UserRole } from '../models/user.model';
 
 export type ShipmentChipType = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
@@ -70,6 +70,14 @@ const documentStatusIcons: Record<ShipmentDocumentStatus, string> = {
   EXPIRED: 'event_busy',
 };
 
+const shipmentIssueTitles: Record<ShipmentIssue['type'], string> = {
+  DELAY: 'Retraso logístico',
+  CUSTOMS_INSPECTION: 'Inspección aduanera',
+  DOCUMENT_PENDING: 'Documento pendiente',
+  WEATHER: 'Condición climática',
+  NONE: 'Sin novedad',
+};
+
 const userRoleLabels: Record<UserRole, string> = {
   CLIENT: 'Cliente',
   ADMIN: 'Administrador',
@@ -107,6 +115,10 @@ export function getShipmentStatusIcon(value: ShipmentStatus): string {
 
 export function getShipmentStatusOrder(value: ShipmentStatus): number {
   return shipmentStatusOrder[value];
+}
+
+export function getShipmentIssueTitle(value: ShipmentIssue): string {
+  return shipmentIssueTitles[value.type];
 }
 
 export function isTerminalShipmentStatus(value: ShipmentStatus): boolean {
