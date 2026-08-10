@@ -184,14 +184,19 @@ describe('ShipmentDetail', () => {
     expect(getText()).not.toContain('Retraso logístico');
   }));
 
-  it('should classify delayed logistic dates', fakeAsync(() => {
+  it('should list every logistic milestone with its date', fakeAsync(() => {
     getByIdSpy.and.returnValue(of(createShipment({ logisticDates: { etd: '2026-01-01', atd: '2026-01-03', eta: '2026-01-05', ata: null } })));
     setQueryParams({ tab: 'dates' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
-    expect(getText()).toContain('Retrasado');
-    expect(getText()).toContain('Pendiente');
+    const text = getText();
+
+    expect(text).toContain('Línea de tiempo logística');
+    expect(text).toContain('ETD (Salida estimada)');
+    expect(text).toContain('ATA (Llegada real)');
+    expect(text).toContain('Entrega contenedor');
+    expect(text).not.toContain('Retrasado');
   }));
 
   it('should show container not applicable for air shipments', fakeAsync(() => {

@@ -33,7 +33,6 @@ import { formatShipmentDate, getLocationLabel } from '../../core/utils/shipment-
 import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
 import { ShipmentTracking } from './components/shipment-tracking/shipment-tracking';
 import type {
-  DateState,
   DetailField,
   DetailTab,
   DetailViewModel,
@@ -284,15 +283,16 @@ export class ShipmentDetail {
     const dates = shipment.logisticDates;
 
     return [
-      this.createDateRow('Bodega origen', null, dates.originWarehouse, true),
-      this.createDateRow('Salida ETD / ATD', dates.etd, dates.atd, true),
-      this.createDateRow('Llegada ETA / ATA', dates.eta, dates.ata, true),
-      this.createDateRow('Bodega destino', null, dates.destinationWarehouse, true),
-      this.createDateRow('Nacionalización', null, dates.nationalization, true),
-      this.createDateRow('Despacho destino', null, dates.dispatch, true),
-      this.createDateRow('Planilla', null, dates.planilla, true),
-      this.createDateRow('Entrega', null, dates.delivery, true),
-      this.createDateRow('Devolución de contenedor', null, shipment.container?.returnDate ?? null, shipment.transportMode === 'SEA' && Boolean(shipment.container)),
+      { label: 'Bodega Origen', date: this.formatDate(dates.originWarehouse) },
+      { label: 'ETD (Salida estimada)', date: this.formatDate(dates.etd) },
+      { label: 'ATD (Salida real)', date: this.formatDate(dates.atd) },
+      { label: 'ETA (Llegada estimada)', date: this.formatDate(dates.eta) },
+      { label: 'ATA (Llegada real)', date: this.formatDate(dates.ata) },
+      { label: 'Bodega Destino', date: this.formatDate(dates.destinationWarehouse) },
+      { label: 'Nacionalización', date: this.formatDate(dates.nationalization) },
+      { label: 'Despacho Destino', date: this.formatDate(dates.dispatch) },
+      { label: 'Planilla', date: this.formatDate(dates.planilla) },
+      { label: 'Entrega contenedor', date: this.formatDate(dates.delivery) },
     ];
   }
 
@@ -370,57 +370,6 @@ export class ShipmentDetail {
 
   protected getModeClass(mode: TransportMode): string {
     return mode === 'AIR' ? 'detail-header__mode--air' : 'detail-header__mode--sea';
-  }
-
-  private createDateRow(label: string, estimated: string | null | undefined, actual: string | null | undefined, applies: boolean): LogisticDateRow {
-    const state = this.getDateState(estimated, actual, applies);
-
-    return {
-      label,
-      estimated: this.formatDate(estimated),
-      actual: this.formatDate(actual),
-      state,
-      stateLabel: this.getDateStateLabel(state),
-    };
-  }
-
-  private getDateState(estimated: string | null | undefined, actual: string | null | undefined, applies: boolean): DateState {
-    if (!applies) {
-      return 'not-applicable';
-    }
-
-    if (!estimated && !actual) {
-      return 'no-data';
-    }
-
-    if (estimated && !actual) {
-      return 'pending';
-    }
-
-    if (!estimated && actual) {
-      return 'on-time';
-    }
-
-    const estimatedDate = new Date(`${estimated}T00:00:00.000Z`);
-    const actualDate = new Date(`${actual}T00:00:00.000Z`);
-
-    if (Number.isNaN(estimatedDate.getTime()) || Number.isNaN(actualDate.getTime())) {
-      return 'no-data';
-    }
-
-    return actualDate.getTime() > estimatedDate.getTime() ? 'delayed' : 'on-time';
-  }
-
-  private getDateStateLabel(state: DateState): string {
-    const labels: Record<DateState, string> = {
-      'on-time': 'A tiempo',
-      delayed: 'Retrasado',
-      pending: 'Pendiente',
-      'not-applicable': 'No aplica',
-      'no-data': 'Sin dato',
-    };
-
-    return labels[state];
   }
 
   private getTabFromParams(params: ParamMap): DetailTab {

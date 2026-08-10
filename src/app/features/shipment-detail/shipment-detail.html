@@ -108,21 +108,18 @@
         }
 
         @case ('dates') {
-          <section class="surface-card detail-section" aria-label="Fechas logísticas">
-            <h2>Fechas logísticas</h2>
-            <div class="dates-table" role="table" aria-label="Fechas estimadas y reales">
+          <section class="surface-card detail-section detail-section--half" aria-label="Fechas logísticas">
+            <div class="dates-table" role="table" aria-label="Línea de tiempo logística">
               <div class="dates-table__row dates-table__row--head" role="row">
-                <span role="columnheader">Hito</span>
-                <span role="columnheader">Estimada</span>
-                <span role="columnheader">Real</span>
-                <span role="columnheader">Estado</span>
+                <h2 class="dates-table__title" role="columnheader">
+                  <mat-icon aria-hidden="true">schedule</mat-icon> Línea de tiempo logística
+                </h2>
+                <span role="columnheader">Fecha</span>
               </div>
               @for (row of getLogisticDateRows(shipment); track row.label) {
                 <div class="dates-table__row" role="row">
                   <strong role="cell">{{ row.label }}</strong>
-                  <span role="cell">{{ row.estimated }}</span>
-                  <span role="cell">{{ row.actual }}</span>
-                  <span role="cell" class="date-state" [class]="'date-state date-state--' + row.state">{{ row.stateLabel }}</span>
+                  <span role="cell">{{ row.date }}</span>
                 </div>
               }
             </div>
