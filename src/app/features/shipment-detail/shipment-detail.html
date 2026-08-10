@@ -180,59 +180,50 @@
         }
 
         @case ('history') {
-          <section class="surface-card detail-section" aria-label="Historial del envío">
-            <div class="section-heading section-heading--with-action">
-              <div>
-                <h2>Historial</h2>
-                <p>{{ getHistoryOrderLabel() }}</p>
-              </div>
-              <button mat-stroked-button type="button" (click)="toggleHistoryOrder()" aria-label="Cambiar orden del historial">
-                <mat-icon aria-hidden="true">swap_vert</mat-icon>
-                Cambiar orden
-              </button>
+          @let historyEntries = getHistoryEntries(shipment);
+
+          <section class="history-section" aria-label="Historial de cambios">
+            <div class="history-heading">
+              <mat-icon aria-hidden="true">history</mat-icon>
+              <h2>Historial de cambios</h2>
+              <span class="history-heading__count">{{ historyEntries.length }}</span>
             </div>
 
-            @if (shipment.events.length) {
+            @if (historyEntries.length) {
               <ol class="history-timeline">
-                @for (event of getSortedEvents(shipment); track event.id) {
+                @for (entry of historyEntries; track entry.id) {
                   <li class="history-timeline__item">
-                    <span class="history-timeline__marker" aria-hidden="true"></span>
-                    <article>
-                      <div class="history-timeline__topline">
-                        <span>{{ formatEventDate(event.dateTime) }}</span>
-                        <span>{{ formatEventTime(event.dateTime) }}</span>
-                      </div>
-                      <h3>
-                        <span class="status-chip" [class]="'status-chip ' + getStatusChipClass({ status: event.status })">
-                          <mat-icon aria-hidden="true">{{ getShipmentStatusIcon(event.status) }}</mat-icon>
-                          {{ getShipmentStatusLabel(event.status) }}
-                        </span>
-                      </h3>
-                      <p>{{ event.description }}</p>
-                      <dl class="history-meta">
-                        <div>
-                          <dt>Ubicación</dt>
-                          <dd>{{ getLocationLabel(event.location) }}</dd>
-                        </div>
-                        <div>
-                          <dt>Fuente</dt>
-                          <dd>{{ event.source }}</dd>
-                        </div>
-                        @if (event.user) {
-                          <div>
-                            <dt>Usuario</dt>
-                            <dd>{{ event.user }}</dd>
-                          </div>
+                    <span class="history-timeline__marker" [class]="'history-timeline__marker history-timeline__marker--' + entry.type">
+                      <mat-icon aria-hidden="true">{{ entry.icon }}</mat-icon>
+                    </span>
+                    <article class="history-entry">
+                      <p class="history-entry__headline">
+                        <span class="history-entry__label">{{ entry.label }}</span>
+                        @if (entry.previousStatus) {
+                          <span class="history-entry__from">{{ entry.previousStatus }}</span>
+                          <mat-icon aria-hidden="true">arrow_right_alt</mat-icon>
                         }
-                      </dl>
+                        @if (entry.headline) {
+                          <span class="history-entry__to">{{ entry.headline }}</span>
+                        }
+                      </p>
+                      <p class="history-entry__description">{{ entry.description }}</p>
+                      <p class="history-entry__meta">
+                        @if (entry.user) {
+                          <mat-icon aria-hidden="true">person</mat-icon>
+                          <span>{{ entry.user }}</span>
+                          <span aria-hidden="true">•</span>
+                        }
+                        <span>{{ entry.dateTime }}</span>
+                      </p>
                     </article>
                   </li>
                 }
               </ol>
             } @else {
-              <div class="empty-section empty-section--compact">
-                <strong>Sin eventos registrados.</strong>
-                <p>Este envío no tiene historial simulado asociado.</p>
+              <div class="surface-card empty-section empty-section--compact">
+                <strong>Sin cambios registrados.</strong>
+                <p>Este envío no tiene historial de cambios asociado.</p>
               </div>
             }
           </section>

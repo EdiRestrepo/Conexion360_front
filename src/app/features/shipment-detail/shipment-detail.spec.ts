@@ -317,19 +317,48 @@ describe('ShipmentDetail', () => {
     expect(getText()).toContain('Información del envío');
   }));
 
-  it('should render history newest first and allow order change', fakeAsync(() => {
+  it('should render the change log newest first with the previous status of each change', fakeAsync(() => {
     setQueryParams({ tab: 'history' });
     render();
 
-    const initialText = getText();
-    expect(initialText.indexOf('Entrega final')).toBeLessThan(initialText.indexOf('Ingreso a bodega'));
+    const text = getText();
 
-    clickButton('Cambiar orden');
-    fixture.detectChanges();
+    expect(text).toContain('Historial de cambios');
+    expect(text).toContain('Estado');
+    expect(text.indexOf('Entrega final')).toBeLessThan(text.indexOf('Ingreso a bodega'));
+    expect(text).toContain('En tránsito');
+    expect(text).toContain('Equipo operaciones');
+  }));
 
-    const updatedText = getText();
-    expect(updatedText).toContain('Más antiguo primero');
-    expect(updatedText.indexOf('Ingreso a bodega')).toBeLessThan(updatedText.indexOf('Entrega final'));
+  it('should render comment entries without a previous status', fakeAsync(() => {
+    getByIdSpy.and.returnValue(
+      of(
+        createShipment({
+          events: [
+            {
+              id: 'shipment-001-event-1',
+              dateTime: '2026-01-01T08:30:00.000Z',
+              status: 'IN_TRANSIT',
+              location: { country: 'México', city: 'Ciudad de México' },
+              description: 'Se informó al cliente sobre la demora.',
+              source: 'Sistema mock Conexion360',
+              user: 'Laura Martínez',
+              type: 'COMMENT',
+              title: 'Demora de 2 días por congestión portuaria',
+            },
+          ],
+        }),
+      ),
+    );
+    setQueryParams({ tab: 'history' });
+    fixture = TestBed.createComponent(ShipmentDetail);
+    render();
+
+    const text = getText();
+
+    expect(text).toContain('Comentario');
+    expect(text).toContain('Demora de 2 días por congestión portuaria');
+    expect(text).toContain('Laura Martínez');
   }));
 
   it('should render empty history state', fakeAsync(() => {
@@ -338,7 +367,7 @@ describe('ShipmentDetail', () => {
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
-    expect(getText()).toContain('Sin eventos registrados.');
+    expect(getText()).toContain('Sin cambios registrados.');
   }));
   function render(): void {
     fixture.detectChanges();

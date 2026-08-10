@@ -31,9 +31,14 @@ import type {
   DetailField,
   DetailTab,
   DetailViewModel,
+  HistoryEntry,
+  HistoryEntryType,
   LogisticDateRow,
   TabItem,
 } from './models/shipment-detail-view.model';
+
+const historyEntryIcons: Record<HistoryEntryType, string> = { STATUS: 'sync', COMMENT: 'chat_bubble', DATE: 'event' };
+const historyEntryLabels: Record<HistoryEntryType, string> = { STATUS: 'Estado', COMMENT: 'Comentario', DATE: 'Fecha' };
 
 const defaultTab: DetailTab = 'summary';
 const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'history'];
@@ -191,33 +196,14 @@ export class ShipmentDetail {
     return issue.resolved ? 'Resuelta' : 'Activa';
   }
 
-  protected getSortedEvents(shipment: Shipment): ShipmentEvent[] {
-    const direction = this.historyDescending() ? -1 : 1;
+  protected getHistoryEntries(shipment: Shipment): HistoryEntry[] {
+    const chronological = [...shipment.events].sort(
+      (first, second) => new Date(first.dateTime).getTime() - new Date(second.dateTime).getTime(),
+    );
 
-    return [...shipment.events].sort((first, second) => direction * (new Date(first.dateTime).getTime() - new Date(second.dateTime).getTime()));
+    return chronological.map((event, index) => this.createHistoryEntry(event, chronological[index - 1] ?? null)).reverse();
   }
 
-  protected toggleHistoryOrder(): void {
-    this.historyDescending.update((value) => !value);
-  }
-
-  protected getHistoryOrderLabel(): string {
-    return this.historyDescending() ? 'Más reciente primero' : 'Más antiguo primero';
-  }
-
-  protected formatEventDate(value: string): string {
-    return this.formatDate(value);
-  }
-
-  protected formatEventTime(value: string): string {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return '-';
-    }
-
-    return new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(date);
-  }
   protected getLogisticDateRows(shipment: Shipment): LogisticDateRow[] {
     const dates = shipment.logisticDates;
 
@@ -358,6 +344,49 @@ export class ShipmentDetail {
     );
   }
 
+  // Bitácora de ejemplo para maquetar el historial mientras el backend expone el servicio de cambios.
+  // Al conectar el endpoint real, esta función se reemplaza por los eventos que entregue el servicio.
+  private createSampleHistory(summary: HomeShipmentSummary): ShipmentEvent[] {
+    const baseId = summary.id || summary.documentNumber;
+    const location = { country: summary.origin.country || '-', city: null, terminal: null };
+    const source = 'Servicio de inicio Conexion360';
+    const statuses = (['PENDING', 'IN_TRANSIT', summary.status] as ShipmentStatus[]).filter(
+      (status, index, all) => index === 0 || status !== all[index - 1],
+    );
+    const descriptions = [
+      'Registro inicial del envío en la plataforma.',
+      'Envío despachado desde la bodega de origen. Todo en orden.',
+      'Detalle construido desde la búsqueda por documento de transporte.',
+    ];
+    const users = ['Edison Estival', 'Edison Estival', 'Laura Martínez'];
+
+    const events: ShipmentEvent[] = statuses.map((status, index) => ({
+      id: `${baseId}-history-${index + 1}`,
+      dateTime: `2026-01-0${index + 1}T09:30:00.000Z`,
+      status,
+      location,
+      description: descriptions[index] ?? descriptions[descriptions.length - 1],
+      source,
+      user: users[index] ?? null,
+    }));
+
+    events.push({
+      id: `${baseId}-history-ata`,
+      dateTime: '2026-01-05T10:20:00.000Z',
+      status: summary.status,
+      location,
+      description: 'Fecha real de llegada confirmada por la aerolínea.',
+      source,
+      user: 'Laura Martínez',
+      type: 'DATE',
+      label: 'ATA',
+      previousValue: 'Sin confirmar',
+      title: '15 mar 2026',
+    });
+
+    return events;
+  }
+
   private createShipmentFromHomeSummary(summary: HomeShipmentSummary): Shipment {
     return {
       id: summary.id,
@@ -394,21 +423,7 @@ export class ShipmentDetail {
         advancePayment: null,
         invoice: null,
       },
-      events: [
-        {
-          id: `${summary.id || summary.documentNumber}-home-search`,
-          dateTime: '2026-01-01T00:00:00.000Z',
-          status: summary.status,
-          location: {
-            country: summary.origin.country || '-',
-            city: null,
-            terminal: null,
-          },
-          description: 'Detalle construido desde la búsqueda por documento de transporte.',
-          source: 'Servicio de inicio Conexion360',
-          user: null,
-        },
-      ],
+      events: this.createSampleHistory(summary),
       issue:
         summary.status === 'WITH_ISSUE'
           ? {
@@ -437,6 +452,36 @@ export class ShipmentDetail {
     }
 
     return Math.min(getShipmentStatusOrder(status) * 12, 90);
+  }
+
+  private createHistoryEntry(event: ShipmentEvent, previous: ShipmentEvent | null): HistoryEntry {
+    const type = event.type ?? 'STATUS';
+    const isStatus = type === 'STATUS';
+
+    return {
+      id: event.id,
+      type,
+      icon: historyEntryIcons[type],
+      label: event.label?.trim() ? event.label : historyEntryLabels[type],
+      previousStatus: event.previousValue ?? (isStatus && previous ? getShipmentStatusLabel(previous.status) : null),
+      headline: isStatus ? getShipmentStatusLabel(event.status) : (event.title?.trim() ?? null),
+      description: event.description,
+      user: event.user?.trim() ? event.user : null,
+      dateTime: this.formatEntryDateTime(event.dateTime),
+    };
+  }
+
+  private formatEntryDateTime(value: string): string {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+
+    const day = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+    const time = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(date);
+
+    return `${day}, ${time}`;
   }
 
   private createOptionalField(label: string, value: string | null | undefined, accent = false): DetailField {

@@ -78,6 +78,8 @@ export interface ShipmentIssue {
   resolved: boolean;
 }
 
+export type ShipmentEventType = 'STATUS' | 'COMMENT' | 'DATE';
+
 export interface ShipmentEvent {
   id: string;
   dateTime: string;
@@ -86,6 +88,10 @@ export interface ShipmentEvent {
   description: string;
   source: string;
   user?: string | null;
+  type?: ShipmentEventType;
+  label?: string | null;
+  previousValue?: string | null;
+  title?: string | null;
 }
 
 export interface Shipment {
