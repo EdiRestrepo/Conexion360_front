@@ -4,15 +4,13 @@ import { ActivatedRoute, Params, Router, convertToParamMap, provideRouter } from
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
 import { LogisticDates, Shipment, ShipmentFinancialInfo } from '../../core/models/shipment.model';
-import { ApiHomeService } from '../../core/services/api-home.service';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
+import { ApiShipmentDetailService } from '../../core/services/api-shipment-detail.service';
 import { ShipmentDetail } from './shipment-detail';
 
 describe('ShipmentDetail', () => {
   let fixture: ComponentFixture<ShipmentDetail>;
   let router: Router;
-  let getByIdSpy: jasmine.Spy<(id: string) => Observable<Shipment | null>>;
-  let homeSearchSpy: jasmine.Spy;
+  let getDetailSpy: jasmine.Spy<(documentNumber: string, shipmentId?: string) => Observable<Shipment | null>>;
   let paramSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let querySubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let clipboardWriteSpy: jasmine.Spy<(value: string) => Promise<void>>;
@@ -20,16 +18,7 @@ describe('ShipmentDetail', () => {
   beforeEach(async () => {
     paramSubject = new BehaviorSubject(convertToParamMap({ id: 'shipment-001' }));
     querySubject = new BehaviorSubject(convertToParamMap({}));
-    getByIdSpy = jasmine.createSpy('getById').and.returnValue(of(createShipment()));
-    homeSearchSpy = jasmine.createSpy('search').and.returnValue(
-      of({
-        items: [],
-        page: 1,
-        pageSize: 10,
-        totalItems: 0,
-        totalPages: 0,
-      }),
-    );
+    getDetailSpy = jasmine.createSpy('getDetail').and.returnValue(of(createShipment()));
     clipboardWriteSpy = jasmine.createSpy('writeText').and.resolveTo();
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       value: { writeText: clipboardWriteSpy },
@@ -48,8 +37,7 @@ describe('ShipmentDetail', () => {
             snapshot: { paramMap: convertToParamMap({ id: 'shipment-001' }), queryParamMap: convertToParamMap({}) },
           },
         },
-        { provide: MockShipmentService, useValue: { getById: getByIdSpy } },
-        { provide: ApiHomeService, useValue: { search: homeSearchSpy } },
+        { provide: ApiShipmentDetailService, useValue: { getDetail: getDetailSpy } },
       ],
     }).compileComponents();
 
@@ -58,10 +46,11 @@ describe('ShipmentDetail', () => {
     fixture = TestBed.createComponent(ShipmentDetail);
   });
 
-  it('should get shipment by route id and render header', fakeAsync(() => {
+  it('should request the detail by transport document and render header', fakeAsync(() => {
+    querySubject.next(convertToParamMap({ document: 'AWB-001' }));
     render();
 
-    expect(getByIdSpy).toHaveBeenCalledWith('shipment-001');
+    expect(getDetailSpy).toHaveBeenCalledWith('AWB-001', 'shipment-001');
     expect(getText()).toContain('AWB-001');
     expect(getText()).toContain('En tránsito');
     expect(getText()).toContain('México');
@@ -69,53 +58,26 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should render not found state', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(null));
+    getDetailSpy.and.returnValue(of(null));
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
     expect(getText()).toContain('Envío no encontrado');
   }));
 
-  it('should render detail from home search when route id is not in mock data', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(null));
-    homeSearchSpy.and.returnValue(
-      of({
-        items: [
-          {
-            id: '200',
-            documentNumber: 'AWB-JL9TDCC5',
-            operationType: 'EXPO',
-            transportMode: 'SEA',
-            status: 'ORIGIN_CUSTOMS',
-            origin: { country: 'Colombia' },
-            destination: { country: 'Alemania' },
-          },
-        ],
-        page: 1,
-        pageSize: 10,
-        totalItems: 1,
-        totalPages: 1,
-      }),
-    );
-    paramSubject.next(convertToParamMap({ id: '200' }));
-    querySubject.next(convertToParamMap({ document: 'AWB-JL9TDCC5', from: 'dashboard' }));
-    fixture = TestBed.createComponent(ShipmentDetail);
+  it('should fall back to the route id when the document query param is missing', fakeAsync(() => {
     render();
 
-    expect(homeSearchSpy).toHaveBeenCalledWith({ query: 'AWB-JL9TDCC5', page: 1, pageSize: 10 });
-    expect(getText()).toContain('AWB-JL9TDCC5');
-    expect(getText()).toContain('En Aduana origen');
-    expect(getText()).toContain('Colombia');
-    expect(getText()).toContain('Alemania');
+    expect(getDetailSpy).toHaveBeenCalledWith('shipment-001', 'shipment-001');
   }));
 
   it('should render error state and retry', fakeAsync(() => {
-    getByIdSpy.and.returnValue(throwError(() => new Error('fallo')));
+    getDetailSpy.and.returnValue(throwError(() => new Error('fallo')));
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
     expect(getText()).toContain('No se pudo cargar el detalle');
-    getByIdSpy.and.returnValue(of(createShipment()));
+    getDetailSpy.and.returnValue(of(createShipment()));
     clickButton('Reintentar');
     tick();
     fixture.detectChanges();
@@ -170,14 +132,14 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should render issue only when shipment has issue', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ issue: { type: 'DELAY', comment: 'Retraso operativo.', date: '2026-01-06', resolved: false } })));
+    getDetailSpy.and.returnValue(of(createShipment({ issue: { type: 'DELAY', comment: 'Retraso operativo.', date: '2026-01-06', resolved: false } })));
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
     expect(getText()).toContain('Retraso logístico');
     expect(getText()).toContain('Retraso operativo.');
 
-    getByIdSpy.and.returnValue(of(createShipment({ issue: null })));
+    getDetailSpy.and.returnValue(of(createShipment({ issue: null })));
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
@@ -185,7 +147,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should list every logistic milestone with its date', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ logisticDates: { etd: '2026-01-01', atd: '2026-01-03', eta: '2026-01-05', ata: null } })));
+    getDetailSpy.and.returnValue(of(createShipment({ logisticDates: { etd: '2026-01-01', atd: '2026-01-03', eta: '2026-01-05', ata: null } })));
     setQueryParams({ tab: 'dates' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
@@ -200,7 +162,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should show the container card with placeholders when there is no container data', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ transportMode: 'AIR', container: undefined })));
+    getDetailSpy.and.returnValue(of(createShipment({ transportMode: 'AIR', container: undefined })));
     setQueryParams({ tab: 'container' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
@@ -214,7 +176,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should show the financial cards with placeholders when financial data is absent', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ financialInfo: { advancePayment: null, invoice: null } })));
+    getDetailSpy.and.returnValue(of(createShipment({ financialInfo: { advancePayment: null, invoice: null } })));
     setQueryParams({ tab: 'financial' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
@@ -239,7 +201,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should calculate tracking progress and active stage', fakeAsync(() => {
-    getByIdSpy.and.returnValue(
+    getDetailSpy.and.returnValue(
       of(
         createShipment({
           status: 'IN_TRANSIT',
@@ -261,7 +223,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should calculate next stop from logistic dates and destination', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ status: 'IN_TRANSIT', logisticDates: { eta: '2026-01-05' } })));
+    getDetailSpy.and.returnValue(of(createShipment({ status: 'IN_TRANSIT', logisticDates: { eta: '2026-01-05' } })));
     setQueryParams({ tab: 'tracking' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
@@ -271,7 +233,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should render delivered tracking as complete without next stop', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ status: 'DELIVERED', logisticDates: { delivery: '2026-01-10' } })));
+    getDetailSpy.and.returnValue(of(createShipment({ status: 'DELIVERED', logisticDates: { delivery: '2026-01-10' } })));
     setQueryParams({ tab: 'tracking' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
@@ -281,7 +243,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should render coordinate fallback when coordinates are absent', fakeAsync(() => {
-    getByIdSpy.and.returnValue(
+    getDetailSpy.and.returnValue(
       of(
         createShipment({
           origin: { country: 'España', city: 'Madrid', terminal: null },
@@ -331,7 +293,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should render comment entries without a previous status', fakeAsync(() => {
-    getByIdSpy.and.returnValue(
+    getDetailSpy.and.returnValue(
       of(
         createShipment({
           events: [
@@ -362,7 +324,7 @@ describe('ShipmentDetail', () => {
   }));
 
   it('should render empty history state', fakeAsync(() => {
-    getByIdSpy.and.returnValue(of(createShipment({ events: [] })));
+    getDetailSpy.and.returnValue(of(createShipment({ events: [] })));
     setQueryParams({ tab: 'history' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();

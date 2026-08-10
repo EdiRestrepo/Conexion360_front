@@ -127,7 +127,7 @@
                   <a
                     mat-icon-button
                     [routerLink]="['/shipments', shipment.id]"
-                    [queryParams]="viewModel.queryParams"
+                    [queryParams]="getDetailQueryParams(viewModel.queryParams, shipment.documentNumber)"
                     [attr.aria-label]="'Ver detalle del envío completado ' + shipment.documentNumber"
                     title="Ver detalle"
                   >
@@ -151,7 +151,7 @@
                 <a
                   mat-icon-button
                   [routerLink]="['/shipments', shipment.id]"
-                  [queryParams]="viewModel.queryParams"
+                  [queryParams]="getDetailQueryParams(viewModel.queryParams, shipment.documentNumber)"
                   [attr.aria-label]="'Ver detalle del envío completado ' + shipment.documentNumber"
                   title="Ver detalle"
                 >

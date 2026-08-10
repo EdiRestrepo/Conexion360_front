@@ -102,6 +102,10 @@ export class History {
     this.bindPageSizeControl();
   }
 
+  protected getDetailQueryParams(queryParams: Params, documentNumber: string): Params {
+    return { ...queryParams, document: documentNumber };
+  }
+
   protected retry(): void {
     void this.router.navigate([], { relativeTo: this.route, queryParams: this.buildQueryParams(defaultFilters) });
   }

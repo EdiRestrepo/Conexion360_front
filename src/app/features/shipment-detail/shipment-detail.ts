@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
+import { Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 
 import {
   Container,
@@ -14,18 +14,16 @@ import {
   ShipmentStatus,
   TransportMode,
 } from '../../core/models/shipment.model';
-import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
+import { ApiShipmentDetailService } from '../../core/services/api-shipment-detail.service';
 import {
   ShipmentChipType,
   getShipmentIssueTitle,
   getShipmentStatusChipType,
   getShipmentStatusIcon,
   getShipmentStatusLabel,
-  getShipmentStatusOrder,
   getTransportModeIcon,
 } from '../../core/utils/display-labels';
 import { formatShipmentDate, getLocationLabel } from '../../core/utils/shipment-format';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
 import { ShipmentTracking } from './components/shipment-tracking/shipment-tracking';
 import type {
   DetailField,
@@ -53,12 +51,10 @@ const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'finan
 export class ShipmentDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly shipmentService = inject(MockShipmentService);
-  private readonly apiHomeService = inject(ApiHomeService);
+  private readonly shipmentDetailService = inject(ApiShipmentDetailService);
   private readonly retry$ = new Subject<void>();
 
   protected readonly copied = signal(false);
-  protected readonly historyDescending = signal(true);
   protected readonly tabs: TabItem[] = [
     { id: 'summary', label: 'Resumen' },
     { id: 'tracking', label: 'Seguimiento' },
@@ -77,21 +73,22 @@ export class ShipmentDetail {
       const id = params.get('id') ?? '';
       const selectedTab = this.getTabFromParams(queryParams);
       const listQueryParams = this.getListQueryParams(queryParams);
-      const documentNumber = queryParams.get('document') ?? '';
+      // Los listados navegan con el id del envío y el documento de transporte; el detalle
+      // se consulta por documento, así que el id sirve de respaldo cuando no viaja el query param.
+      const documentNumber = queryParams.get('document') ?? id;
 
-      return this.shipmentService.getById(id).pipe(
-        switchMap((shipment) => {
-          if (shipment) {
-            return of({
-              state: 'success',
-              selectedTab,
-              listQueryParams,
-              shipment,
-            } satisfies DetailViewModel);
-          }
-
-          return this.getShipmentFromHomeSearch(id, documentNumber, selectedTab, listQueryParams);
-        }),
+      return this.shipmentDetailService.getDetail(documentNumber, id).pipe(
+        map((shipment) =>
+          shipment
+            ? ({ state: 'success', selectedTab, listQueryParams, shipment } satisfies DetailViewModel)
+            : ({
+                state: 'not-found',
+                selectedTab,
+                listQueryParams,
+                shipment: null,
+                message: 'No encontramos información para el documento de transporte solicitado.',
+              } satisfies DetailViewModel),
+        ),
         startWith({ state: 'loading', selectedTab, listQueryParams, shipment: null } satisfies DetailViewModel),
         catchError(() =>
           of({
@@ -154,7 +151,7 @@ export class ShipmentDetail {
   }
 
   protected getDocumentType(shipment: Shipment): string {
-    return shipment.transportMode === 'AIR' ? 'AWB' : 'HBL';
+    return shipment.documentType?.trim() || (shipment.transportMode === 'AIR' ? 'AWB' : 'HBL');
   }
 
   protected getStatusChipClass(shipment: { status: ShipmentStatus }): string {
@@ -298,161 +295,6 @@ export class ShipmentDetail {
     return returnQueryParams;
   }
 
-  private getShipmentFromHomeSearch(
-    id: string,
-    documentNumber: string,
-    selectedTab: DetailTab,
-    listQueryParams: Params,
-  ): Observable<DetailViewModel> {
-    if (!documentNumber.trim()) {
-      return of({
-        state: 'not-found',
-        selectedTab,
-        listQueryParams,
-        shipment: null,
-        message: 'El identificador solicitado no existe en los datos simulados.',
-      } satisfies DetailViewModel);
-    }
-
-    return this.apiHomeService.search({ query: documentNumber, page: 1, pageSize: 10 }).pipe(
-      map((result) => {
-        const normalizedDocument = documentNumber.trim().toLowerCase();
-        const summary =
-          result.items.find((item) => item.id === id || item.documentNumber.toLowerCase() === normalizedDocument) ??
-          result.items[0] ??
-          null;
-
-        return {
-          state: summary ? 'success' : 'not-found',
-          selectedTab,
-          listQueryParams,
-          shipment: summary ? this.createShipmentFromHomeSummary(summary) : null,
-          message: summary
-            ? undefined
-            : 'El identificador solicitado no fue encontrado en la consulta por documento.',
-        } satisfies DetailViewModel;
-      }),
-      catchError(() =>
-        of({
-          state: 'error',
-          selectedTab,
-          listQueryParams,
-          shipment: null,
-          message: 'No fue posible cargar el detalle desde la búsqueda por documento. Intenta nuevamente.',
-        } satisfies DetailViewModel),
-      ),
-    );
-  }
-
-  // Bitácora de ejemplo para maquetar el historial mientras el backend expone el servicio de cambios.
-  // Al conectar el endpoint real, esta función se reemplaza por los eventos que entregue el servicio.
-  private createSampleHistory(summary: HomeShipmentSummary): ShipmentEvent[] {
-    const baseId = summary.id || summary.documentNumber;
-    const location = { country: summary.origin.country || '-', city: null, terminal: null };
-    const source = 'Servicio de inicio Conexion360';
-    const statuses = (['PENDING', 'IN_TRANSIT', summary.status] as ShipmentStatus[]).filter(
-      (status, index, all) => index === 0 || status !== all[index - 1],
-    );
-    const descriptions = [
-      'Registro inicial del envío en la plataforma.',
-      'Envío despachado desde la bodega de origen. Todo en orden.',
-      'Detalle construido desde la búsqueda por documento de transporte.',
-    ];
-    const users = ['Edison Estival', 'Edison Estival', 'Laura Martínez'];
-
-    const events: ShipmentEvent[] = statuses.map((status, index) => ({
-      id: `${baseId}-history-${index + 1}`,
-      dateTime: `2026-01-0${index + 1}T09:30:00.000Z`,
-      status,
-      location,
-      description: descriptions[index] ?? descriptions[descriptions.length - 1],
-      source,
-      user: users[index] ?? null,
-    }));
-
-    events.push({
-      id: `${baseId}-history-ata`,
-      dateTime: '2026-01-05T10:20:00.000Z',
-      status: summary.status,
-      location,
-      description: 'Fecha real de llegada confirmada por la aerolínea.',
-      source,
-      user: 'Laura Martínez',
-      type: 'DATE',
-      label: 'ATA',
-      previousValue: 'Sin confirmar',
-      title: '15 mar 2026',
-    });
-
-    return events;
-  }
-
-  private createShipmentFromHomeSummary(summary: HomeShipmentSummary): Shipment {
-    return {
-      id: summary.id,
-      documentNumber: summary.documentNumber,
-      operationType: summary.operationType,
-      transportMode: summary.transportMode,
-      status: summary.status,
-      client: 'Cliente autenticado',
-      provider: 'Pendiente por integrar',
-      incoterm: '-',
-      origin: {
-        country: summary.origin.country || '-',
-        city: null,
-        terminal: null,
-        latitude: null,
-        longitude: null,
-      },
-      destination: {
-        country: summary.destination.country || '-',
-        city: null,
-        terminal: null,
-        latitude: null,
-        longitude: null,
-      },
-      merchandiseDescription: 'Información pendiente por integrar desde el servicio de detalle.',
-      cargoType: summary.transportMode === 'SEA' ? 'FCL' : 'LCL',
-      packages: 0,
-      weightKg: 0,
-      volumeM3: 0,
-      carrier: 'Pendiente por integrar',
-      logisticDates: {},
-      container: null,
-      financialInfo: {
-        advancePayment: null,
-        invoice: null,
-      },
-      events: this.createSampleHistory(summary),
-      issue:
-        summary.status === 'WITH_ISSUE'
-          ? {
-              type: 'DELAY',
-              comment: 'El envío registra una novedad según el servicio de inicio.',
-              date: '2026-01-01',
-              resolved: false,
-            }
-          : null,
-      progress: this.getProgressFromStatus(summary.status),
-      nextStop: null,
-    };
-  }
-
-  private getProgressFromStatus(status: ShipmentStatus): number {
-    if (status === 'DELIVERED') {
-      return 100;
-    }
-
-    if (status === 'PENDING') {
-      return 0;
-    }
-
-    if (status === 'IN_TRANSIT') {
-      return 50;
-    }
-
-    return Math.min(getShipmentStatusOrder(status) * 12, 90);
-  }
 
   private createHistoryEntry(event: ShipmentEvent, previous: ShipmentEvent | null): HistoryEntry {
     const type = event.type ?? 'STATUS';
@@ -478,8 +320,9 @@ export class ShipmentDetail {
       return '-';
     }
 
-    const day = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
-    const time = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(date);
+    // El backend envía la marca de tiempo con desfase horario, así que se muestra en la zona del usuario.
+    const day = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+    const time = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
 
     return `${day}, ${time}`;
   }

@@ -88,6 +88,7 @@
                 <a
                   mat-icon-button
                   [routerLink]="['/shipments', notification.shipmentId]"
+                  [queryParams]="{ document: notification.shipmentDocument }"
                   [attr.aria-label]="'Abrir envío ' + notification.shipmentDocument"
                   title="Abrir envío"
                   (click)="markAsRead(notification)"

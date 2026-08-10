@@ -51,7 +51,7 @@ export interface Container {
 export interface AdvancePayment {
   requestedAt: string | null;
   paidAt: string | null;
-  amount: number;
+  amount: number | null;
 }
 
 export interface Invoice {
@@ -60,10 +60,10 @@ export interface Invoice {
   invoiceNumber: string | null;
   invoiceDate: string | null;
   expenseDescription: string | null;
-  expenseValue: number;
-  subtotal: number;
-  tax: number;
-  total: number;
+  expenseValue: number | null;
+  subtotal: number | null;
+  tax: number | null;
+  total: number | null;
 }
 
 export interface ShipmentFinancialInfo {
@@ -97,6 +97,7 @@ export interface ShipmentEvent {
 export interface Shipment {
   id: string;
   documentNumber: string;
+  documentType?: string | null;
   operationType: OperationType;
   transportMode: TransportMode;
   status: ShipmentStatus;

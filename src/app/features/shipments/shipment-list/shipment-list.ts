@@ -217,6 +217,10 @@ export class ShipmentList {
     };
   }
 
+  protected getDetailQueryParams(queryParams: Params, documentNumber: string): Params {
+    return { ...queryParams, document: documentNumber };
+  }
+
   private getFiltersFromParams(params: ParamMap): ShipmentListFilters {
     const operation = this.toOperationType(params.get('operation'));
     const mode = this.toTransportMode(params.get('mode'));
