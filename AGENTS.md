@@ -49,10 +49,13 @@ Integrado con el backend real:
   y `/myshipments/filterShipments`).
 - Historial (`ApiHistoryService`, endpoints `/myshipments/allhistory` y
   `/myshipments/filterhistory`).
+- Detalle del envío (`ApiShipmentDetailService`, endpoint
+  `/myshipments/detailsshipments`). Un único endpoint alimenta las seis
+  pestañas: Resumen, Seguimiento, Fechas logísticas, Contenedor, Financiero e
+  Historial.
 
 Todavía con datos simulados, sin endpoints de backend confirmados:
 
-- Detalle del envío (pestañas más allá del resumen)
 - Reportes
 - Notificaciones
 - Ajustes
@@ -132,8 +135,10 @@ El detalle debe incluir pestañas:
 - Fechas logísticas
 - Contenedor
 - Financiero
-- Documentos
 - Historial
+
+La pestaña Documentos fue descartada: no se implementará y el backend no
+entrega esa información.
 
 ### Seguimiento
 
@@ -187,24 +192,14 @@ El detalle debe incluir pestañas:
 - IVA
 - Total
 
-### Documentos
-
-- Lista de documentos
-- Tipo
-- Nombre
-- Fecha
-- Estado
-- Acción de descarga simulada
-- Acción de visualización simulada
-
 ### Historial
 
-- Eventos del envío
+Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
+
+- Estado anterior y estado nuevo del cambio
+- Mensaje o descripción del cambio
+- Usuario que lo registró
 - Fecha y hora
-- Estado
-- Ubicación
-- Descripción
-- Usuario o fuente del evento
 
 ### Notificaciones
 
@@ -300,7 +295,6 @@ Definir interfaces y tipos explícitos para al menos:
 - ShipmentFinancialInfo
 - Invoice
 - AdvancePayment
-- ShipmentDocument
 - Notification
 - NotificationPreference
 - DashboardMetrics
@@ -375,10 +369,21 @@ algo sigue mockeado):
   un endpoint nuevo con la misma forma de respuesta. Los mappers de
   funciones puras (sin `@Injectable`) viven en `core/mappers/`, separados de
   los servicios inyectables.
+- `ApiShipmentDetailService`: real, consume el backend
+  (`/myshipments/detailsshipments`) con `idClient` y `documentNumber` como
+  parámetros. Un solo endpoint alimenta las seis pestañas del detalle, así
+  que la consulta se hace **una vez por envío**: la pestaña activa es estado
+  de interfaz y no debe disparar una petición nueva (ver
+  `detailRequest$` / `detailData$` en `shipment-detail.ts`).
+- `mapShipmentDetailResponse` (`core/mappers/shipment-detail.mapper.ts`):
+  traduce las secciones `resumenShipments`, `trackingShipments`,
+  `logisticsDatesShipments`, `containerShipments`, `financialInfoShipments` e
+  `historyShipments` al modelo `Shipment`. Tolera que los números lleguen
+  como texto y que las fechas vengan en ISO o en formato estadounidense
+  (`MM/DD/YYYY`, caso de `invoiceDate`).
 - `MockShipmentService` (implementa `ShipmentDataSource`, definida en
-  `core/contracts/shipment-data-source.ts`): sigue en uso para detalle del
-  envío y reportes, mientras no exista integración con el backend para esas
-  pantallas.
+  `core/contracts/shipment-data-source.ts`): sigue en uso únicamente para
+  reportes, mientras no exista integración con el backend para esa pantalla.
 - `MockNotificationService` (implementa `NotificationDataSource`, definida
   en `core/contracts/notification-data-source.ts`): sigue en uso para
   notificaciones.
@@ -763,3 +768,65 @@ Una tarea solo se considera terminada cuando:
 - Mantiene tipado estricto
 - Está integrada con las rutas correspondientes
 - Se documentan los cambios
+
+## 20. Geolocalización y mapas (nota técnica)
+
+Esta sección documenta cómo se resuelve el mapa de la pestaña Seguimiento y
+qué limitaciones tiene la solución actual de cara a un despliegue productivo.
+
+### Qué componente hace qué
+
+Hay tres piezas distintas que suelen confundirse porque en dos de ellas
+aparece el nombre "OpenStreetMap":
+
+| Pieza | Dónde vive | Qué hace | ¿Es dependencia npm? |
+|---|---|---|---|
+| Nominatim (`nominatim.openstreetmap.org`) | Backend .NET | Geocodificación: recibe el nombre del país y devuelve latitud/longitud | No, es una API REST |
+| Servidor de tiles de OSM (`tile.openstreetmap.org`) | Consumido por el navegador | Entrega las imágenes del mapa | No, se consume por URL |
+| Leaflet | Frontend Angular | Renderiza el mapa, marcadores y línea de ruta | Sí, `leaflet` en `package.json` |
+
+Por eso en `package.json` solo aparece `leaflet`: los dos servicios de
+OpenStreetMap se consumen por HTTP, no como librerías. Leaflet es agnóstico
+del proveedor de mapas; cambiar de proveedor no implica cambiar el código de
+la aplicación, solo la URL de los tiles.
+
+### Flujo de datos
+
+1. El backend consulta Nominatim con el nombre del país y obtiene las
+   coordenadas.
+2. El endpoint `/myshipments/detailsshipments` las entrega en
+   `trackingShipments` (`originLatitudCoordinates`,
+   `originLongitudCoordinates` y equivalentes de destino).
+3. `shipment-detail.mapper.ts` las guarda en `origin.latitude/longitude` y
+   `destination.latitude/longitude` del modelo `Shipment`.
+4. El componente `shipment-tracking` dibuja origen, destino y ruta con
+   Leaflet sobre los tiles de OpenStreetMap.
+
+Advertencia sobre los nombres de país: Nominatim devuelve el nombre en el
+idioma local (`Deutschland` en vez de Alemania, el nombre en chino para
+China). Por eso el mapper usa `resumenShipments.origin` y
+`resumenShipments.destination` para las **etiquetas visibles**, y de
+`trackingShipments` toma **únicamente** latitud y longitud.
+
+### Limitaciones para producción
+
+La solución actual es adecuada para el alcance del trabajo de grado, pero
+tiene restricciones que deben resolverse antes de un despliegue con tráfico
+real:
+
+- **Tiles**: la política de uso de OpenStreetMap desaconseja explícitamente
+  usar `tile.openstreetmap.org` en aplicaciones productivas. Correspondería
+  contratar un proveedor con plan (Mapbox, MapTiler, Stadia Maps) y cambiar
+  la URL del `tileLayer`.
+- **Geocodificación**: Nominatim limita a una petición por segundo y exige un
+  `User-Agent` identificable. Con volumen, ese límite se convierte en cuello
+  de botella.
+- **Geocodificación repetida**: hoy se resuelve el mismo país en cada
+  consulta de detalle. Como el conjunto de países es pequeño y estable, lo
+  correcto es persistir las coordenadas en base de datos (o una tabla de
+  referencia de países) y consultar Nominatim solo ante un país desconocido.
+  Esto es una decisión del lado del backend.
+- **Precisión**: geocodificar a nivel de país ubica el marcador en el
+  centroide del territorio, no en el puerto o aeropuerto real. Si más
+  adelante se requiere precisión operativa, habría que geocodificar por
+  terminal o ciudad.
