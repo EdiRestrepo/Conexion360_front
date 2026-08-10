@@ -199,13 +199,18 @@ describe('ShipmentDetail', () => {
     expect(text).not.toContain('Retrasado');
   }));
 
-  it('should show container not applicable for air shipments', fakeAsync(() => {
+  it('should show the container card with placeholders when there is no container data', fakeAsync(() => {
     getByIdSpy.and.returnValue(of(createShipment({ transportMode: 'AIR', container: undefined })));
     setQueryParams({ tab: 'container' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
-    expect(getText()).toContain('No aplica para esta operación.');
+    const text = getText();
+
+    expect(text).toContain('Información de contenedor');
+    expect(text).toContain('Días restantes para entrega');
+    expect(text).toContain('Depósito contenedor');
+    expect(text).toContain('No disponible');
   }));
 
   it('should show empty financial section when financial data is absent', fakeAsync(() => {

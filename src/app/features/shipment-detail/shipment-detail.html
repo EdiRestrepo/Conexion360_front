@@ -127,23 +127,17 @@
         }
 
         @case ('container') {
-          @if (shipment.transportMode === 'SEA' && shipment.container; as container) {
-            <section class="surface-card detail-section" aria-label="Información del contenedor">
-              <h2>Contenedor</h2>
-              <dl class="detail-list detail-list--three">
-                @for (field of getContainerFields(container); track field.label) {
-                  <div>
-                    <dt>{{ field.label }}</dt>
-                    <dd>{{ field.value }}</dd>
-                  </div>
-                }
-              </dl>
-            </section>
-          } @else {
-            <section class="surface-card empty-section" aria-label="Contenedor no aplica">
-              <strong>No aplica para esta operación.</strong>
-            </section>
-          }
+          <section class="surface-card detail-section detail-section--half container-card" aria-label="Información de contenedor">
+            <h2>Información de contenedor</h2>
+            <dl class="detail-list detail-list--rows">
+              @for (field of getContainerFields(shipment.container); track field.label) {
+                <div class="detail-list__row">
+                  <dt>{{ field.label }}</dt>
+                  <dd [class.detail-list__value--empty]="field.empty">{{ field.value }}</dd>
+                </div>
+              }
+            </dl>
+          </section>
         }
 
         @case ('financial') {

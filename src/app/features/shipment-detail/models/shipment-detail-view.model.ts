@@ -5,7 +5,7 @@ export type DetailTab = 'summary' | 'tracking' | 'dates' | 'container' | 'financ
 export type TrackingStageState = 'completed' | 'current' | 'pending';
 export interface DetailViewModel { state: DetailState; selectedTab: DetailTab; listQueryParams: Params; shipment: Shipment | null; message?: string; }
 export interface TabItem { id: DetailTab; label: string; }
-export interface DetailField { label: string; value: string; accent?: boolean; }
+export interface DetailField { label: string; value: string; accent?: boolean; empty?: boolean; }
 export interface LogisticDateRow { label: string; date: string; }
 export interface TrackingStage { label: string; icon: string; state: TrackingStageState; }
 export interface NextStop { location: string; date: string; }

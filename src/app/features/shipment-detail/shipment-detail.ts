@@ -296,18 +296,18 @@ export class ShipmentDetail {
     ];
   }
 
-  protected getContainerFields(container: Container): DetailField[] {
+  protected getContainerFields(container: Container | null | undefined): DetailField[] {
     return [
-      { label: 'Tipo', value: this.formatOptional(container.type) },
-      { label: 'Cantidad', value: container.quantity.toLocaleString('es-CO') },
-      { label: 'Número', value: this.formatOptional(container.number) },
-      { label: 'Días libres', value: this.formatNullableNumber(container.freeDays) },
-      { label: 'Días restantes', value: this.formatNullableNumber(container.remainingDays) },
-      { label: 'Fecha devolución real', value: this.formatDate(container.returnDate) },
-      { label: 'Días de demora', value: container.delayDays.toLocaleString('es-CO') },
-      { label: 'Valor por día', value: this.formatCurrency(container.delayValuePerDay) },
-      { label: 'Total demoras', value: this.formatCurrency(container.totalDelayValue) },
-      { label: 'Depósito', value: this.formatOptional(container.deposit) },
+      this.createContainerField('Tipo de contenedor', container?.type),
+      this.createContainerField('Cantidad de contenedores', this.formatCount(container?.quantity)),
+      this.createContainerField('Número de contenedor', container?.number),
+      this.createContainerField('Días libres', this.formatDays(container?.freeDays)),
+      this.createContainerField('Días restantes para entrega', this.formatDays(container?.remainingDays)),
+      this.createContainerField('Fecha devolución real', this.formatOptionalDate(container?.returnDate)),
+      this.createContainerField('Días de demora', this.formatDays(container?.delayDays)),
+      this.createContainerField('Valor por día de demora', this.formatUsd(container?.delayValuePerDay)),
+      this.createContainerField('Total demoras', this.formatUsd(container?.totalDelayValue)),
+      this.createContainerField('Depósito contenedor', container?.deposit),
     ];
   }
 
@@ -533,7 +533,27 @@ export class ShipmentDetail {
     return value?.trim() ? value : '-';
   }
 
-  private formatNullableNumber(value: number | null | undefined): string {
-    return value === null || value === undefined ? '-' : value.toLocaleString('es-CO');
+  private createContainerField(label: string, value: string | null | undefined): DetailField {
+    const text = value?.trim();
+
+    return text ? { label, value: text } : { label, value: 'No disponible', empty: true };
+  }
+
+  private formatCount(value: number | null | undefined): string | null {
+    return value === null || value === undefined ? null : value.toLocaleString('es-CO');
+  }
+
+  private formatDays(value: number | null | undefined): string | null {
+    return value === null || value === undefined ? null : `${value.toLocaleString('es-CO')} días`;
+  }
+
+  private formatUsd(value: number | null | undefined): string | null {
+    return value === null || value === undefined ? null : `USD ${value.toLocaleString('es-CO')}`;
+  }
+
+  private formatOptionalDate(value: string | null | undefined): string | null {
+    const formatted = this.formatDate(value);
+
+    return formatted === '-' ? null : formatted;
   }
 }
