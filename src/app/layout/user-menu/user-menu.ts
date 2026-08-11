@@ -2,6 +2,8 @@ import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
@@ -10,7 +12,7 @@ import { getUserRoleLabel } from '../../core/utils/display-labels';
 
 @Component({
   selector: 'app-user-menu',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, RouterLink],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, RouterLink],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { BehaviorSubject, Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
@@ -24,7 +25,7 @@ const initialViewModel: NotificationsViewModel = {
 
 @Component({
   selector: 'app-notifications',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, RouterLink],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatTooltipModule, RouterLink],
   templateUrl: './notifications.html',
   styleUrl: './notifications.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -36,7 +36,12 @@ describe('MobileNavigation', () => {
     expect(content).toContain('Inicio');
     expect(content).toContain('Mis envíos');
     expect(content).toContain('Reportes');
-    expect(content).toContain('Cliente');
+
+    const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__trigger');
+    trigger?.click();
+    fixture.detectChanges();
+
+    expect(document.body.textContent).toContain('Cliente');
   });
 
   it('should emit close when a navigation link is clicked', () => {

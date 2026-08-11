@@ -20,12 +20,14 @@ describe('UserMenu', () => {
     }).compileComponents();
   });
 
-  it('should render dynamic profile data and translated role', () => {
+  it('should render dynamic profile data and translated role in the dropdown', () => {
     fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('ANALISTAOPE'));
     fixture.detectChanges();
 
-    const content = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    openMenu(fixture);
+
+    const content = document.body.textContent ?? '';
 
     expect(content).toContain('Iván Valencia');
     expect(content).toContain('ivan.valencia@conexion360.com');
@@ -52,17 +54,69 @@ describe('UserMenu', () => {
     expect(image?.src).toContain('https://example.com/avatar.png');
   });
 
-  it('should emit logout when the logout button is clicked', () => {
+  it('should not render a standalone logout button in compact mode', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__logout')).toBeNull();
+  });
+
+  it('should emit logout from the menu item when compact', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    const logoutSpy = jasmine.createSpy('logout');
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('compact', true);
+    fixture.componentInstance.logout.subscribe(logoutSpy);
+    fixture.detectChanges();
+
+    openMenu(fixture);
+
+    const menuItem = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item')).find((item) =>
+      item.textContent?.includes('Cerrar sesión'),
+    );
+    menuItem?.click();
+
+    expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('should render a standalone logout button with tooltip when not compact', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    const logoutButton = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__logout');
+
+    expect(logoutButton).not.toBeNull();
+    expect(logoutButton?.getAttribute('aria-label')).toBe('Cerrar sesión');
+  });
+
+  it('should emit logout when the standalone logout button is clicked', () => {
     fixture = TestBed.createComponent(UserMenu);
     const logoutSpy = jasmine.createSpy('logout');
     fixture.componentRef.setInput('session', createSession('CLIENT'));
     fixture.componentInstance.logout.subscribe(logoutSpy);
     fixture.detectChanges();
 
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button');
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__logout');
     button?.click();
 
     expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('should not include a logout menu item when not compact', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+
+    const menuItem = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item')).find((item) =>
+      item.textContent?.includes('Cerrar sesión'),
+    );
+
+    expect(menuItem).toBeUndefined();
   });
 
   it('should not render the notifications bell when not compact', () => {
@@ -111,6 +165,12 @@ describe('UserMenu', () => {
     expect(bell?.getAttribute('href')).toContain('/notifications');
   });
 });
+
+function openMenu(fixture: ComponentFixture<UserMenu>): void {
+  const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__trigger');
+  trigger?.click();
+  fixture.detectChanges();
+}
 
 function createSession(role: AuthSession['user']['role'], picture: string | null = null): AuthSession {
   return {

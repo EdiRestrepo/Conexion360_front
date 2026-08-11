@@ -1,18 +1,4 @@
 <section class="user-menu" [class.user-menu--compact]="compact()" aria-label="Perfil de usuario">
-  <div class="user-menu__identity">
-    @if (picture()) {
-      <img class="user-menu__avatar" [src]="picture() ?? ''" alt="" aria-hidden="true" />
-    } @else {
-      <span class="user-menu__avatar" aria-hidden="true">{{ initials() }}</span>
-    }
-
-    <span class="user-menu__text">
-      <strong [title]="displayName()">{{ displayName() }}</strong>
-      <small [title]="email()">{{ email() }}</small>
-      <small>{{ roleLabel() }}</small>
-    </span>
-  </div>
-
   @if (compact()) {
     <a mat-icon-button class="user-menu__bell" routerLink="/notifications" aria-label="Ver notificaciones">
       <mat-icon aria-hidden="true">notifications</mat-icon>
@@ -25,13 +11,44 @@
   }
 
   <button
-    mat-stroked-button
-    class="user-menu__logout"
+    mat-icon-button
+    class="user-menu__trigger"
     type="button"
-    aria-label="Cerrar sesión"
-    (click)="onLogout()"
+    [matMenuTriggerFor]="userMenuPanel"
+    [attr.aria-label]="'Cuenta de ' + displayName()"
   >
-    <mat-icon aria-hidden="true">logout</mat-icon>
-    <span>Cerrar sesión</span>
+    @if (picture()) {
+      <img class="user-menu__avatar" [src]="picture() ?? ''" alt="" aria-hidden="true" />
+    } @else {
+      <span class="user-menu__avatar" aria-hidden="true">{{ initials() }}</span>
+    }
   </button>
+
+  @if (!compact()) {
+    <button
+      mat-icon-button
+      class="user-menu__logout"
+      type="button"
+      aria-label="Cerrar sesión"
+      matTooltip="Cerrar sesión"
+      (click)="onLogout()"
+    >
+      <mat-icon aria-hidden="true">logout</mat-icon>
+    </button>
+  }
 </section>
+
+<mat-menu #userMenuPanel="matMenu" xPosition="before">
+  <div class="user-menu__panel-identity">
+    <strong [title]="displayName()">{{ displayName() }}</strong>
+    <small [title]="email()">{{ email() }}</small>
+    <small>{{ roleLabel() }}</small>
+  </div>
+
+  @if (compact()) {
+    <button mat-menu-item type="button" (click)="onLogout()">
+      <mat-icon aria-hidden="true">logout</mat-icon>
+      <span>Cerrar sesión</span>
+    </button>
+  }
+</mat-menu>

@@ -50,7 +50,7 @@ describe('Sidebar', () => {
     fixture.componentInstance.logout.subscribe(logoutSpy);
     fixture.detectChanges();
 
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button');
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button[aria-label="Cerrar sesión"]');
     button?.click();
 
     expect(logoutSpy).toHaveBeenCalled();
