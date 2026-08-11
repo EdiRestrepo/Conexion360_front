@@ -299,6 +299,29 @@ describe('ShipmentDetail', () => {
     expect(getText()).toContain('Información del envío');
   }));
 
+  it('should render the incoterm received from the backend', fakeAsync(() => {
+    render();
+
+    const text = getText();
+
+    expect(text).toContain('Incoterms');
+    expect(text).toContain('DAP');
+    expect(text).not.toContain('Pendiente por integrar');
+  }));
+
+  it('should mark the incoterm as unavailable when the backend omits it', fakeAsync(() => {
+    getDetailSpy.and.returnValue(of(createShipment({ incoterm: '' })));
+    fixture = TestBed.createComponent(ShipmentDetail);
+    render();
+
+    const incoterm = Array.from(fixture.nativeElement.querySelectorAll('.detail-list__row') as NodeListOf<HTMLElement>).find((row) =>
+      row.querySelector('dt')?.textContent?.includes('Incoterms'),
+    );
+
+    expect(incoterm?.querySelector('dd')?.textContent?.trim()).toBe('No disponible');
+    expect(incoterm?.querySelector('dd')?.classList).toContain('detail-list__value--empty');
+  }));
+
   it('should render the change log newest first with the previous status of each change', fakeAsync(() => {
     setQueryParams({ tab: 'history' });
     render();

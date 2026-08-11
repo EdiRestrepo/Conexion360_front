@@ -66,7 +66,7 @@
                 @for (field of getShipmentInfoFields(shipment); track field.label) {
                   <div class="detail-list__row">
                     <dt>{{ field.label }}</dt>
-                    <dd [class.detail-list__value--accent]="field.accent">{{ field.value }}</dd>
+                    <dd [class.detail-list__value--accent]="field.accent" [class.detail-list__value--empty]="field.empty">{{ field.value }}</dd>
                   </div>
                 }
               </dl>

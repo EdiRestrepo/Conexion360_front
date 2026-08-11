@@ -208,7 +208,7 @@ export class ShipmentDetail {
       { label: 'Descripción de mercancía', value: shipment.merchandiseDescription },
       { label: 'Documento de transporte', value: shipment.documentNumber, accent: true },
       { label: 'Tipo de documento', value: this.getDocumentType(shipment) },
-      { label: 'Incoterms', value: 'Pendiente por integrar' },
+      this.createOptionalField('Incoterms', shipment.incoterm),
     ];
   }
 
