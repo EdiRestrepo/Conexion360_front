@@ -86,6 +86,21 @@ describe('Dashboard', () => {
     expect(progressbars[1].getAttribute('aria-valuenow')).toBe('50');
     expect(progressbars[2].getAttribute('aria-valuenow')).toBe('40');
     expect(progressbars[3].getAttribute('aria-valuenow')).toBe('60');
+    expect(getText()).toContain('50,00%');
+    expect(getText()).toContain('40,00%');
+  }));
+
+  it('should distinguish close distributions with two decimals', fakeAsync(() => {
+    const service = TestBed.inject(ApiHomeService) as unknown as { getDashboardMetrics: jasmine.Spy };
+    service.getDashboardMetrics.and.returnValue(of({ ...createDashboardMetrics(), totalAir: 52, totalSea: 53 }));
+    fixture = TestBed.createComponent(Dashboard);
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('49,52%');
+    expect(getText()).toContain('50,48%');
   }));
 
   it('should render all recent shipments received from service', fakeAsync(() => {

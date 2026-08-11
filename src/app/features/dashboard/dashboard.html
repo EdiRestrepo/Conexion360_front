@@ -133,7 +133,7 @@
                   <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
                   {{ item.label }}
                 </span>
-                <strong>{{ item.percentage }}%</strong>
+                <strong>{{ formatPercentage(item.percentage) }}%</strong>
               </div>
               <div
                 class="distribution-row__bar"
@@ -141,7 +141,7 @@
                 [attr.aria-valuenow]="item.percentage"
                 aria-valuemin="0"
                 aria-valuemax="100"
-                [attr.aria-label]="item.label + ': ' + item.count + ' envíos, ' + item.percentage + '%'"
+                [attr.aria-label]="item.label + ': ' + item.count + ' envíos, ' + formatPercentage(item.percentage) + '%'"
               >
                 <span [style.width.%]="item.percentage"></span>
               </div>
@@ -161,7 +161,7 @@
                   <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
                   {{ item.label }}
                 </span>
-                <strong>{{ item.percentage }}%</strong>
+                <strong>{{ formatPercentage(item.percentage) }}%</strong>
               </div>
               <div
                 class="distribution-row__bar"
@@ -169,7 +169,7 @@
                 [attr.aria-valuenow]="item.percentage"
                 aria-valuemin="0"
                 aria-valuemax="100"
-                [attr.aria-label]="item.label + ': ' + item.count + ' envíos, ' + item.percentage + '%'"
+                [attr.aria-label]="item.label + ': ' + item.count + ' envíos, ' + formatPercentage(item.percentage) + '%'"
               >
                 <span [style.width.%]="item.percentage"></span>
               </div>

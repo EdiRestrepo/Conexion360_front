@@ -105,6 +105,11 @@ export class Dashboard {
     return `${shipment.origin.country} → ${shipment.destination.country}`;
   }
 
+  /** Dos decimales para distinguir participaciones muy cercanas (49,52% vs 50,48%). */
+  protected formatPercentage(value: number): string {
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  }
+
   protected searchAgain(value: string): void {
     this.searchControl.setValue(value);
     this.searchShipment();
@@ -206,7 +211,7 @@ export class Dashboard {
     return {
       label,
       count,
-      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+      percentage: total > 0 ? Math.round((count / total) * 10000) / 100 : 0,
       icon,
     };
   }
