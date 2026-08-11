@@ -1,4 +1,4 @@
-﻿import { AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -6,20 +6,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { BehaviorSubject, Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { Notification, NotificationType } from '../../core/models/notification.model';
 import {
   NotificationTone,
   getNotificationTone,
+  getNotificationTypeEmoji,
   getNotificationTypeIcon,
-  getNotificationTypeLabel,
 } from '../../core/utils/notification-labels';
-import { MockNotificationService } from '../../mocks/services/mock-notification.service';
 import type { NotificationFilter, NotificationsViewModel } from './models/notifications-view.model';
 
 const initialViewModel: NotificationsViewModel = {
   state: 'loading',
   notifications: [],
-  unreadCount: 0,
   filter: 'all',
 };
 
@@ -32,7 +31,7 @@ const initialViewModel: NotificationsViewModel = {
 })
 export class Notifications {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly notificationService = inject(MockNotificationService);
+  private readonly notificationService = inject(NOTIFICATION_DATA_SOURCE);
   private readonly filter$ = new BehaviorSubject<NotificationFilter>('all');
   private readonly refresh$ = new Subject<void>();
 
@@ -57,7 +56,7 @@ export class Notifications {
   );
 
   protected readonly getNotificationTypeIcon = getNotificationTypeIcon;
-  protected readonly getNotificationTypeLabel = getNotificationTypeLabel;
+  protected readonly getNotificationTypeEmoji = getNotificationTypeEmoji;
 
   protected setFilter(filter: NotificationFilter): void {
     this.filter$.next(filter);
@@ -78,18 +77,11 @@ export class Notifications {
       .subscribe(() => this.refresh$.next());
   }
 
-  protected markAllAsRead(): void {
-    this.notificationService
-      .markAllAsRead()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.refresh$.next());
-  }
-
   protected getToneClass(type: NotificationType): string {
     const classes: Record<NotificationTone, string> = {
-      info: 'notification-item--info',
-      warning: 'notification-item--warning',
-      success: 'notification-item--success',
+      info: 'notification-card--info',
+      warning: 'notification-card--warning',
+      success: 'notification-card--success',
     };
 
     return classes[getNotificationTone(type)];
@@ -102,28 +94,22 @@ export class Notifications {
       return '-';
     }
 
-    return new Intl.DateTimeFormat('es-CO', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'UTC',
-    }).format(date);
+    const day = new Intl.DateTimeFormat('es-CO', { day: 'numeric', timeZone: 'UTC' }).format(date);
+    const month = new Intl.DateTimeFormat('es-CO', { month: 'short', timeZone: 'UTC' }).format(date).replace('.', '');
+    const time = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(date);
+
+    return `${day} ${month}, ${time}`;
   }
 
   private createViewModel(notifications: Notification[], filter: NotificationFilter): NotificationsViewModel {
     const sortedNotifications = [...notifications].sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
     const filteredNotifications = filter === 'unread' ? sortedNotifications.filter((notification) => !notification.read) : sortedNotifications;
-    const unreadCount = notifications.filter((notification) => !notification.read).length;
 
     return {
-      state: notifications.length === 0 || filteredNotifications.length === 0 ? 'empty' : 'success',
+      state: filteredNotifications.length === 0 ? 'empty' : 'success',
       notifications: filteredNotifications,
-      unreadCount,
       filter,
-      message: notifications.length === 0 ? 'No hay notificaciones simuladas para mostrar.' : 'No hay notificaciones no leídas.',
+      message: notifications.length === 0 ? 'No hay notificaciones para mostrar.' : 'No hay notificaciones no leídas.',
     };
   }
 }

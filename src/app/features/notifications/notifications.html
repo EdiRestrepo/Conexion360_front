@@ -1,115 +1,74 @@
-﻿<section class="page notifications-page">
+<section class="page notifications-page">
   <header class="page__header notifications-header">
-    <div>
-      <h1 class="page__title">Notificaciones</h1>
-      <p class="page__subtitle">Cambios de estado, novedades y alertas simuladas.</p>
-    </div>
-    @if (viewModel$ | async; as headerViewModel) {
-      <span class="unread-counter" aria-label="Notificaciones no leídas">{{ headerViewModel.unreadCount }} no leídas</span>
-    }
+    <h1 class="page__title">Notificaciones</h1>
+    <a mat-stroked-button routerLink="/settings/notifications">
+      <mat-icon aria-hidden="true">tune</mat-icon>
+      Preferencias
+    </a>
   </header>
 
   @if (viewModel$ | async; as viewModel) {
-    <section class="surface-card notifications-controls" aria-label="Controles de notificaciones">
-      <div class="notification-filter" role="group" aria-label="Filtro de notificaciones">
-        <button mat-stroked-button type="button" [class.notification-filter__button--active]="viewModel.filter === 'all'" (click)="setFilter('all')">
-          Todos
-        </button>
-        <button mat-stroked-button type="button" [class.notification-filter__button--active]="viewModel.filter === 'unread'" (click)="setFilter('unread')">
-          No leídos
-        </button>
-      </div>
-      <div class="notifications-actions">
-        <button mat-stroked-button type="button" [disabled]="viewModel.unreadCount === 0" (click)="markAllAsRead()">
-          <mat-icon aria-hidden="true">done_all</mat-icon>
-          Marcar todos como leídos
-        </button>
-        <a mat-stroked-button routerLink="/settings/notifications">
-          <mat-icon aria-hidden="true">tune</mat-icon>
-          Preferencias
-        </a>
-      </div>
-    </section>
+    <div class="notification-filter" role="group" aria-label="Filtro de notificaciones">
+      <button type="button" [class.notification-filter__button--active]="viewModel.filter === 'all'" (click)="setFilter('all')">Todos</button>
+      <button type="button" [class.notification-filter__button--active]="viewModel.filter === 'unread'" (click)="setFilter('unread')">No leídos</button>
+    </div>
 
-    <section class="surface-card notifications-card" aria-label="Listado de notificaciones">
-      @if (viewModel.state === 'loading') {
-        <div class="loading-state">
-          <strong>Cargando notificaciones...</strong>
-          <p>Consultando alertas simuladas.</p>
-        </div>
-      } @else if (viewModel.state === 'error') {
-        <div class="error-state">
-          <strong>No se pudieron cargar las notificaciones</strong>
-          <p>{{ viewModel.message }}</p>
+    @if (viewModel.state === 'loading') {
+      <div class="surface-card loading-state">
+        <strong>Cargando notificaciones...</strong>
+        <p>Consultando alertas del envío.</p>
+      </div>
+    } @else if (viewModel.state === 'error') {
+      <div class="surface-card error-state">
+        <strong>No se pudieron cargar las notificaciones</strong>
+        <p>{{ viewModel.message }}</p>
+        <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+      </div>
+    } @else if (viewModel.state === 'empty') {
+      <div class="surface-card empty-state">
+        <strong>Sin notificaciones para mostrar</strong>
+        <p>{{ viewModel.message }}</p>
+        @if (viewModel.filter === 'unread') {
+          <button mat-stroked-button type="button" (click)="setFilter('all')">Ver todas</button>
+        } @else {
           <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
-        </div>
-      } @else if (viewModel.state === 'empty') {
-        <div class="empty-state">
-          <strong>Sin notificaciones para mostrar</strong>
-          <p>{{ viewModel.message }}</p>
-          @if (viewModel.filter === 'unread') {
-            <button mat-stroked-button type="button" (click)="setFilter('all')">Ver todas</button>
-          } @else {
-            <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
-          }
-        </div>
-      } @else {
-        <div class="notifications-list">
-          @for (notification of viewModel.notifications; track notification.id) {
-            <article class="notification-item" [class]="'notification-item ' + getToneClass(notification.type)" [class.notification-item--unread]="!notification.read">
-              <span class="notification-item__icon" aria-hidden="true">
-                <mat-icon>{{ getNotificationTypeIcon(notification.type) }}</mat-icon>
-              </span>
+        }
+      </div>
+    } @else {
+      <div class="notifications-list">
+        @for (notification of viewModel.notifications; track notification.id) {
+          <a
+            class="notification-card"
+            [class]="'notification-card ' + getToneClass(notification.type)"
+            [class.notification-card--unread]="!notification.read"
+            [routerLink]="['/shipments', notification.shipmentId]"
+            [queryParams]="{ document: notification.shipmentDocument }"
+            [attr.aria-label]="'Abrir envío ' + notification.shipmentDocument"
+            (click)="markAsRead(notification)"
+          >
+            <span class="notification-card__icon" aria-hidden="true">
+              <mat-icon>{{ getNotificationTypeIcon(notification.type) }}</mat-icon>
+            </span>
 
-              <div class="notification-item__body">
-                <div class="notification-item__topline">
-                  <span>{{ getNotificationTypeLabel(notification.type) }}</span>
-                  <time [attr.datetime]="notification.createdAt">{{ formatDateTime(notification.createdAt) }}</time>
-                </div>
-                <h2>{{ notification.title }}</h2>
-                <p>{{ notification.description }}</p>
-                <dl class="notification-meta">
-                  <div>
-                    <dt>Documento</dt>
-                    <dd>{{ notification.shipmentDocument }}</dd>
-                  </div>
-                  <div>
-                    <dt>Ubicación</dt>
-                    <dd>{{ notification.location ?? '-' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Estado</dt>
-                    <dd>{{ notification.read ? 'Leída' : 'No leída' }}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div class="notification-item__actions">
-                <a
-                  mat-icon-button
-                  [routerLink]="['/shipments', notification.shipmentId]"
-                  [queryParams]="{ document: notification.shipmentDocument }"
-                  [attr.aria-label]="'Abrir envío ' + notification.shipmentDocument"
-                  title="Abrir envío"
-                  (click)="markAsRead(notification)"
-                >
-                  <mat-icon aria-hidden="true">open_in_new</mat-icon>
-                </a>
-                <button
-                  mat-icon-button
-                  type="button"
-                  [disabled]="notification.read"
-                  [attr.aria-label]="'Marcar como leída la notificación de ' + notification.shipmentDocument"
-                  title="Marcar como leída"
-                  (click)="markAsRead(notification)"
-                >
-                  <mat-icon aria-hidden="true">mark_email_read</mat-icon>
-                </button>
-              </div>
-            </article>
-          }
-        </div>
-      }
-    </section>
+            <div class="notification-card__body">
+              <h2 class="notification-card__title">
+                <span class="notification-card__emoji" aria-hidden="true">{{ getNotificationTypeEmoji(notification.type) }}</span>
+                <span class="notification-card__document">{{ notification.shipmentDocument }}</span>
+                <span class="notification-card__separator" aria-hidden="true">—</span>
+                <span class="notification-card__headline">{{ notification.title }}</span>
+              </h2>
+              <p class="notification-card__description">{{ notification.description }}</p>
+              <p class="notification-card__meta">
+                <time [attr.datetime]="notification.createdAt">{{ formatDateTime(notification.createdAt) }}</time>
+                @if (notification.location) {
+                  <span aria-hidden="true">•</span>
+                  <span>{{ notification.location }}</span>
+                }
+              </p>
+            </div>
+          </a>
+        }
+      </div>
+    }
   }
 </section>

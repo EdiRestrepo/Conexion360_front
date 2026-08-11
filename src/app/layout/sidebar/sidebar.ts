@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
-import { MockNotificationService } from '../../mocks/services/mock-notification.service';
 import { layoutNavItems } from '../layout-navigation';
 import { UserMenu } from '../user-menu/user-menu';
 
@@ -20,7 +20,7 @@ export class Sidebar {
   readonly collapsed = input(false);
   readonly logout = output<void>();
 
-  private readonly notificationService = inject(MockNotificationService);
+  private readonly notificationService = inject(NOTIFICATION_DATA_SOURCE);
 
   protected readonly navItems = layoutNavItems;
   protected readonly unreadCount$ = this.notificationService.getUnreadCount();

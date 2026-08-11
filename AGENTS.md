@@ -396,7 +396,10 @@ algo sigue mockeado):
   cualquiera de esas dos pantallas siga sin backend.
 - `MockNotificationService` (implementa `NotificationDataSource`, definida
   en `core/contracts/notification-data-source.ts`): sigue en uso para
-  notificaciones.
+  notificaciones. Los componentes (`Notifications`, `Sidebar`) no lo inyectan
+  directamente: inyectan el token `NOTIFICATION_DATA_SOURCE`, que se resuelve
+  en `app.config.ts`. Para pasar a backend real basta con cambiar ahí el
+  proveedor por el servicio HTTP equivalente, sin tocar los componentes.
 
 Las interfaces/contratos de acceso a datos (`ShipmentDataSource`,
 `NotificationDataSource`) viven en `core/contracts/`, separadas de las

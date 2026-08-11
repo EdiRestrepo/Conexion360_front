@@ -22,6 +22,21 @@ describe('MockNotificationService', () => {
     tick();
   }));
 
+  it('should build mockup style titles, descriptions and locations', fakeAsync(() => {
+    service.getAll().subscribe((notifications) => {
+      const delivery = notifications.find((notification) => notification.type === 'DELIVERY');
+      const customs = notifications.find((notification) => notification.type === 'CUSTOMS');
+
+      expect(delivery?.title).toMatch(/Envío entregado|Entregado en destino/);
+      expect(delivery?.description).toContain(delivery?.status === 'DELIVERED' ? 'entregado' : '');
+      expect(customs?.title).toBe('En aduana');
+      expect(customs?.description).toContain("ha pasado a estado 'En aduana'");
+      expect(customs?.description).toContain('→');
+      expect(customs?.location).toMatch(/^.+, .+$/);
+    });
+    tick();
+  }));
+
   it('should mark one notification as read and update unread count', fakeAsync(() => {
     let notificationId = '';
     service.getUnread().subscribe((notifications) => {

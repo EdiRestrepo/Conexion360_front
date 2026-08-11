@@ -1,8 +1,8 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, delay, map, of, throwError } from 'rxjs';
 
 import { Notification, NotificationPreference, NotificationType } from '../../core/models/notification.model';
-import { Shipment } from '../../core/models/shipment.model';
+import { Shipment, ShipmentIssueType, TransportMode } from '../../core/models/shipment.model';
 import { NotificationDataSource } from '../../core/contracts/notification-data-source';
 import { getShipmentStatusLabel } from '../../core/utils/display-labels';
 import { mockShipments } from '../data/mock-shipments';
@@ -15,6 +15,7 @@ export interface MockNotificationSimulationConfig {
 }
 
 const defaultLatencyMs = 250;
+const notificationSampleSize = 14;
 const notificationTypes: NotificationType[] = ['DELAY', 'STATUS_CHANGE', 'IN_TRANSIT', 'CUSTOMS', 'DELIVERY', 'DOCUMENT', 'CONTAINER_EXPIRING'];
 
 @Injectable({
@@ -96,35 +97,61 @@ export class MockNotificationService implements NotificationDataSource {
 }
 
 function createMockNotifications(shipments: Shipment[]): Notification[] {
-  return shipments.slice(0, 14).map((shipment, index) => createNotification(shipment, index + 1));
+  return selectNotificationShipments(shipments).map((shipment, index) => createNotification(shipment, index + 1));
+}
+
+/**
+ * Toma primero una muestra por cada variante de alerta para que el listado
+ * cubra todos los tipos del backlog y luego completa hasta el tamaño de página.
+ */
+function selectNotificationShipments(shipments: Shipment[]): Shipment[] {
+  const selected = new Map<string, Shipment>();
+  const variants = new Set<string>();
+
+  for (const shipment of shipments) {
+    const variant = `${getNotificationType(shipment)}-${isContainerShipment(shipment)}`;
+
+    if (!variants.has(variant)) {
+      variants.add(variant);
+      selected.set(shipment.id, shipment);
+    }
+  }
+
+  for (const shipment of shipments) {
+    if (selected.size >= notificationSampleSize) {
+      break;
+    }
+
+    selected.set(shipment.id, shipment);
+  }
+
+  return [...selected.values()].slice(0, notificationSampleSize);
 }
 
 function createNotification(shipment: Shipment, sequence: number): Notification {
   const type = getNotificationType(shipment);
-  const location = getNotificationLocation(shipment);
-  const createdAt = getNotificationDate(shipment, sequence);
 
   return {
     id: `notification-${sequence.toString().padStart(3, '0')}`,
     type,
     shipmentId: shipment.id,
     shipmentDocument: shipment.documentNumber,
-    title: getNotificationTitle(type),
+    title: getNotificationTitle(type, shipment),
     description: getNotificationDescription(type, shipment),
-    createdAt,
-    location,
+    createdAt: getNotificationDate(shipment, sequence),
+    location: getNotificationLocation(shipment, type),
     read: sequence % 3 === 0,
     status: shipment.status,
   };
 }
 
 function getNotificationType(shipment: Shipment): NotificationType {
-  if (shipment.container && shipment.container.remainingDays !== null && shipment.container.remainingDays <= 2) {
-    return 'CONTAINER_EXPIRING';
-  }
-
   if (shipment.issue?.type === 'DELAY') {
     return 'DELAY';
+  }
+
+  if (shipment.container && shipment.container.remainingDays !== null && shipment.container.remainingDays <= 2) {
+    return 'CONTAINER_EXPIRING';
   }
 
   if (shipment.issue?.type === 'DOCUMENT_PENDING') {
@@ -146,13 +173,21 @@ function getNotificationType(shipment: Shipment): NotificationType {
   return 'STATUS_CHANGE';
 }
 
-function getNotificationTitle(type: NotificationType): string {
+function getNotificationTitle(type: NotificationType, shipment: Shipment): string {
+  if (type === 'DELAY') {
+    return shipment.transportMode === 'SEA' ? 'Demora en puerto' : 'Demora en tránsito';
+  }
+
+  if (type === 'DELIVERY') {
+    return isContainerShipment(shipment) ? 'Entregado en destino' : 'Envío entregado';
+  }
+
   const titles: Record<NotificationType, string> = {
-    DELAY: 'Demora registrada',
+    DELAY: 'Demora en puerto',
     STATUS_CHANGE: 'Cambio de estado',
-    IN_TRANSIT: 'Envío en tránsito',
-    CUSTOMS: 'Gestión aduanera',
-    DELIVERY: 'Entrega completada',
+    IN_TRANSIT: 'En tránsito',
+    CUSTOMS: 'En aduana',
+    DELIVERY: 'Envío entregado',
     DOCUMENT: 'Documento pendiente',
     CONTAINER_EXPIRING: 'Contenedor próximo a vencer',
   };
@@ -161,23 +196,120 @@ function getNotificationTitle(type: NotificationType): string {
 }
 
 function getNotificationDescription(type: NotificationType, shipment: Shipment): string {
-  const statusLabel = getShipmentStatusLabel(shipment.status).toLowerCase();
-  const descriptions: Record<NotificationType, string> = {
-    DELAY: shipment.issue?.comment ?? 'Se registró una demora logística en la operación.',
-    STATUS_CHANGE: `El envío cambió a estado ${statusLabel}.`,
-    IN_TRANSIT: 'La operación continúa su tránsito internacional.',
-    CUSTOMS: 'El envío requiere seguimiento en proceso aduanero.',
-    DELIVERY: 'El envío registra entrega final en los datos simulados.',
-    DOCUMENT: shipment.issue?.comment ?? 'Hay documentos pendientes de validación.',
-    CONTAINER_EXPIRING: 'Los días libres del contenedor están próximos a vencer.',
-  };
+  const client = shipment.client;
+  const route = `${getHub(shipment.origin.country, shipment.transportMode, shipment.origin.city)} → ${getHub(shipment.destination.country, shipment.transportMode, shipment.destination.city)}`;
+  const destinationHub = getHub(shipment.destination.country, shipment.transportMode, shipment.destination.city);
 
-  return descriptions[type];
+  switch (type) {
+    case 'DELAY': {
+      const delayDays = shipment.container?.delayDays || 2;
+      const place = shipment.transportMode === 'SEA' ? 'el puerto de' : 'el aeropuerto de';
+      const originHub = getHub(shipment.origin.country, shipment.transportMode, shipment.origin.city);
+      return `El envío de ${client} presenta una demora de ${delayDays} días en ${place} ${originHub} por ${getDelayReason(shipment.issue?.type)}. Nueva ETA: ${formatDate(shipment.logisticDates.eta)}.`;
+    }
+    case 'CUSTOMS':
+      return `El envío de ${client} (${route}) ha pasado a estado 'En aduana'. Se estima liberación en 3-5 días hábiles.`;
+    case 'IN_TRANSIT': {
+      const departure = shipment.transportMode === 'SEA' ? 'ha zarpado' : 'ha despegado';
+      return `El envío de ${shipment.merchandiseDescription.toLowerCase()} de ${client} (${route}) ${departure} y está en tránsito. ETA: ${formatDate(shipment.logisticDates.eta)}.`;
+    }
+    case 'DELIVERY':
+      return isContainerShipment(shipment)
+        ? `${client}: contenedor ${shipment.container?.type} entregado en ${destinationHub}. El proceso de nacionalización fue completado el ${formatDate(shipment.logisticDates.nationalization ?? shipment.logisticDates.delivery)}.`
+        : `El envío de ${client} (${route}) ha sido entregado exitosamente. Fecha real de entrega: ${formatDate(shipment.logisticDates.delivery)}.`;
+    case 'DOCUMENT':
+      return `El envío de ${client} (${route}) tiene documentos pendientes de validación. Adjunta el soporte requerido para continuar con el proceso aduanero.`;
+    case 'CONTAINER_EXPIRING': {
+      const container = shipment.container;
+      const reference = container?.number ?? container?.type ?? 'asignado';
+
+      if (container?.remainingDays === 0) {
+        return `El contenedor ${reference} de ${client} agotó sus ${container.freeDays} días libres en ${destinationHub}. Se generan cobros por demoraje de USD ${container.delayValuePerDay} por día.`;
+      }
+
+      const remainingDays = container?.remainingDays ?? 0;
+      const remainingLabel = remainingDays === 1 ? '1 día libre' : `${remainingDays} días libres`;
+
+      return `Al contenedor ${reference} de ${client} en ${destinationHub} le queda${remainingDays === 1 ? '' : 'n'} ${remainingLabel} de ${container?.freeDays}. Programa la devolución para evitar cobros por demoraje.`;
+    }
+    case 'STATUS_CHANGE':
+    default:
+      return `El envío de ${client} (${route}) ha pasado a estado '${getShipmentStatusLabel(shipment.status)}'.`;
+  }
 }
 
-function getNotificationLocation(shipment: Shipment): string | null {
-  const location = shipment.status === 'DELIVERED' || shipment.status === 'DESTINATION_CUSTOMS' ? shipment.destination : shipment.origin;
-  return [location.city, location.country].filter((value): value is string => Boolean(value)).join(', ') || null;
+function isContainerShipment(shipment: Shipment): boolean {
+  return Boolean(shipment.container && shipment.cargoType === 'FCL');
+}
+
+function getDelayReason(issueType: ShipmentIssueType | undefined): string {
+  const reasons: Record<ShipmentIssueType, string> = {
+    DELAY: 'congestión portuaria',
+    WEATHER: 'condiciones climáticas adversas',
+    CUSTOMS_INSPECTION: 'inspección aduanera',
+    DOCUMENT_PENDING: 'documentación pendiente',
+    NONE: 'congestión operativa',
+  };
+
+  return reasons[issueType ?? 'NONE'];
+}
+
+/**
+ * Puerto o aeropuerto representativo por país, para que las notificaciones
+ * simuladas lean como en los mockups ("Rotterdam, Países Bajos").
+ */
+function getHub(country: string, transportMode: TransportMode, city?: string | null): string {
+  const seaHubs: Record<string, string> = {
+    Alemania: 'Hamburgo',
+    Brasil: 'Santos',
+    Chile: 'Valparaíso',
+    China: 'Shanghái',
+    Colombia: 'Cartagena',
+    España: 'Valencia',
+    'Estados Unidos': 'Miami',
+    México: 'Veracruz',
+    Perú: 'Callao',
+  };
+  const airHubs: Record<string, string> = {
+    Alemania: 'Fráncfort',
+    Brasil: 'São Paulo',
+    Chile: 'Santiago',
+    China: 'Shanghái',
+    Colombia: 'Bogotá',
+    España: 'Madrid',
+    'Estados Unidos': 'Miami',
+    México: 'Ciudad de México',
+    Perú: 'Lima',
+  };
+  const hubs = transportMode === 'SEA' ? seaHubs : airHubs;
+
+  return hubs[country] ?? city ?? country;
+}
+
+function getNotificationLocation(shipment: Shipment, type: NotificationType): string | null {
+  // El contenedor se libera en destino, así que esa alerta siempre apunta allí.
+  const isDestination = type === 'CONTAINER_EXPIRING' || shipment.status === 'DELIVERED' || shipment.status === 'DESTINATION_CUSTOMS';
+  const location = isDestination ? shipment.destination : shipment.origin;
+  const hub = getHub(location.country, shipment.transportMode, location.city);
+
+  return [hub, location.country].filter((value, index, values) => Boolean(value) && values.indexOf(value) === index).join(', ') || null;
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) {
+    return 'por confirmar';
+  }
+
+  const date = new Date(value.length === 10 ? `${value}T00:00:00.000Z` : value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'por confirmar';
+  }
+
+  const day = new Intl.DateTimeFormat('es-CO', { day: 'numeric', timeZone: 'UTC' }).format(date);
+  const month = new Intl.DateTimeFormat('es-CO', { month: 'short', timeZone: 'UTC' }).format(date).replace('.', '');
+
+  return `${day} ${month} ${date.getUTCFullYear()}`;
 }
 
 function getNotificationDate(shipment: Shipment, sequence: number): string {

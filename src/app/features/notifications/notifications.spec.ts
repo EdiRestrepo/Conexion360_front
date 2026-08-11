@@ -1,34 +1,31 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { Notification } from '../../core/models/notification.model';
-import { MockNotificationService } from '../../mocks/services/mock-notification.service';
 import { Notifications } from './notifications';
 
 describe('Notifications', () => {
   let fixture: ComponentFixture<Notifications>;
   let getAllSpy: jasmine.Spy<() => Observable<Notification[]>>;
   let markAsReadSpy: jasmine.Spy<(id: string) => Observable<Notification | null>>;
-  let markAllAsReadSpy: jasmine.Spy<() => Observable<Notification[]>>;
 
   beforeEach(async () => {
     getAllSpy = jasmine.createSpy('getAll').and.returnValue(of(createNotifications()));
     markAsReadSpy = jasmine.createSpy('markAsRead').and.callFake((id: string) => of(createNotifications().find((notification) => notification.id === id) ?? null));
-    markAllAsReadSpy = jasmine.createSpy('markAllAsRead').and.returnValue(of(createNotifications().map((notification) => ({ ...notification, read: true }))));
 
     await TestBed.configureTestingModule({
       imports: [Notifications, NoopAnimationsModule],
       providers: [
         provideRouter([{ path: 'shipments/:id', component: BlankRouteComponent }]),
         {
-          provide: MockNotificationService,
+          provide: NOTIFICATION_DATA_SOURCE,
           useValue: {
             getAll: getAllSpy,
             markAsRead: markAsReadSpy,
-            markAllAsRead: markAllAsReadSpy,
           },
         },
       ],
@@ -42,7 +39,18 @@ describe('Notifications', () => {
 
     expect(getText()).toContain('Notificaciones');
     expect(getText()).toContain('AWB-001');
-    expect(getText()).toContain('Demora registrada');
+    expect(getText()).toContain('Demora en puerto');
+  }));
+
+  it('should render document, headline, date and location like the mockup', fakeAsync(() => {
+    render();
+
+    const card = fixture.nativeElement.querySelector('.notification-card') as HTMLAnchorElement;
+
+    expect(card.querySelector('.notification-card__document')?.textContent).toContain('AWB-001');
+    expect(card.querySelector('.notification-card__headline')?.textContent).toContain('Demora en puerto');
+    expect(card.querySelector('.notification-card__meta')?.textContent).toContain('5 ene, 10:30');
+    expect(card.querySelector('.notification-card__meta')?.textContent).toContain('Cartagena, Colombia');
   }));
 
   it('should filter unread notifications', fakeAsync(() => {
@@ -55,39 +63,14 @@ describe('Notifications', () => {
     expect(getText()).not.toContain('HBL-002');
   }));
 
-  it('should mark one notification as read', fakeAsync(() => {
+  it('should mark a notification as read when its card is opened', fakeAsync(() => {
     render();
 
-    const button = fixture.nativeElement.querySelector('button[title="Marcar como leída"]') as HTMLButtonElement;
-    button.click();
-    tick();
-    fixture.detectChanges();
-
-    expect(markAsReadSpy).toHaveBeenCalledWith('notification-001');
-  }));
-
-  it('should mark all notifications as read', fakeAsync(() => {
-    render();
-    clickButton('Marcar todos como leídos');
+    const card = fixture.nativeElement.querySelector('.notification-card') as HTMLAnchorElement;
+    card.click();
     tick();
 
-    expect(markAllAsReadSpy).toHaveBeenCalled();
-  }));
-
-  it('should render unread counter', fakeAsync(() => {
-    render();
-
-    expect(getText()).toContain('2 no leídas');
-  }));
-
-  it('should render detail navigation links', fakeAsync(() => {
-    render();
-
-    const link = fixture.nativeElement.querySelector('a[title="Abrir envío"]') as HTMLAnchorElement;
-    link.click();
-    tick();
-
-    expect(link.getAttribute('href')).toContain('/shipments/shipment-001');
+    expect(card.getAttribute('href')).toContain('/shipments/shipment-001');
     expect(markAsReadSpy).toHaveBeenCalledWith('notification-001');
   }));
 
@@ -144,10 +127,10 @@ function createNotifications(): Notification[] {
       type: 'DELAY',
       shipmentId: 'shipment-001',
       shipmentDocument: 'AWB-001',
-      title: 'Demora registrada',
-      description: 'Retraso operativo en ruta.',
+      title: 'Demora en puerto',
+      description: 'El envío de Zenú presenta una demora de 2 días en el puerto de Cartagena por congestión portuaria.',
       createdAt: '2026-01-05T10:30:00.000Z',
-      location: 'Bogotá, Colombia',
+      location: 'Cartagena, Colombia',
       read: false,
       status: 'WITH_ISSUE',
     },
@@ -156,10 +139,10 @@ function createNotifications(): Notification[] {
       type: 'DELIVERY',
       shipmentId: 'shipment-002',
       shipmentDocument: 'HBL-002',
-      title: 'Entrega completada',
-      description: 'Entrega final registrada.',
+      title: 'Envío entregado',
+      description: 'El envío de Postobon (Cartagena → Miami) ha sido entregado exitosamente.',
       createdAt: '2026-01-04T09:00:00.000Z',
-      location: 'Medellín, Colombia',
+      location: 'Miami, Estados Unidos',
       read: true,
       status: 'DELIVERED',
     },
@@ -169,7 +152,7 @@ function createNotifications(): Notification[] {
       shipmentId: 'shipment-003',
       shipmentDocument: 'AWB-003',
       title: 'Documento pendiente',
-      description: 'Documento pendiente de validación.',
+      description: 'El envío de Enka tiene documentos pendientes de validación.',
       createdAt: '2026-01-03T08:00:00.000Z',
       location: null,
       read: false,

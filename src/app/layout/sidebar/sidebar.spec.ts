@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
-import { MockNotificationService } from '../../mocks/services/mock-notification.service';
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { Sidebar } from './sidebar';
 
 describe('Sidebar', () => {
@@ -15,7 +15,7 @@ describe('Sidebar', () => {
       imports: [NoopAnimationsModule, Sidebar],
       providers: [
         provideRouter([]),
-        { provide: MockNotificationService, useValue: { getUnreadCount: () => of(4) } },
+        { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(4) } },
       ],
     }).compileComponents();
 

@@ -1,4 +1,4 @@
-﻿import { NotificationType } from '../models/notification.model';
+import { NotificationType } from '../models/notification.model';
 
 export type NotificationTone = 'info' | 'warning' | 'success';
 
@@ -22,6 +22,16 @@ const notificationTypeIcons: Record<NotificationType, string> = {
   CONTAINER_EXPIRING: 'event_busy',
 };
 
+const notificationTypeEmojis: Record<NotificationType, string> = {
+  DELAY: '⚠️',
+  STATUS_CHANGE: '🔄',
+  IN_TRANSIT: '✈️',
+  CUSTOMS: '🚢',
+  DELIVERY: '✅',
+  DOCUMENT: '📄',
+  CONTAINER_EXPIRING: '📦',
+};
+
 const notificationTypeTones: Record<NotificationType, NotificationTone> = {
   DELAY: 'warning',
   STATUS_CHANGE: 'info',
@@ -38,6 +48,10 @@ export function getNotificationTypeLabel(type: NotificationType): string {
 
 export function getNotificationTypeIcon(type: NotificationType): string {
   return notificationTypeIcons[type];
+}
+
+export function getNotificationTypeEmoji(type: NotificationType): string {
+  return notificationTypeEmojis[type];
 }
 
 export function getNotificationTone(type: NotificationType): NotificationTone {

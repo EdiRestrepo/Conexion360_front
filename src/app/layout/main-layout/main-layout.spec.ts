@@ -5,6 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { MainLayout } from './main-layout';
@@ -34,6 +35,7 @@ describe('MainLayout', () => {
             logout: logoutSpy,
           },
         },
+        { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(0) } },
       ],
     }).compileComponents();
 
