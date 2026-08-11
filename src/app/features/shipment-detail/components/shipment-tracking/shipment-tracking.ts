@@ -13,8 +13,8 @@ import * as L from 'leaflet';
 
 import { Location, Shipment, ShipmentStatus } from '../../../../core/models/shipment.model';
 import { getShipmentIssueTitle, getTransportModeIcon } from '../../../../core/utils/display-labels';
-import { formatShipmentDate, getLocationLabel } from '../../../../core/utils/shipment-format';
-import type { Coordinates, NextStop, TrackingStage } from '../../models/shipment-detail-view.model';
+import { getLocationLabel } from '../../../../core/utils/shipment-format';
+import type { Coordinates, TrackingStage } from '../../models/shipment-detail-view.model';
 
 const trackingStageDefinitions = [
   { label: 'Pendiente', icon: 'inventory_2' },
@@ -82,20 +82,6 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
       icon: stage.icon || getTransportModeIcon(shipment.transportMode),
       state: shipment.status === 'DELIVERED' || index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'pending',
     }));
-  }
-
-  protected getNextStop(shipment: Shipment): NextStop | null {
-    if (shipment.status === 'DELIVERED') {
-      return null;
-    }
-
-    const nextStageIndex = Math.min(this.getTrackingStageIndex(shipment) + 1, trackingStageDefinitions.length - 1);
-    const location = nextStageIndex <= 1 ? shipment.origin : shipment.destination;
-
-    return {
-      location: getLocationLabel(location),
-      date: formatShipmentDate(this.getEstimatedDateForStage(shipment, nextStageIndex)),
-    };
   }
 
   protected hasTrackingCoordinates(shipment: Shipment): boolean {
@@ -187,14 +173,15 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
   }
 
   private getTrackingStageIndex(shipment: Shipment): number {
-    if (shipment.status === 'DELIVERED') {
-      return 4;
+    // El estado del envío manda: la etapa marcada como "Ahora", la barra de progreso
+    // y el chip del encabezado tienen que decir lo mismo.
+    if (shipment.status !== 'WITH_ISSUE') {
+      return this.getStageIndexFromStatus(shipment.status);
     }
 
-    const statusStage = this.getStageIndexFromStatus(shipment.status);
-    const eventStage = shipment.events.reduce((max, event) => Math.max(max, this.getStageIndexFromStatus(event.status)), 0);
-
-    return Math.max(statusStage, eventStage);
+    // 'Con novedad' no es una etapa del recorrido, así que se ubica en la más
+    // avanzada que registre la bitácora del envío.
+    return shipment.events.reduce((max, event) => Math.max(max, this.getStageIndexFromStatus(event.status)), 0);
   }
 
   private getStageIndexFromStatus(status: ShipmentStatus): number {
@@ -204,21 +191,9 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
       IN_TRANSIT: 2,
       DESTINATION_CUSTOMS: 3,
       DELIVERED: 4,
-      WITH_ISSUE: 3,
+      WITH_ISSUE: 0,
     };
 
     return stageByStatus[status];
-  }
-
-  private getEstimatedDateForStage(shipment: Shipment, stageIndex: number): string | null | undefined {
-    const dates = shipment.logisticDates;
-    const values: Record<number, string | null | undefined> = {
-      1: dates.etd ?? dates.originWarehouse,
-      2: dates.eta ?? dates.etd,
-      3: dates.nationalization ?? dates.eta,
-      4: dates.delivery ?? dates.eta,
-    };
-
-    return values[stageIndex];
   }
 }

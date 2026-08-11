@@ -57,16 +57,6 @@
         }
       </ol>
 
-      @if (getNextStop(shipment); as nextStop) {
-        <p class="tracking-next-stop">
-          <span class="tracking-next-stop__label">Próxima parada</span>
-          <span class="tracking-next-stop__value">{{ nextStop.location }}</span>
-          <span class="tracking-next-stop__date">{{ nextStop.date }}</span>
-        </p>
-      } @else {
-        <p class="tracking-next-stop tracking-next-stop--empty">No hay próxima parada para este estado.</p>
-      }
-
       @if (shipment.issue; as issue) {
         <div class="tracking-issue">
           <strong>{{ getIssueTitle(issue) }}</strong>

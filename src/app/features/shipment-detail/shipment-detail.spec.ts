@@ -242,24 +242,14 @@ describe('ShipmentDetail', () => {
     expect(currentStage.querySelector('.tracking-stages__badge mat-icon')?.textContent?.trim()).toBe('flight');
   }));
 
-  it('should calculate next stop from logistic dates and destination', fakeAsync(() => {
-    getDetailSpy.and.returnValue(of(createShipment({ status: 'IN_TRANSIT', logisticDates: { eta: '2026-01-05' } })));
-    setQueryParams({ tab: 'tracking' });
-    fixture = TestBed.createComponent(ShipmentDetail);
-    render();
-
-    expect(getText()).toContain('Bogotá, Colombia');
-    expect(getText()).toContain('05 de ene de 2026');
-  }));
-
-  it('should render delivered tracking as complete without next stop', fakeAsync(() => {
+  it('should render delivered tracking as complete', fakeAsync(() => {
     getDetailSpy.and.returnValue(of(createShipment({ status: 'DELIVERED', logisticDates: { delivery: '2026-01-10' } })));
     setQueryParams({ tab: 'tracking' });
     fixture = TestBed.createComponent(ShipmentDetail);
     render();
 
     expect(getText()).toContain('100%');
-    expect(getText()).toContain('No hay próxima parada para este estado.');
+    expect(getText()).not.toContain('Próxima parada');
   }));
 
   it('should render coordinate fallback when coordinates are absent', fakeAsync(() => {

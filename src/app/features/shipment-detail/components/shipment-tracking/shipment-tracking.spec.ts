@@ -50,7 +50,7 @@ describe('ShipmentTracking', () => {
     expect(endpoints.textContent).toContain('Bogotá, Colombia');
   });
 
-  it('should complete every stage and hide the next stop when delivered', () => {
+  it('should complete every stage when delivered', () => {
     render(createShipment({ status: 'DELIVERED' }));
 
     const completed = fixture.nativeElement.querySelectorAll('.tracking-stages__item--completed');
@@ -58,16 +58,32 @@ describe('ShipmentTracking', () => {
     expect(completed.length).toBe(5);
     expect(fixture.nativeElement.querySelector('.tracking-stages__item--current')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('100%');
-    expect(fixture.nativeElement.textContent).toContain('No hay próxima parada para este estado.');
   });
 
-  it('should show the next stop with its estimated date', () => {
-    render(createShipment({ logisticDates: { eta: '2026-01-05' } }));
+  it('should not render the next stop block', () => {
+    render(createShipment());
 
-    const nextStop = fixture.nativeElement.querySelector('.tracking-next-stop') as HTMLElement;
+    expect(fixture.nativeElement.querySelector('.tracking-next-stop')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Próxima parada');
+  });
 
-    expect(nextStop.textContent).toContain('Bogotá, Colombia');
-    expect(nextStop.textContent).toContain('05 de ene de 2026');
+  it('should keep the current stage on the shipment status even when events went further', () => {
+    render(createShipment({ status: 'ORIGIN_CUSTOMS' }));
+
+    const current = fixture.nativeElement.querySelector('.tracking-stages__item--current') as HTMLElement;
+    const progress = fixture.nativeElement.querySelector('[role="progressbar"]') as HTMLElement;
+
+    expect(current.textContent).toContain('Aduana origen');
+    expect(current.textContent).not.toContain('En tránsito');
+    expect(progress.getAttribute('aria-valuenow')).toBe('25');
+  });
+
+  it('should place a shipment with an issue on the furthest stage of its change log', () => {
+    render(createShipment({ status: 'WITH_ISSUE' }));
+
+    const current = fixture.nativeElement.querySelector('.tracking-stages__item--current') as HTMLElement;
+
+    expect(current.textContent).toContain('En tránsito');
   });
 
   it('should fall back to the textual summary without coordinates', () => {
