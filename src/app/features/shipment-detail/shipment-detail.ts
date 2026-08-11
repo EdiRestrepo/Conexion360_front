@@ -269,15 +269,12 @@ export class ShipmentDetail {
 
   protected getAdvanceFields(financialInfo: ShipmentFinancialInfo): DetailField[] {
     const advance = financialInfo.advancePayment;
-    const invoice = financialInfo.invoice;
 
+    // Subtotal, IVA y total viven solo en la tarjeta de resumen financiero.
     return [
       this.createOptionalField('Fecha solicitud anticipo', this.formatOptionalDate(advance?.requestedAt)),
       this.createOptionalField('Fecha pago anticipo', this.formatOptionalDate(advance?.paidAt)),
       this.createOptionalField('Valor anticipo', this.formatUsd(advance?.amount)),
-      this.createOptionalField('Subtotal factura', this.formatUsd(invoice?.subtotal)),
-      this.createOptionalField('IVA', this.formatUsd(invoice?.tax)),
-      this.createOptionalField('Total factura', this.formatUsd(invoice?.total)),
     ];
   }
 
@@ -361,10 +358,11 @@ export class ShipmentDetail {
     return `${day}, ${time}`;
   }
 
+  /** Si el backend no envía el dato, la fila queda en blanco en lugar de mostrar un texto sustituto. */
   private createOptionalField(label: string, value: string | null | undefined, accent = false): DetailField {
     const text = value?.trim();
 
-    return text ? { label, value: text, accent } : { label, value: 'No disponible', empty: true };
+    return text ? { label, value: text, accent } : { label, value: '', empty: true };
   }
 
   private formatCount(value: number | null | undefined): string | null {

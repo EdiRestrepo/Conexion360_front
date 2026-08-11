@@ -181,7 +181,7 @@ describe('ShipmentDetail', () => {
     expect(text).not.toContain('Retrasado');
   }));
 
-  it('should show the container card with placeholders when there is no container data', fakeAsync(() => {
+  it('should leave container values blank when there is no container data', fakeAsync(() => {
     getDetailSpy.and.returnValue(of(createShipment({ transportMode: 'AIR', container: undefined })));
     setQueryParams({ tab: 'container' });
     fixture = TestBed.createComponent(ShipmentDetail);
@@ -192,10 +192,11 @@ describe('ShipmentDetail', () => {
     expect(text).toContain('Información de contenedor');
     expect(text).toContain('Días restantes para entrega');
     expect(text).toContain('Depósito contenedor');
-    expect(text).toContain('No disponible');
+    expect(text).not.toContain('No disponible');
+    expect(getFieldValue('Número de contenedor')).toBe('');
   }));
 
-  it('should show the financial cards with placeholders when financial data is absent', fakeAsync(() => {
+  it('should leave financial values blank when financial data is absent', fakeAsync(() => {
     getDetailSpy.and.returnValue(of(createShipment({ financialInfo: { advancePayment: null, invoice: null } })));
     setQueryParams({ tab: 'financial' });
     fixture = TestBed.createComponent(ShipmentDetail);
@@ -206,10 +207,21 @@ describe('ShipmentDetail', () => {
     expect(text).toContain('Anticipo');
     expect(text).toContain('Facturación');
     expect(text).toContain('Fecha solicitud anticipo');
-    expect(text).toContain('Subtotal factura');
-    expect(text).toContain('Total factura');
     expect(text).toContain('Descripción gasto');
-    expect(text).toContain('No disponible');
+    expect(text).not.toContain('No disponible');
+    expect(getFieldValue('Valor anticipo')).toBe('');
+  }));
+
+  it('should keep invoice totals only in the financial summary card', fakeAsync(() => {
+    setQueryParams({ tab: 'financial' });
+    render();
+
+    const advanceCard = fixture.nativeElement.querySelector('.detail-grid .detail-section') as HTMLElement;
+
+    expect(advanceCard.textContent).toContain('Anticipo');
+    expect(advanceCard.textContent).not.toContain('Subtotal factura');
+    expect(advanceCard.textContent).not.toContain('Total factura');
+    expect(fixture.nativeElement.querySelector('.financial-summary')?.textContent).toContain('Total factura');
   }));
 
   it('should render currency format consistently', fakeAsync(() => {
@@ -308,7 +320,7 @@ describe('ShipmentDetail', () => {
       row.querySelector('dt')?.textContent?.includes('Incoterms'),
     );
 
-    expect(incoterm?.querySelector('dd')?.textContent?.trim()).toBe('No disponible');
+    expect(incoterm?.querySelector('dd')?.textContent?.trim()).toBe('');
     expect(incoterm?.querySelector('dd')?.classList).toContain('detail-list__value--empty');
   }));
 
@@ -378,6 +390,13 @@ describe('ShipmentDetail', () => {
 
   function getText(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  }
+
+  function getFieldValue(label: string): string | undefined {
+    const row = Array.from(fixture.nativeElement.querySelectorAll('.detail-list__row') as NodeListOf<HTMLElement>).find((item) =>
+      item.querySelector('dt')?.textContent?.includes(label),
+    );
+    return row?.querySelector('dd')?.textContent?.trim();
   }
 
   function clickButton(label: string): void {
