@@ -105,7 +105,19 @@
                 <span role="cell" class="mode-icon" [title]="getTransportModeLabel(shipment.transportMode)">
                   <mat-icon aria-hidden="true">{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
                 </span>
-                <strong role="cell">{{ shipment.documentNumber }}</strong>
+                <span role="cell" class="document-cell">
+                  <strong>{{ shipment.documentNumber }}</strong>
+                  <button
+                    mat-icon-button
+                    class="copy-button"
+                    type="button"
+                    [attr.aria-label]="'Copiar documento ' + shipment.documentNumber"
+                    title="Copiar documento"
+                    (click)="copyDocument(shipment.documentNumber)"
+                  >
+                    <mat-icon aria-hidden="true">{{ copiedDocument() === shipment.documentNumber ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                </span>
                 <span role="cell" class="status-chip" [class]="'status-chip ' + getStatusChipClass(shipment.status)">
                   <mat-icon aria-hidden="true">{{ getShipmentStatusIcon(shipment.status) }}</mat-icon>
                   {{ getShipmentStatusLabel(shipment.status) }}

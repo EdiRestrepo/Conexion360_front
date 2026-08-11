@@ -10,6 +10,7 @@ import { DashboardMetrics } from '../../core/models/shipment.model';
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import type { DashboardDistributionItem, DashboardMetricCard, DashboardSearchState, DashboardViewModel } from './models/dashboard-view.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
+import { copyToClipboard } from '../../core/utils/clipboard';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
@@ -49,6 +50,7 @@ export class Dashboard {
   protected readonly searchResults = signal<HomeShipmentSummary[]>([]);
   protected readonly searchState = signal<DashboardSearchState>('idle');
   protected readonly recentSearches = signal<string[]>([]);
+  protected readonly copiedDocument = signal<string | null>(null);
 
   protected readonly getOperationTypeLabel = getOperationTypeLabel;
   protected readonly getTransportModeLabel = getTransportModeLabel;
@@ -103,6 +105,13 @@ export class Dashboard {
 
   protected getRouteLabel(shipment: HomeShipmentSummary): string {
     return `${shipment.origin.country} → ${shipment.destination.country}`;
+  }
+
+  protected copyDocument(documentNumber: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    void copyToClipboard(documentNumber).then((ok) => this.copiedDocument.set(ok ? documentNumber : null));
   }
 
   /** Dos decimales para distinguir participaciones muy cercanas (49,52% vs 50,48%). */

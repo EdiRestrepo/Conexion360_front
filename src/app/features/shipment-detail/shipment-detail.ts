@@ -26,6 +26,7 @@ import {
   TransportMode,
 } from '../../core/models/shipment.model';
 import { ApiShipmentDetailService } from '../../core/services/api-shipment-detail.service';
+import { copyToClipboard } from '../../core/utils/clipboard';
 import {
   ShipmentChipType,
   getShipmentIssueTitle,
@@ -171,17 +172,7 @@ export class ShipmentDetail {
   }
 
   protected copyDocument(documentNumber: string): void {
-    const clipboard = globalThis.navigator?.clipboard;
-
-    if (!clipboard) {
-      this.copied.set(false);
-      return;
-    }
-
-    void clipboard.writeText(documentNumber).then(
-      () => this.copied.set(true),
-      () => this.copied.set(false),
-    );
+    void copyToClipboard(documentNumber).then((ok) => this.copied.set(ok));
   }
 
   protected getDocumentType(shipment: Shipment): string {

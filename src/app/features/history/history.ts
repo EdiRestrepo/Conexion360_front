@@ -1,5 +1,5 @@
 ﻿import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
@@ -19,6 +19,7 @@ import {
 } from '../../core/utils/display-labels';
 import { ApiHistoryService } from '../../core/services/api-history.service';
 import { MyShipmentsPage } from '../../core/mappers/shipments-page.mapper';
+import { copyToClipboard } from '../../core/utils/clipboard';
 import type { HistoryFilters, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {
@@ -67,6 +68,7 @@ export class History {
   protected readonly getTransportModeIcon = getTransportModeIcon;
   protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
+  protected readonly copiedDocument = signal<string | null>(null);
 
   constructor() {
     this.viewModel$ = this.route.queryParamMap.pipe(
@@ -120,6 +122,10 @@ export class History {
 
   protected getLocationLabel(shipment: Shipment): string {
     return `${shipment.origin.country} → ${shipment.destination.country}`;
+  }
+
+  protected copyDocument(documentNumber: string): void {
+    void copyToClipboard(documentNumber).then((ok) => this.copiedDocument.set(ok ? documentNumber : null));
   }
 
   protected formatDate(value: string | null | undefined): string {

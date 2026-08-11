@@ -50,7 +50,19 @@
             <mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
           </span>
           <span class="dashboard-search-result__main">
-            <strong>{{ shipment.documentNumber }}</strong>
+            <span class="document-cell">
+              <strong>{{ shipment.documentNumber }}</strong>
+              <button
+                mat-icon-button
+                class="copy-button"
+                type="button"
+                [attr.aria-label]="'Copiar documento ' + shipment.documentNumber"
+                title="Copiar documento"
+                (click)="copyDocument(shipment.documentNumber, $event)"
+              >
+                <mat-icon aria-hidden="true">{{ copiedDocument() === shipment.documentNumber ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            </span>
             <small>{{ getRouteLabel(shipment) }}</small>
           </span>
           <span class="status-chip" [class.status-chip--issue]="shipment.status === 'WITH_ISSUE'">
@@ -196,7 +208,19 @@
                 <mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
               </span>
               <span class="recent-item__main">
-                <strong>{{ shipment.documentNumber }}</strong>
+                <span class="document-cell">
+                  <strong>{{ shipment.documentNumber }}</strong>
+                  <button
+                    mat-icon-button
+                    class="copy-button"
+                    type="button"
+                    [attr.aria-label]="'Copiar documento ' + shipment.documentNumber"
+                    title="Copiar documento"
+                    (click)="copyDocument(shipment.documentNumber, $event)"
+                  >
+                    <mat-icon aria-hidden="true">{{ copiedDocument() === shipment.documentNumber ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                </span>
                 <small>{{ getRouteLabel(shipment) }}</small>
               </span>
               <span class="status-chip" [class.status-chip--issue]="shipment.status === 'WITH_ISSUE'">
