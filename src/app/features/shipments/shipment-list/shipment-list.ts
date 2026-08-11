@@ -33,7 +33,7 @@ const initialViewModel: ShipmentListViewModel = {
   state: 'loading',
   filters: defaultFilters,
   shipments: [],
-  summary: { total: 0, exports: 0, imports: 0, air: 0, sea: 0, withIssues: 0 },
+  summary: { total: 0, exports: 0, imports: 0, air: 0, sea: 0 },
   totalItems: 0,
   totalPages: 0,
   rangeStart: 0,
@@ -42,12 +42,12 @@ const initialViewModel: ShipmentListViewModel = {
 };
 
 const pageSizeOptions = [10, 25, 50] as const;
+// Sin 'DELIVERED': los envíos entregados se consultan en Historial, no aquí.
 const statusOptions: ShipmentStatus[] = [
   'PENDING',
   'ORIGIN_CUSTOMS',
   'IN_TRANSIT',
   'DESTINATION_CUSTOMS',
-  'DELIVERED',
   'WITH_ISSUE',
 ];
 
@@ -206,7 +206,6 @@ export class ShipmentList {
         imports: result.summary.imports,
         air: result.summary.air,
         sea: result.summary.sea,
-        withIssues: result.summary.withIssues,
       },
       totalItems,
       totalPages,

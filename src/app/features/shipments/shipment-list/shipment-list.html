@@ -70,11 +70,6 @@
         <strong>{{ viewModel.summary.sea }}</strong>
         marítimos
       </span>
-      <span class="summary-pill summary-pill--warning">
-        <mat-icon aria-hidden="true">warning</mat-icon>
-        <strong>{{ viewModel.summary.withIssues }}</strong>
-        con novedad
-      </span>
     </section>
 
     <div class="surface-card shipments-card">
@@ -99,7 +94,7 @@
         <div class="shipments-table-wrap">
           <div class="shipments-table" role="table" aria-label="Listado de envíos activos">
             <div class="shipments-table__row shipments-table__row--head" role="row">
-              <span role="columnheader">Modalidad</span>
+              <span role="columnheader" aria-label="Modalidad"></span>
               <span role="columnheader">Documento</span>
               <span role="columnheader">Estado</span>
               <span role="columnheader">Operación</span>

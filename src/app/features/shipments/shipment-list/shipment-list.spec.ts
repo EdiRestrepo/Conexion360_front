@@ -72,14 +72,38 @@ describe('ShipmentList', () => {
     render();
 
     const pills = Array.from(fixture.nativeElement.querySelectorAll('.summary-pill') as NodeListOf<HTMLElement>);
-    const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos', 'con novedad'];
-    const numbers = ['5', '1', '4', '3', '2', '2'];
+    const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos'];
+    const numbers = ['5', '1', '4', '3', '2'];
 
-    expect(pills.length).toBe(6);
+    expect(pills.length).toBe(5);
+    expect(getText()).not.toContain('con novedad');
     pills.forEach((pill, index) => {
       expect(pill.querySelector('strong')?.textContent?.trim()).toBe(numbers[index]);
       expect(pill.textContent).toContain(labels[index]);
     });
+  }));
+
+  it('should not offer the delivered status filter', fakeAsync(() => {
+    render();
+
+    const options = Array.from(
+      fixture.nativeElement.querySelectorAll('select[aria-label="Filtrar por estado"] option') as NodeListOf<HTMLOptionElement>,
+    );
+
+    expect(options.map((option) => option.value)).not.toContain('DELIVERED');
+    expect(options.map((option) => option.textContent?.trim())).not.toContain('Entregado');
+  }));
+
+  it('should label the document column without the transport mode header', fakeAsync(() => {
+    render();
+
+    const headers = Array.from(
+      fixture.nativeElement.querySelectorAll('.shipments-table__row--head [role="columnheader"]') as NodeListOf<HTMLElement>,
+    );
+
+    expect(headers[0].textContent?.trim()).toBe('');
+    expect(headers[0].getAttribute('aria-label')).toBe('Modalidad');
+    expect(headers[1].textContent?.trim()).toBe('Documento');
   }));
 
   it('should debounce search and keep query params', fakeAsync(() => {

@@ -88,14 +88,27 @@ describe('History', () => {
     render();
 
     const pills = Array.from(fixture.nativeElement.querySelectorAll('.summary-pill') as NodeListOf<HTMLElement>);
-    const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos', 'con novedad'];
-    const numbers = ['2', '1', '1', '1', '1', '0'];
+    const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos'];
+    const numbers = ['2', '1', '1', '1', '1'];
 
-    expect(pills.length).toBe(6);
+    expect(pills.length).toBe(5);
+    expect(getText()).not.toContain('con novedad');
     pills.forEach((pill, index) => {
       expect(pill.querySelector('strong')?.textContent?.trim()).toBe(numbers[index]);
       expect(pill.textContent).toContain(labels[index]);
     });
+  }));
+
+  it('should label the document column without the transport mode header', fakeAsync(() => {
+    render();
+
+    const headers = Array.from(
+      fixture.nativeElement.querySelectorAll('.history-table__row--head [role="columnheader"]') as NodeListOf<HTMLElement>,
+    );
+
+    expect(headers[0].textContent?.trim()).toBe('');
+    expect(headers[0].getAttribute('aria-label')).toBe('Modalidad');
+    expect(headers[1].textContent?.trim()).toBe('Documento');
   }));
 
   it('should debounce search and keep query params', fakeAsync(() => {

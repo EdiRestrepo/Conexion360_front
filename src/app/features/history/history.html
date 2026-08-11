@@ -62,11 +62,6 @@
         <strong>{{ viewModel.summary.sea }}</strong>
         marítimos
       </span>
-      <span class="summary-pill summary-pill--warning">
-        <mat-icon aria-hidden="true">warning</mat-icon>
-        <strong>{{ viewModel.summary.withIssues }}</strong>
-        con novedad
-      </span>
     </section>
 
     <div class="surface-card history-card">
@@ -91,7 +86,7 @@
         <div class="history-table-wrap">
           <div class="history-table" role="table" aria-label="Historial de envíos completados">
             <div class="history-table__row history-table__row--head" role="row">
-              <span role="columnheader">Modalidad</span>
+              <span role="columnheader" aria-label="Modalidad"></span>
               <span role="columnheader">Documento</span>
               <span role="columnheader">Estado</span>
               <span role="columnheader">Operación</span>
