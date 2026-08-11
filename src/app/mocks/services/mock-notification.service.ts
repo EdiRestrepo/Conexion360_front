@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, delay, map, of, throwError } from 'rxjs';
 
 import { Notification, NotificationPreference, NotificationType } from '../../core/models/notification.model';
@@ -18,10 +18,15 @@ const defaultLatencyMs = 250;
 const notificationSampleSize = 14;
 const notificationTypes: NotificationType[] = ['DELAY', 'STATUS_CHANGE', 'IN_TRANSIT', 'CUSTOMS', 'DELIVERY', 'DOCUMENT', 'CONTAINER_EXPIRING'];
 
+// Cadencia demo-friendly: suficientemente espaciada para no saturar la UI en una
+// demo/QA en vivo, pero corta para ver varias llegadas en pocos minutos. Simula, sin
+// backend real, el mismo camino reactivo que después alimentará un push de SignalR.
+const liveArrivalIntervalMs = 45_000;
+
 @Injectable({
   providedIn: 'root',
 })
-export class MockNotificationService implements NotificationDataSource {
+export class MockNotificationService implements NotificationDataSource, OnDestroy {
   private readonly notifications$ = new BehaviorSubject<Notification[]>(createMockNotifications(mockShipments));
   private readonly preferences$ = new BehaviorSubject<NotificationPreference[]>(
     notificationTypes.map((type) => ({ type, enabled: true })),
@@ -30,18 +35,59 @@ export class MockNotificationService implements NotificationDataSource {
     latencyMs: defaultLatencyMs,
     responseMode: 'success',
   };
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
+  private liveShipmentCursor = 0;
+
+  constructor() {
+    this.armLiveSimulation();
+  }
+
+  ngOnDestroy(): void {
+    if (this.liveTimer) {
+      clearInterval(this.liveTimer);
+      this.liveTimer = null;
+    }
+  }
 
   configureSimulation(config: MockNotificationSimulationConfig): void {
     this.simulationConfig = { ...this.simulationConfig, ...config };
   }
 
   resetSimulation(): void {
+    if (this.liveTimer) {
+      clearInterval(this.liveTimer);
+    }
+
     this.simulationConfig = { latencyMs: defaultLatencyMs, responseMode: 'success' };
     this.notifications$.next(createMockNotifications(mockShipments));
+    this.liveShipmentCursor = 0;
+    this.armLiveSimulation();
+  }
+
+  /** Empuja una notificación nueva al stream, como lo haría un push real. Público para el intervalo interno y para pruebas deterministas. */
+  simulateLiveArrival(): void {
+    const shipment = mockShipments[this.liveShipmentCursor % mockShipments.length];
+    this.liveShipmentCursor++;
+
+    const current = this.notifications$.value;
+    const notification: Notification = {
+      ...createNotification(shipment, current.length + 1),
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+
+    this.notifications$.next([notification, ...current]);
   }
 
   getAll(): Observable<Notification[]> {
-    return this.respondWith(this.notifications$.value);
+    if (this.simulationConfig.responseMode === 'error') {
+      return throwError(() => new Error('Error simulado al consultar notificaciones')).pipe(delay(this.simulationConfig.latencyMs));
+    }
+
+    return this.notifications$.pipe(
+      map((notifications) => (this.simulationConfig.responseMode === 'empty' ? [] : notifications)),
+      delay(this.simulationConfig.latencyMs),
+    );
   }
 
   getUnread(): Observable<Notification[]> {
@@ -73,6 +119,10 @@ export class MockNotificationService implements NotificationDataSource {
 
   getPreferences(): Observable<NotificationPreference[]> {
     return this.respondWith(this.preferences$.value);
+  }
+
+  private armLiveSimulation(): void {
+    this.liveTimer = setInterval(() => this.simulateLiveArrival(), liveArrivalIntervalMs);
   }
 
   private respondWith<T>(value: T): Observable<T> {

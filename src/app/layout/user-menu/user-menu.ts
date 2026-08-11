@@ -1,13 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
 import { getUserRoleLabel } from '../../core/utils/display-labels';
 
 @Component({
   selector: 'app-user-menu',
-  imports: [MatButtonModule, MatIconModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, RouterLink],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,6 +19,10 @@ export class UserMenu {
   readonly session = input<AuthSession | null>(null);
   readonly compact = input(false);
   readonly logout = output<void>();
+
+  private readonly notificationService = inject(NOTIFICATION_DATA_SOURCE);
+
+  protected readonly unreadCount$ = this.notificationService.getUnreadCount();
 
   protected readonly displayName = computed(() => {
     const user = this.session()?.user;

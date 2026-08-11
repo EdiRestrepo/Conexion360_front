@@ -39,16 +39,10 @@ describe('Sidebar', () => {
     expect(content).toContain('Inicio');
     expect(content).toContain('Mis envíos');
     expect(content).toContain('Historial');
-    expect(content).toContain('Notificaciones');
+    expect(content).not.toContain('Notificaciones');
     expect(content).toContain('Reportes');
     expect(content).toContain('Ajustes');
     expect(content).not.toContain('ðŸ“¦');
-  });
-
-  it('should render unread notifications counter', () => {
-    const content = (fixture.nativeElement as HTMLElement).textContent ?? '';
-
-    expect(content).toContain('4');
   });
 
   it('should emit logout from the embedded user menu', () => {

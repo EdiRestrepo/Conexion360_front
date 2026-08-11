@@ -42,15 +42,16 @@ describe('Notifications', () => {
     expect(getText()).toContain('Demora en puerto');
   }));
 
-  it('should render document, headline, date and location like the mockup', fakeAsync(() => {
+  it('should render document, headline and date like the mockup', fakeAsync(() => {
     render();
 
     const card = fixture.nativeElement.querySelector('.notification-card') as HTMLAnchorElement;
 
     expect(card.querySelector('.notification-card__document')?.textContent).toContain('AWB-001');
     expect(card.querySelector('.notification-card__headline')?.textContent).toContain('Demora en puerto');
+    expect(card.querySelector('.notification-card__description')?.textContent).toContain('congestión portuaria');
     expect(card.querySelector('.notification-card__meta')?.textContent).toContain('5 ene, 10:30');
-    expect(card.querySelector('.notification-card__meta')?.textContent).toContain('Cartagena, Colombia');
+    expect(card.querySelector('.notification-card__meta')?.textContent).not.toContain('Cartagena, Colombia');
   }));
 
   it('should filter unread notifications', fakeAsync(() => {

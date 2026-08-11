@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
 import { MobileNavigation } from './mobile-navigation';
 
@@ -11,7 +13,7 @@ describe('MobileNavigation', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, MobileNavigation],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(0) } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MobileNavigation);

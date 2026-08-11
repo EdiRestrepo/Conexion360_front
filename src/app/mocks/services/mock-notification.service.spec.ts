@@ -1,6 +1,7 @@
 ﻿import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { take } from 'rxjs';
 
+import { Notification } from '../../core/models/notification.model';
 import { MockNotificationService } from './mock-notification.service';
 
 describe('MockNotificationService', () => {
@@ -15,7 +16,7 @@ describe('MockNotificationService', () => {
   afterEach(() => service.resetSimulation());
 
   it('should load notifications', fakeAsync(() => {
-    service.getAll().subscribe((notifications) => {
+    service.getAll().pipe(take(1)).subscribe((notifications) => {
       expect(notifications.length).toBeGreaterThan(0);
       expect(notifications[0].shipmentDocument).toBeTruthy();
     });
@@ -23,7 +24,7 @@ describe('MockNotificationService', () => {
   }));
 
   it('should build mockup style titles, descriptions and locations', fakeAsync(() => {
-    service.getAll().subscribe((notifications) => {
+    service.getAll().pipe(take(1)).subscribe((notifications) => {
       const delivery = notifications.find((notification) => notification.type === 'DELIVERY');
       const customs = notifications.find((notification) => notification.type === 'CUSTOMS');
 
@@ -39,7 +40,7 @@ describe('MockNotificationService', () => {
 
   it('should mark one notification as read and update unread count', fakeAsync(() => {
     let notificationId = '';
-    service.getUnread().subscribe((notifications) => {
+    service.getUnread().pipe(take(1)).subscribe((notifications) => {
       notificationId = notifications[0].id;
     });
     tick();
@@ -49,7 +50,7 @@ describe('MockNotificationService', () => {
     });
     tick();
 
-    service.getUnread().subscribe((notifications) => {
+    service.getUnread().pipe(take(1)).subscribe((notifications) => {
       expect(notifications.some((notification) => notification.id === notificationId)).toBeFalse();
     });
     tick();
@@ -67,11 +68,28 @@ describe('MockNotificationService', () => {
 
   it('should simulate empty and error responses', fakeAsync(() => {
     service.configureSimulation({ responseMode: 'empty', latencyMs: 0 });
-    service.getAll().subscribe((notifications) => expect(notifications).toEqual([]));
+    service.getAll().pipe(take(1)).subscribe((notifications) => expect(notifications).toEqual([]));
     tick();
 
     service.configureSimulation({ responseMode: 'error', latencyMs: 0 });
     service.getAll().subscribe({ error: (error: Error) => expect(error.message).toContain('Error simulado') });
+    tick();
+  }));
+
+  it('should push a new unread notification when a live arrival is simulated', fakeAsync(() => {
+    let notifications: Notification[] = [];
+    service.getAll().subscribe((value) => (notifications = value));
+    tick();
+    const initialCount = notifications.length;
+
+    service.simulateLiveArrival();
+    tick();
+
+    expect(notifications.length).toBe(initialCount + 1);
+    expect(notifications[0].read).toBeFalse();
+    expect(new Date(notifications[0].createdAt).getTime()).toBeGreaterThan(new Date(notifications[1].createdAt).getTime());
+
+    service.getUnreadCount().pipe(take(1)).subscribe((count) => expect(count).toBeGreaterThan(0));
     tick();
   }));
 });

@@ -60,10 +60,6 @@
               <p class="notification-card__description">{{ notification.description }}</p>
               <p class="notification-card__meta">
                 <time [attr.datetime]="notification.createdAt">{{ formatDateTime(notification.createdAt) }}</time>
-                @if (notification.location) {
-                  <span aria-hidden="true">•</span>
-                  <span>{{ notification.location }}</span>
-                }
               </p>
             </div>
           </a>

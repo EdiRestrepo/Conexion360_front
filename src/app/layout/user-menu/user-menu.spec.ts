@@ -1,21 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
+import { Observable, of } from 'rxjs';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
 import { UserMenu } from './user-menu';
 
 describe('UserMenu', () => {
   let fixture: ComponentFixture<UserMenu>;
+  let getUnreadCountSpy: jasmine.Spy<() => Observable<number>>;
 
   beforeEach(async () => {
+    getUnreadCountSpy = jasmine.createSpy('getUnreadCount').and.returnValue(of(3));
+
     await TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, UserMenu],
+      providers: [provideRouter([]), { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: getUnreadCountSpy } }],
     }).compileComponents();
-
-    fixture = TestBed.createComponent(UserMenu);
   });
 
   it('should render dynamic profile data and translated role', () => {
+    fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('ANALISTAOPE'));
     fixture.detectChanges();
 
@@ -27,6 +33,7 @@ describe('UserMenu', () => {
   });
 
   it('should use initials when the Auth0 picture is not available', () => {
+    fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('CLIENT', null));
     fixture.detectChanges();
 
@@ -36,6 +43,7 @@ describe('UserMenu', () => {
   });
 
   it('should render the Auth0 picture when available', () => {
+    fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('ADMIN', 'https://example.com/avatar.png'));
     fixture.detectChanges();
 
@@ -45,6 +53,7 @@ describe('UserMenu', () => {
   });
 
   it('should emit logout when the logout button is clicked', () => {
+    fixture = TestBed.createComponent(UserMenu);
     const logoutSpy = jasmine.createSpy('logout');
     fixture.componentRef.setInput('session', createSession('CLIENT'));
     fixture.componentInstance.logout.subscribe(logoutSpy);
@@ -54,6 +63,52 @@ describe('UserMenu', () => {
     button?.click();
 
     expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('should not render the notifications bell when not compact', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__bell')).toBeNull();
+  });
+
+  it('should render the notifications bell with the unread badge when compact', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+
+    const bell = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__bell');
+    const badge = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__badge');
+
+    expect(bell).not.toBeNull();
+    expect(badge?.textContent?.trim()).toBe('3');
+  });
+
+  it('should hide the badge when there are no unread notifications', () => {
+    getUnreadCountSpy.and.returnValue(of(0));
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+
+    const bell = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__bell');
+    const badge = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__badge');
+
+    expect(bell).not.toBeNull();
+    expect(badge).toBeNull();
+  });
+
+  it('should link the bell to /notifications', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+
+    const bell = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.user-menu__bell');
+
+    expect(bell?.getAttribute('href')).toContain('/notifications');
   });
 });
 

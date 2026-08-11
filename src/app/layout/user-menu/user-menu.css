@@ -65,7 +65,29 @@
 .user-menu--compact {
   align-items: center;
   grid-auto-flow: column;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.user-menu__bell {
+  position: relative;
+  color: var(--color-primary) !important;
+}
+
+.user-menu__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-alert);
+  color: var(--color-on-primary);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .user-menu--compact .user-menu__avatar {
