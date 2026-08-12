@@ -41,6 +41,20 @@ describe('MockShipmentService', () => {
     });
   }));
 
+  it('should rank the top routes by number of shipments', fakeAsync(() => {
+    const topRoutes = getReportMetrics()?.topRoutes ?? [];
+
+    expect(topRoutes.length).toBeGreaterThan(0);
+    expect(topRoutes.length).toBeLessThanOrEqual(5);
+    topRoutes.forEach((route, index) => {
+      expect(route.route).toContain('→');
+
+      if (index > 0) {
+        expect(route.total).toBeLessThanOrEqual(topRoutes[index - 1].total);
+      }
+    });
+  }));
+
   it('should simulate an empty response', fakeAsync(() => {
     service.configureSimulation({ latencyMs: 0, responseMode: 'empty' });
 
@@ -48,6 +62,7 @@ describe('MockShipmentService', () => {
 
     expect(metrics?.totalShipments).toBe(0);
     expect(metrics?.topClients).toEqual([]);
+    expect(metrics?.topRoutes).toEqual([]);
     expect(metrics?.averageProgress).toBe(0);
   }));
 

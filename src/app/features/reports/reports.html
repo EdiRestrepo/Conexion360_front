@@ -6,9 +6,9 @@
     </div>
     @if (viewModel$ | async; as headerViewModel) {
       @if (headerViewModel.metrics) {
-        <button mat-stroked-button type="button" (click)="exportCsv(headerViewModel.metrics)">
+        <button mat-stroked-button type="button" class="export-button" (click)="exportCsv(headerViewModel.metrics)">
           <mat-icon aria-hidden="true">download</mat-icon>
-          Exportar CSV
+          Exportar
         </button>
       }
     }
@@ -40,45 +40,103 @@
       <section class="reports-grid reports-grid--metrics" aria-label="Indicadores principales">
         @for (indicator of viewModel.indicators; track indicator.label) {
           <article class="surface-card report-card">
-            <mat-icon aria-hidden="true">{{ indicator.icon }}</mat-icon>
-            <span>{{ indicator.label }}</span>
-            <strong>{{ indicator.value }}</strong>
+            <span class="report-card__icon"><mat-icon aria-hidden="true">{{ indicator.icon }}</mat-icon></span>
+            <span class="report-card__content">
+              <strong>{{ indicator.value }}</strong>
+              <span>{{ indicator.label }}</span>
+              @if (indicator.caption) {
+                <small>{{ indicator.caption }}</small>
+              }
+            </span>
           </article>
         }
       </section>
 
-      <section class="surface-card financial-summary" aria-label="Resúmenes financieros">
-        <h2>Resúmenes financieros</h2>
-        <div class="financial-summary__grid">
-          @for (financial of viewModel.financials; track financial.label) {
-            <article>
-              <mat-icon aria-hidden="true">{{ financial.icon }}</mat-icon>
-              <span>{{ financial.label }}</span>
+      <section class="reports-grid reports-grid--metrics" aria-label="Resúmenes financieros">
+        @for (financial of viewModel.financials; track financial.label) {
+          <article class="surface-card report-card">
+            <span class="report-card__icon"><mat-icon aria-hidden="true">{{ financial.icon }}</mat-icon></span>
+            <span class="report-card__content">
               <strong>{{ financial.value }}</strong>
+              <span>{{ financial.label }}</span>
+            </span>
+          </article>
+        }
+      </section>
+
+      <section class="reports-grid reports-grid--charts" aria-label="Gráficos de análisis">
+        @for (chart of viewModel.charts; track chart.id) {
+          <article class="surface-card chart-card" [class.chart-card--wide]="chart.id === 'clients'">
+            <h2>
+              @if (chart.id === 'clients') {
+                <mat-icon aria-hidden="true">leaderboard</mat-icon>
+              }
+              {{ chart.title }}
+            </h2>
+            @if (chart.kind === 'doughnut') {
+              <div class="chart-card__body">
+                <div class="chart-card__canvas chart-card__canvas--compact">
+                  <canvas #chartCanvas [attr.aria-label]="chart.summary" role="img"></canvas>
+                </div>
+                <ul class="chart-legend" [attr.aria-label]="'Valores de ' + chart.title">
+                  @for (value of chart.values; track value.label; let idx = $index) {
+                    <li>
+                      <span [class]="'chart-legend__dot chart-legend__dot--' + chart.id + '-' + idx"></span>
+                      @if (value.icon) {
+                        <mat-icon aria-hidden="true">{{ value.icon }}</mat-icon>
+                      }
+                      <span class="chart-legend__label">{{ value.label }}</span>
+                      <strong>{{ value.value }}</strong>
+                    </li>
+                  }
+                </ul>
+              </div>
+            } @else {
+              <div class="chart-card__canvas">
+                <canvas #chartCanvas [attr.aria-label]="chart.summary" role="img"></canvas>
+              </div>
+            }
+          </article>
+
+          @if (chart.id === 'mode') {
+            <article class="surface-card chart-card" aria-label="Por estado">
+              <h2>Por estado</h2>
+              <ul class="status-rows" aria-label="Distribución por estado">
+                @for (item of viewModel.statusBreakdown; track item.label) {
+                  <li [class]="'status-row ' + item.toneClass">
+                    <div class="status-row__label">
+                      <span>{{ item.label }}</span>
+                      <strong>{{ item.value }}</strong>
+                    </div>
+                    <div
+                      class="status-row__bar"
+                      role="progressbar"
+                      [attr.aria-valuenow]="item.value"
+                      aria-valuemin="0"
+                      [attr.aria-valuemax]="item.value"
+                      [attr.aria-label]="item.label + ': ' + item.value + ' envíos'"
+                    >
+                      <span [style.width.%]="item.percentage"></span>
+                    </div>
+                  </li>
+                }
+              </ul>
             </article>
           }
-        </div>
-        <p>Valores agregados desde información simulada. No corresponde a reporte contable oficial.</p>
-      </section>
-
-      <section class="reports-grid" aria-label="Gráficos de análisis">
-        @for (chart of viewModel.charts; track chart.id) {
-          <article class="surface-card chart-card">
-            <h2>{{ chart.title }}</h2>
-            <div class="chart-card__canvas">
-              <canvas #chartCanvas [attr.aria-label]="chart.summary" role="img"></canvas>
-            </div>
-            <p class="chart-card__summary">{{ chart.summary }}</p>
-            <ul class="chart-values" [attr.aria-label]="'Valores de ' + chart.title">
-              @for (value of chart.values; track value.label) {
-                <li>
-                  <span>{{ value.label }}</span>
-                  <strong>{{ value.value }}</strong>
-                </li>
-              }
-            </ul>
-          </article>
         }
+
+        <article class="surface-card chart-card chart-card--wide routes-card" aria-label="Rutas más frecuentes">
+          <h2>Rutas más frecuentes</h2>
+          <ol class="routes-list">
+            @for (route of viewModel.topRoutes; track route.label; let idx = $index) {
+              <li>
+                <span class="routes-list__index">{{ idx + 1 }}.</span>
+                <span class="routes-list__label">{{ route.label }}</span>
+                <span class="routes-list__value">{{ route.value }}</span>
+              </li>
+            }
+          </ol>
+        </article>
       </section>
     }
   }

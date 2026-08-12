@@ -101,6 +101,7 @@ export class MockShipmentService implements ShipmentDataSource {
       byTransportMode: this.countByTransportMode(shipments),
       byStatus: this.countByStatus(shipments),
       topClients: this.getTopClients(shipments),
+      topRoutes: this.getTopRoutes(shipments),
     };
   }
 
@@ -137,6 +138,19 @@ export class MockShipmentService implements ShipmentDataSource {
     return Object.entries(totals)
       .map(([client, total]) => ({ client, total }))
       .sort((first, second) => second.total - first.total || first.client.localeCompare(second.client))
+      .slice(0, 5);
+  }
+
+  private getTopRoutes(shipments: Shipment[]): { route: string; total: number }[] {
+    const totals = shipments.reduce<Record<string, number>>((result, shipment) => {
+      const route = `${shipment.origin.country} → ${shipment.destination.country}`;
+      result[route] = (result[route] ?? 0) + 1;
+      return result;
+    }, {});
+
+    return Object.entries(totals)
+      .map(([route, total]) => ({ route, total }))
+      .sort((first, second) => second.total - first.total || first.route.localeCompare(second.route))
       .slice(0, 5);
   }
 

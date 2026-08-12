@@ -16,13 +16,14 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { Observable, Subject, catchError, map, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
 
 import { ReportMetrics, ShipmentStatus } from '../../core/models/shipment.model';
+import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
+  getTransportModeIcon,
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
-import type { ChartKind, ChartValue, MetricCard, ReportChart, ReportsState, ReportsViewModel } from './models/reports-view.model';
+import type { ChartKind, ChartValue, MetricCard, ReportChart, ReportsState, ReportsViewModel, StatusBreakdownItem } from './models/reports-view.model';
 
 const initialViewModel: ReportsViewModel = {
   state: 'loading',
@@ -30,9 +31,22 @@ const initialViewModel: ReportsViewModel = {
   indicators: [],
   financials: [],
   charts: [],
+  statusBreakdown: [],
+  topRoutes: [],
 };
 
-const chartColors = ['#12355B', '#00B8A9', '#F97316', '#22C55E', '#334155', '#0F172A', '#93C5FD', '#FED7AA', '#BBF7D0'];
+const chartBlueDark = '#1D4ED8';
+const chartBlueLight = '#60A5FA';
+const chartTeal = '#00B8A9';
+const chartPurple = '#8B5CF6';
+const statusRowPalette = [
+  'status-row--gray',
+  'status-row--blue',
+  'status-row--green',
+  'status-row--purple',
+  'status-row--orange',
+  'status-row--teal',
+];
 
 Chart.register(...registerables);
 
@@ -46,7 +60,7 @@ Chart.register(...registerables);
 export class Reports implements AfterViewChecked, OnDestroy {
   @ViewChildren('chartCanvas') private readonly chartCanvases?: QueryList<ElementRef<HTMLCanvasElement>>;
 
-  private readonly shipmentService = inject(MockShipmentService);
+  private readonly shipmentService = inject(SHIPMENT_DATA_SOURCE);
   private readonly retry$ = new Subject<void>();
   private readonly currentViewModel = signal<ReportsViewModel>(initialViewModel);
   private readonly charts = new Map<string, Chart>();
@@ -117,6 +131,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
       ...Object.entries(metrics.byTransportMode).map(([key, value]) => ['modalidad', key, value.toString()]),
       ...Object.entries(metrics.byStatus).map(([key, value]) => ['estado', key, value.toString()]),
       ...metrics.topClients.map((client) => ['cliente', client.client, client.total.toString()]),
+      ...metrics.topRoutes.map((route) => ['ruta', route.route, route.total.toString()]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -144,8 +159,18 @@ export class Reports implements AfterViewChecked, OnDestroy {
       metrics,
       indicators: [
         { label: 'Total de envíos', value: metrics.totalShipments.toLocaleString('es-CO'), icon: 'inventory_2' },
-        { label: 'Entregados', value: metrics.totalDelivered.toLocaleString('es-CO'), icon: 'task_alt' },
-        { label: 'Con novedad', value: metrics.totalWithIssue.toLocaleString('es-CO'), icon: 'warning' },
+        {
+          label: 'Entregados',
+          value: metrics.totalDelivered.toLocaleString('es-CO'),
+          icon: 'task_alt',
+          caption: `${this.formatShare(metrics.totalDelivered, metrics.totalShipments)}% del total`,
+        },
+        {
+          label: 'Con novedad',
+          value: metrics.totalWithIssue.toLocaleString('es-CO'),
+          icon: 'warning',
+          caption: `${this.formatShare(metrics.totalWithIssue, metrics.totalShipments)}% del total`,
+        },
       ],
       financials: [
         { label: 'Total facturado', value: this.formatCurrency(metrics.totalBilledUsd), icon: 'payments' },
@@ -153,6 +178,8 @@ export class Reports implements AfterViewChecked, OnDestroy {
         { label: 'Total demoras', value: this.formatCurrency(metrics.totalDelayUsd), icon: 'timer' },
       ],
       charts: this.createCharts(metrics),
+      statusBreakdown: this.createStatusBreakdown(metrics),
+      topRoutes: metrics.topRoutes.map((route) => ({ label: route.route, value: route.total })),
     };
   }
 
@@ -163,8 +190,8 @@ export class Reports implements AfterViewChecked, OnDestroy {
         title: 'Por tipo de operación',
         kind: 'doughnut',
         values: [
-          { label: getOperationTypeLabel('IMPO'), value: metrics.byOperationType.IMPO },
-          { label: getOperationTypeLabel('EXPO'), value: metrics.byOperationType.EXPO },
+          { label: getOperationTypeLabel('EXPO'), value: metrics.byOperationType.EXPO, icon: 'north_east' },
+          { label: getOperationTypeLabel('IMPO'), value: metrics.byOperationType.IMPO, icon: 'south_west' },
         ],
         summary: `Importaciones: ${metrics.byOperationType.IMPO}. Exportaciones: ${metrics.byOperationType.EXPO}.`,
       },
@@ -173,19 +200,10 @@ export class Reports implements AfterViewChecked, OnDestroy {
         title: 'Por modalidad',
         kind: 'doughnut',
         values: [
-          { label: getTransportModeLabel('AIR'), value: metrics.byTransportMode.AIR },
-          { label: getTransportModeLabel('SEA'), value: metrics.byTransportMode.SEA },
+          { label: getTransportModeLabel('AIR'), value: metrics.byTransportMode.AIR, icon: getTransportModeIcon('AIR') },
+          { label: getTransportModeLabel('SEA'), value: metrics.byTransportMode.SEA, icon: getTransportModeIcon('SEA') },
         ],
         summary: `Aéreos: ${metrics.byTransportMode.AIR}. Marítimos: ${metrics.byTransportMode.SEA}.`,
-      },
-      {
-        id: 'status',
-        title: 'Por estado',
-        kind: 'bar',
-        values: Object.entries(metrics.byStatus)
-          .filter(([, value]) => value > 0)
-          .map(([status, value]) => ({ label: getShipmentStatusLabel(status as ShipmentStatus), value })),
-        summary: `Distribución por estados con ${metrics.totalShipments} envíos simulados.`,
       },
       {
         id: 'clients',
@@ -197,9 +215,23 @@ export class Reports implements AfterViewChecked, OnDestroy {
     ];
   }
 
+  private createStatusBreakdown(metrics: ReportMetrics): StatusBreakdownItem[] {
+    const entries = Object.entries(metrics.byStatus).filter(([, value]) => value > 0) as [ShipmentStatus, number][];
+    const maxValue = Math.max(...entries.map(([, value]) => value), 1);
+
+    return entries.map(([status, value], index) => ({
+      label: getShipmentStatusLabel(status),
+      value,
+      percentage: (value / maxValue) * 100,
+      toneClass: statusRowPalette[index % statusRowPalette.length],
+    }));
+  }
+
   private createChartConfig(reportChart: ReportChart): ChartConfiguration<ChartKind, number[], string> {
     const labels = reportChart.values.map((value) => value.label);
     const data = reportChart.values.map((value) => value.value);
+    const isHorizontalBar = reportChart.id === 'clients';
+    const backgroundColor = this.getChartColors(reportChart.id, data.length);
 
     return {
       type: reportChart.kind,
@@ -209,26 +241,44 @@ export class Reports implements AfterViewChecked, OnDestroy {
           {
             label: reportChart.title,
             data,
-            backgroundColor: chartColors.slice(0, data.length),
+            backgroundColor,
             borderColor: '#FFFFFF',
             borderWidth: 2,
           },
         ],
       },
       options: {
+        indexAxis: isHorizontalBar ? 'y' : 'x',
+        cutout: reportChart.kind === 'doughnut' ? '72%' : undefined,
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, position: 'bottom' },
+          legend: { display: false },
           title: { display: false },
         },
-        scales: reportChart.kind === 'bar' ? { y: { beginAtZero: true, ticks: { precision: 0 } } } : undefined,
+        scales: isHorizontalBar ? { x: { beginAtZero: true, ticks: { precision: 0 } } } : undefined,
       },
     };
   }
 
+  private getChartColors(chartId: string, count: number): string[] {
+    if (chartId === 'operation') {
+      return [chartBlueDark, chartBlueLight];
+    }
+
+    if (chartId === 'mode') {
+      return [chartTeal, chartPurple];
+    }
+
+    return new Array(count).fill(chartTeal);
+  }
+
   private formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value);
+    return `USD ${value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  private formatShare(value: number, total: number): string {
+    return total > 0 ? Math.round((value / total) * 100).toString() : '0';
   }
 
   private destroyCharts(): void {

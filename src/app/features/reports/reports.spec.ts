@@ -3,7 +3,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Observable, of, throwError } from 'rxjs';
 
 import { ReportMetrics } from '../../core/models/shipment.model';
-import { MockShipmentService } from '../../mocks/services/mock-shipment.service';
+import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
 import { Reports } from './reports';
 
 describe('Reports', () => {
@@ -15,7 +15,7 @@ describe('Reports', () => {
 
     await TestBed.configureTestingModule({
       imports: [Reports, NoopAnimationsModule],
-      providers: [{ provide: MockShipmentService, useValue: { getReportMetrics: getReportMetricsSpy } }],
+      providers: [{ provide: SHIPMENT_DATA_SOURCE, useValue: { getReportMetrics: getReportMetricsSpy } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Reports);
@@ -35,8 +35,7 @@ describe('Reports', () => {
   it('should render financial totals with currency format', fakeAsync(() => {
     render();
 
-    expect(getText()).toContain('Resúmenes financieros');
-    expect(getText()).toContain('US$');
+    expect(getText()).toContain('USD');
     expect(getText()).toContain('Total facturado');
     expect(getText()).toContain('Total anticipos');
     expect(getText()).toContain('Total demoras');
@@ -56,7 +55,6 @@ describe('Reports', () => {
     expect(text).toContain('Por estado');
     expect(text).toContain('En tránsito');
     expect(text).toContain('Top clientes por cantidad de envíos');
-    expect(text).toContain('Enka');
   }));
 
   it('should render accessible textual summaries for charts', fakeAsync(() => {
@@ -64,9 +62,20 @@ describe('Reports', () => {
 
     const charts = fixture.nativeElement.querySelectorAll('canvas[role="img"]') as NodeListOf<HTMLCanvasElement>;
 
-    expect(charts.length).toBe(4);
+    expect(charts.length).toBe(3);
     expect(charts[0].getAttribute('aria-label')).toContain('Importaciones: 15');
     expect(charts[1].getAttribute('aria-label')).toContain('Aéreos: 12');
+    expect(charts[2].getAttribute('aria-label')).toContain('Enka');
+  }));
+
+  it('should render the most frequent routes', fakeAsync(() => {
+    render();
+
+    const text = getText();
+
+    expect(text).toContain('Rutas más frecuentes');
+    expect(text).toContain('Colombia → Brasil');
+    expect(text).toContain('44');
   }));
 
   it('should render empty state when dataset is empty', fakeAsync(() => {
@@ -83,7 +92,7 @@ describe('Reports', () => {
     spyOn(HTMLAnchorElement.prototype, 'click');
     render();
 
-    clickButton('Exportar CSV');
+    clickButton('Exportar');
     fixture.detectChanges();
 
     expect(createObjectUrlSpy).toHaveBeenCalled();
@@ -157,6 +166,10 @@ function createReportMetrics(): ReportMetrics {
       { client: 'Enka', total: 8 },
       { client: 'Nutresa', total: 6 },
     ],
+    topRoutes: [
+      { route: 'Colombia → Brasil', total: 44 },
+      { route: 'Perú → Colombia', total: 38 },
+    ],
   };
 }
 
@@ -186,5 +199,6 @@ function createEmptyMetrics(): ReportMetrics {
       WITH_ISSUE: 0,
     },
     topClients: [],
+    topRoutes: [],
   };
 }

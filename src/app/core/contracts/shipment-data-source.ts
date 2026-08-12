@@ -1,3 +1,4 @@
+import { InjectionToken } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ReportMetrics } from '../models/shipment.model';
@@ -13,3 +14,9 @@ import { ReportMetrics } from '../models/shipment.model';
 export interface ShipmentDataSource {
   getReportMetrics(): Observable<ReportMetrics>;
 }
+
+/**
+ * Origen de datos de reportes. Hoy lo resuelve `MockShipmentService`;
+ * cuando exista el endpoint real solo se cambia el proveedor en `app.config.ts`.
+ */
+export const SHIPMENT_DATA_SOURCE = new InjectionToken<ShipmentDataSource>('SHIPMENT_DATA_SOURCE');

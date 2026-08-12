@@ -142,4 +142,5 @@ export interface ReportMetrics extends DashboardMetrics {
   byTransportMode: Record<TransportMode, number>;
   byStatus: Record<ShipmentStatus, number>;
   topClients: { client: string; total: number }[];
+  topRoutes: { route: string; total: number }[];
 }
