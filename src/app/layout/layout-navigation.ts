@@ -11,6 +11,6 @@ export const layoutNavItems: readonly LayoutNavItem[] = [
   { label: 'Mis envíos', route: '/shipments', icon: 'inventory_2', exact: false },
   { label: 'Historial', route: '/history', icon: 'history', exact: true },
   { label: 'Notificaciones', route: '/notifications', icon: 'notifications', exact: true },
-  { label: 'Reportes', route: '/reports', icon: 'monitoring', exact: true },
+  { label: 'Reportes', route: '/reports', icon: 'bar_chart', exact: true },
   { label: 'Ajustes', route: '/settings', icon: 'settings', exact: false },
 ];
