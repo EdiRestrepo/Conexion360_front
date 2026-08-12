@@ -30,9 +30,10 @@ export interface NotificationPreference {
 export interface UserNotificationPreferences {
   email: boolean;
   inApp: boolean;
+  sms: boolean;
   shipmentStatusChanges: boolean;
-  delays: boolean;
   delivery: boolean;
-  documents: boolean;
-  containers: boolean;
+  delays: boolean;
+  shipmentEnRoute: boolean;
+  deliveryReminders: boolean;
 }

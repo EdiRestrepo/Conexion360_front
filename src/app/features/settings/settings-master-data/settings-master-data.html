@@ -21,21 +21,21 @@
       <div class="parameter-row">
         <div>
           <strong>Actualización automática de seguimiento</strong>
-          <span>Refresca el estado de los envíos en intervalos configurados.</span>
+          <span>Refresca el estado de los envíos en tiempo real</span>
         </div>
         <span class="static-switch static-switch--on" aria-label="Activado"></span>
       </div>
       <div class="parameter-row">
         <div>
           <strong>Exigir carga de documentos</strong>
-          <span>Solicita adjuntos mínimos al crear envíos.</span>
+          <span>Obliga a adjuntar documentos al crear envíos</span>
         </div>
         <span class="static-switch" aria-label="Desactivado"></span>
       </div>
       <div class="parameter-row">
         <div>
           <strong>Seguimiento público</strong>
-          <span>Permite rastrear envíos sin iniciar sesión.</span>
+          <span>Permite rastrear envíos sin iniciar sesión</span>
         </div>
         <span class="static-switch static-switch--on" aria-label="Activado"></span>
       </div>
@@ -75,45 +75,7 @@
     </article>
   </section>
 
-  <article class="surface-card master-data">
-    <header class="master-data__header">
-      <div>
-        <h3>Catálogos operativos</h3>
-        <p>Valores usados por el prototipo para estados, modalidades, documentos e Incoterms.</p>
-      </div>
-      <mat-icon aria-hidden="true">inventory_2</mat-icon>
-    </header>
-
-    @if (viewModel$ | async; as viewModel) {
-      @if (viewModel.state === 'loading') {
-        <div class="state-box"><strong>Cargando catálogos...</strong></div>
-      } @else if (viewModel.state === 'error') {
-        <div class="state-box state-box--error">
-          <strong>{{ viewModel.message }}</strong>
-          <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
-        </div>
-      } @else if (viewModel.state === 'empty') {
-        <div class="state-box"><strong>{{ viewModel.message }}</strong></div>
-      } @else {
-        <section class="master-data__grid" aria-label="Catálogos maestros">
-          @for (group of viewModel.groups; track group.id) {
-            <article class="master-card">
-              <header>
-                <h4>{{ group.title }}</h4>
-                <button mat-stroked-button type="button" (click)="saveMasterData(group)">
-                  <mat-icon aria-hidden="true">save</mat-icon>
-                  Guardar
-                </button>
-              </header>
-              <ul>
-                @for (item of group.items; track item) {
-                  <li>{{ item }}</li>
-                }
-              </ul>
-            </article>
-          }
-        </section>
-      }
-    }
-  </article>
+  <button mat-flat-button type="button" class="settings-save-button" (click)="saveConfiguration()">
+    Guardar configuración
+  </button>
 </section>

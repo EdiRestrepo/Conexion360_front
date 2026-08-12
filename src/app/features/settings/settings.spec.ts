@@ -1,12 +1,15 @@
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { AuthSession } from '../../core/models/auth-session.model';
 import { UserRole } from '../../core/models/user.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { Settings } from './settings';
+
+@Component({ selector: 'app-empty', template: '' })
+class EmptyComponent {}
 
 describe('Settings', () => {
   let fixture: ComponentFixture<Settings>;
@@ -17,9 +20,16 @@ describe('Settings', () => {
 
     await TestBed.configureTestingModule({
       imports: [Settings, NoopAnimationsModule],
-      providers: [provideRouter([]), { provide: AuthSessionService, useValue: { currentSession: sessionSignal } }],
+      providers: [
+        provideRouter([
+          { path: 'settings', component: EmptyComponent },
+          { path: 'settings/notifications', component: EmptyComponent },
+        ]),
+        { provide: AuthSessionService, useValue: { currentSession: sessionSignal } },
+      ],
     }).compileComponents();
 
+    await TestBed.inject(Router).navigateByUrl('/settings');
     fixture = TestBed.createComponent(Settings);
   });
 
@@ -38,8 +48,20 @@ describe('Settings', () => {
 
     expect(getText()).toContain('Gestión de usuarios');
     expect(getText()).toContain('Ajustes maestros');
-    expect(getText()).toContain('Rol: Administrador');
     expect(getText()).not.toContain('Solo administradores');
+  });
+
+  it('should hide the main header and cards when navigating to a child route', async () => {
+    fixture.detectChanges();
+    expect(getText()).toContain('Ajustes');
+    expect(getText()).toContain('Ajuste de notificaciones');
+
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/settings/notifications');
+    fixture.detectChanges();
+
+    expect(getText()).not.toContain('Administra la configuración de la plataforma.');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.settings-cards')).toBeNull();
   });
 
   function getText(): string {

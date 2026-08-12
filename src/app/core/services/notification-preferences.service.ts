@@ -62,11 +62,12 @@ export class NotificationPreferencesService {
     return (
       typeof preferences.email === 'boolean' &&
       typeof preferences.inApp === 'boolean' &&
+      typeof preferences.sms === 'boolean' &&
       typeof preferences.shipmentStatusChanges === 'boolean' &&
-      typeof preferences.delays === 'boolean' &&
       typeof preferences.delivery === 'boolean' &&
-      typeof preferences.documents === 'boolean' &&
-      typeof preferences.containers === 'boolean'
+      typeof preferences.delays === 'boolean' &&
+      typeof preferences.shipmentEnRoute === 'boolean' &&
+      typeof preferences.deliveryReminders === 'boolean'
     );
   }
 }

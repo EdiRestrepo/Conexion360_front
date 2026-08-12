@@ -1,76 +1,40 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
 
-import { MasterDataGroup } from '../../../core/models/settings.model';
-import { SettingsService } from '../../../core/services/settings.service';
 import { SettingsMasterData } from './settings-master-data';
 
 describe('SettingsMasterData', () => {
   let fixture: ComponentFixture<SettingsMasterData>;
-  let getMasterDataSpy: jasmine.Spy<() => Observable<MasterDataGroup[]>>;
-  let saveMasterDataSpy: jasmine.Spy<(groupId: string) => Observable<MasterDataGroup | null>>;
 
   beforeEach(async () => {
-    getMasterDataSpy = jasmine.createSpy('getMasterData').and.returnValue(of(createMasterData()));
-    saveMasterDataSpy = jasmine.createSpy('saveMasterData').and.returnValue(of(createMasterData()[0]));
-
     await TestBed.configureTestingModule({
       imports: [SettingsMasterData, NoopAnimationsModule],
-      providers: [provideRouter([]), { provide: SettingsService, useValue: { getMasterData: getMasterDataSpy, saveMasterData: saveMasterDataSpy } }],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsMasterData);
   });
 
-  it('should render master data groups', fakeAsync(() => {
-    render();
-
-    expect(getText()).toContain('Estados');
-    expect(getText()).toContain('Modalidades');
-    expect(getText()).toContain('Incoterms');
-    expect(getText()).toContain('Tipos de contenedor');
-  }));
-
-  it('should save master data changes in simulated mode', fakeAsync(() => {
-    render();
-
-    clickButton('Guardar');
-    tick();
+  it('should render the general parameters, localization and system sections', () => {
     fixture.detectChanges();
 
-    expect(saveMasterDataSpy).toHaveBeenCalledWith('statuses');
-    expect(getText()).toContain('Cambios maestros guardados.');
-  }));
+    expect(getText()).toContain('Parámetros generales');
+    expect(getText()).toContain('Actualización automática de seguimiento');
+    expect(getText()).toContain('Exigir carga de documentos');
+    expect(getText()).toContain('Seguimiento público');
+    expect(getText()).toContain('Localización');
+    expect(getText()).toContain('Sistema');
+    expect(getText()).not.toContain('Catálogos operativos');
+  });
 
-  it('should render empty state', fakeAsync(() => {
-    getMasterDataSpy.and.returnValue(of([]));
-    fixture = TestBed.createComponent(SettingsMasterData);
-    render();
-
-    expect(getText()).toContain('No hay catálogos maestros disponibles.');
-  }));
-
-  it('should render error state and retry', fakeAsync(() => {
-    getMasterDataSpy.and.returnValue(throwError(() => new Error('fallo')));
-    fixture = TestBed.createComponent(SettingsMasterData);
-    render();
-
-    expect(getText()).toContain('No fue posible cargar los catálogos maestros.');
-    getMasterDataSpy.and.returnValue(of(createMasterData()));
-    clickButton('Reintentar');
-    tick();
+  it('should show a confirmation message when saving the configuration', () => {
+    fixture.detectChanges();
+    clickButton('Guardar configuración');
     fixture.detectChanges();
 
-    expect(getText()).toContain('Estados');
-  }));
-
-  function render(): void {
-    fixture.detectChanges();
-    tick();
-    fixture.detectChanges();
-  }
+    expect(getText()).toContain('Configuración guardada.');
+  });
 
   function getText(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -84,13 +48,3 @@ describe('SettingsMasterData', () => {
     button.click();
   }
 });
-
-function createMasterData(): MasterDataGroup[] {
-  return [
-    { id: 'statuses', title: 'Estados', items: ['Pendiente', 'En tránsito', 'Entregado'] },
-    { id: 'modes', title: 'Modalidades', items: ['Aéreo', 'Marítimo'] },
-    { id: 'documents', title: 'Tipos de documento', items: ['HBL', 'AWB'] },
-    { id: 'incoterms', title: 'Incoterms', items: ['FOB', 'DAP'] },
-    { id: 'containers', title: 'Tipos de contenedor', items: ['20GP', '40HC'] },
-  ];
-}

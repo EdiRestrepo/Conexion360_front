@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
-import { UserRole } from '../../core/models/user.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
-import { getUserRoleLabel } from '../../core/utils/display-labels';
 import type { SettingsCard, SettingsCardView } from './models/settings-view.model';
 
 const settingsCards: SettingsCard[] = [
@@ -33,21 +33,28 @@ const settingsCards: SettingsCard[] = [
 
 @Component({
   selector: 'app-settings',
-  imports: [MatIconModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [MatIconModule, RouterLink, RouterOutlet],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Settings {
   private readonly authSession = inject(AuthSessionService);
+  private readonly router = inject(Router);
 
   protected readonly session = this.authSession.currentSession;
   protected readonly cards = computed<SettingsCardView[]>(() => {
     const role = this.session()?.user.role ?? null;
     return settingsCards.map((card) => ({ ...card, available: role ? card.roles.includes(role) : false }));
   });
+  protected readonly showMain = signal(this.router.url === '/settings');
 
-  protected getRoleLabel(role: UserRole): string {
-    return getUserRoleLabel(role);
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => this.showMain.set(event.urlAfterRedirects === '/settings'));
   }
 }

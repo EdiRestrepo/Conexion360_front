@@ -5,7 +5,7 @@
     </a>
     <div>
       <h2>Ajuste de notificaciones</h2>
-      <p>Configura canales y eventos operativos.</p>
+      <p>Configura canales y eventos.</p>
     </div>
   </header>
 
@@ -31,7 +31,6 @@
             <span class="switch-row__icon"><mat-icon aria-hidden="true">notifications</mat-icon></span>
             <span class="switch-row__content">
               <strong>Notificaciones en la app</strong>
-              <small>Alertas dentro de Conexion360.</small>
             </span>
             <input type="checkbox" formControlName="inApp" aria-label="Activar notificaciones en la app" />
             <span class="switch-row__control" aria-hidden="true"></span>
@@ -41,9 +40,17 @@
             <span class="switch-row__icon"><mat-icon aria-hidden="true">mail</mat-icon></span>
             <span class="switch-row__content">
               <strong>Correo electrónico</strong>
-              <small>Resumen y alertas enviadas al correo del perfil.</small>
             </span>
             <input type="checkbox" formControlName="email" aria-label="Activar notificaciones por correo" />
+            <span class="switch-row__control" aria-hidden="true"></span>
+          </label>
+
+          <label class="switch-row">
+            <span class="switch-row__icon"><mat-icon aria-hidden="true">sms</mat-icon></span>
+            <span class="switch-row__content">
+              <strong>SMS / Mensajes</strong>
+            </span>
+            <input type="checkbox" formControlName="sms" aria-label="Activar notificaciones por SMS" />
             <span class="switch-row__control" aria-hidden="true"></span>
           </label>
         </article>
@@ -56,7 +63,6 @@
           <label class="switch-row">
             <span class="switch-row__content">
               <strong>Cambio de estado del envío</strong>
-              <small>Movimiento entre hitos logísticos.</small>
             </span>
             <input type="checkbox" formControlName="shipmentStatusChanges" aria-label="Activar cambios de estado" />
             <span class="switch-row__control" aria-hidden="true"></span>
@@ -65,7 +71,6 @@
           <label class="switch-row">
             <span class="switch-row__content">
               <strong>Entrega exitosa</strong>
-              <small>Confirmación cuando el envío finaliza.</small>
             </span>
             <input type="checkbox" formControlName="delivery" aria-label="Activar notificaciones de entrega" />
             <span class="switch-row__control" aria-hidden="true"></span>
@@ -74,7 +79,6 @@
           <label class="switch-row">
             <span class="switch-row__content">
               <strong>Novedades o incidencias</strong>
-              <small>Demoras, alertas operativas y eventos críticos.</small>
             </span>
             <input type="checkbox" formControlName="delays" aria-label="Activar novedades o incidencias" />
             <span class="switch-row__control" aria-hidden="true"></span>
@@ -82,19 +86,17 @@
 
           <label class="switch-row">
             <span class="switch-row__content">
-              <strong>Documentos</strong>
-              <small>Pendientes, vencidos o rechazados.</small>
+              <strong>Envío en camino</strong>
             </span>
-            <input type="checkbox" formControlName="documents" aria-label="Activar notificaciones de documentos" />
+            <input type="checkbox" formControlName="shipmentEnRoute" aria-label="Activar notificaciones de envío en camino" />
             <span class="switch-row__control" aria-hidden="true"></span>
           </label>
 
           <label class="switch-row">
             <span class="switch-row__content">
-              <strong>Contenedores</strong>
-              <small>Días libres próximos a vencer y demoras.</small>
+              <strong>Recordatorios de entrega</strong>
             </span>
-            <input type="checkbox" formControlName="containers" aria-label="Activar notificaciones de contenedores" />
+            <input type="checkbox" formControlName="deliveryReminders" aria-label="Activar recordatorios de entrega" />
             <span class="switch-row__control" aria-hidden="true"></span>
           </label>
         </article>

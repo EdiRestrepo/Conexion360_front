@@ -58,6 +58,7 @@
 .preferences-card h3 {
   color: var(--color-primary);
   font-size: 18px;
+  font-weight: 800;
 }
 
 .switch-row {
@@ -93,7 +94,7 @@
 .switch-row strong {
   color: var(--color-text);
   font-size: var(--font-size-label);
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .switch-row small {

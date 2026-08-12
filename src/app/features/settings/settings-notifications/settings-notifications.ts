@@ -14,11 +14,12 @@ import type { NotificationPreferenceForm, PreferencesState, PreferencesViewModel
 const defaultPreferences: UserNotificationPreferences = {
   email: true,
   inApp: true,
+  sms: false,
   shipmentStatusChanges: true,
-  delays: true,
   delivery: true,
-  documents: true,
-  containers: true,
+  delays: true,
+  shipmentEnRoute: false,
+  deliveryReminders: false,
 };
 
 @Component({
@@ -37,11 +38,12 @@ export class SettingsNotifications {
   protected readonly form = new FormGroup<NotificationPreferenceForm>({
     email: new FormControl(defaultPreferences.email, { nonNullable: true }),
     inApp: new FormControl(defaultPreferences.inApp, { nonNullable: true }),
+    sms: new FormControl(defaultPreferences.sms, { nonNullable: true }),
     shipmentStatusChanges: new FormControl(defaultPreferences.shipmentStatusChanges, { nonNullable: true }),
-    delays: new FormControl(defaultPreferences.delays, { nonNullable: true }),
     delivery: new FormControl(defaultPreferences.delivery, { nonNullable: true }),
-    documents: new FormControl(defaultPreferences.documents, { nonNullable: true }),
-    containers: new FormControl(defaultPreferences.containers, { nonNullable: true }),
+    delays: new FormControl(defaultPreferences.delays, { nonNullable: true }),
+    shipmentEnRoute: new FormControl(defaultPreferences.shipmentEnRoute, { nonNullable: true }),
+    deliveryReminders: new FormControl(defaultPreferences.deliveryReminders, { nonNullable: true }),
   });
 
   protected readonly viewModel$: Observable<PreferencesViewModel> = this.auth0Facade.user$.pipe(

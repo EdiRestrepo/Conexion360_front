@@ -36,7 +36,9 @@ describe('SettingsNotifications', () => {
 
     expect(getText()).toContain('Correo');
     expect(getText()).toContain('Notificaciones en la app');
-    expect(getText()).toContain('Contenedores');
+    expect(getText()).toContain('SMS / Mensajes');
+    expect(getText()).toContain('Envío en camino');
+    expect(getText()).toContain('Recordatorios de entrega');
   }));
 
   it('should save preferences', fakeAsync(() => {
@@ -88,11 +90,12 @@ function createPreferences(): UserNotificationPreferences {
   return {
     email: true,
     inApp: true,
+    sms: false,
     shipmentStatusChanges: true,
-    delays: true,
     delivery: true,
-    documents: true,
-    containers: true,
+    delays: true,
+    shipmentEnRoute: false,
+    deliveryReminders: false,
   };
 }
 
