@@ -70,14 +70,13 @@
   border: 0;
 }
 
-.shipments-toolbar input:focus,
-.shipments-toolbar select:focus,
-.shipments-pagination select:focus {
+.shipments-toolbar .search-field:focus-within {
   border-color: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--color-secondary-soft);
 }
 
-.shipments-toolbar .search-field:focus-within {
+.shipments-toolbar select:focus,
+.shipments-pagination select:focus {
   border-color: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--color-secondary-soft);
 }
