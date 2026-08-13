@@ -23,7 +23,19 @@
  * (de una app M2M autorizada en Auth0 Management API con `read:users` y `update:users`).
  */
 
+/**
+ * Los tokens M2M están limitados por plan (1000/mes en el plan actual), así que
+ * se reutilizan mientras sigan vivos. El sandbox de Actions puede reciclar el
+ * proceso entre ejecuciones; cuando no lo hace, simplemente se pide otro.
+ */
+let cachedToken = null;
+
 const getManagementToken = async (secrets) => {
+  // Margen de 60 s para no usar un token que caduque a mitad de la petición.
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
+    return cachedToken.value;
+  }
+
   const response = await fetch(`https://${secrets.AUTH0_DOMAIN}/oauth/token`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -39,7 +51,9 @@ const getManagementToken = async (secrets) => {
     throw new Error(`token ${response.status}: ${await response.text()}`);
   }
 
-  const { access_token: accessToken } = await response.json();
+  const { access_token: accessToken, expires_in: expiresIn } = await response.json();
+  cachedToken = { value: accessToken, expiresAt: Date.now() + expiresIn * 1000 };
+
   return accessToken;
 };
 
@@ -47,6 +61,13 @@ exports.onExecutePostLogin = async (event, api) => {
   // 1. Sin correo verificado no se vincula nada. Sin esta comprobación
   // cualquiera podría registrarse con el correo ajeno y heredar la cuenta.
   if (!event.user.email || event.user.email_verified !== true) {
+    return;
+  }
+
+  // 2. Si ya tiene más de una identidad, está vinculado: no hay nada que hacer.
+  // Este corte evita la llamada a la Management API en la inmensa mayoría de
+  // los logins, que es lo que mantiene el consumo de tokens M2M bajo control.
+  if ((event.user.identities?.length ?? 1) > 1) {
     return;
   }
 
@@ -58,7 +79,7 @@ exports.onExecutePostLogin = async (event, api) => {
     const token = await getManagementToken(event.secrets);
     const authorization = { authorization: `Bearer ${token}` };
 
-    // 2. Buscamos otras identidades con el mismo correo verificado.
+    // 3. Buscamos otras identidades con el mismo correo verificado.
     const search = await fetch(
       `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(event.user.email)}`,
       { headers: authorization },
@@ -79,7 +100,7 @@ exports.onExecutePostLogin = async (event, api) => {
       return;
     }
 
-    // 3. La identidad de base de datos manda: es la que el backend ya conoce.
+    // 4. La identidad de base de datos manda: es la que el backend ya conoce.
     const other = candidates[0];
     const currentIsDatabase = event.user.user_id.startsWith('auth0|');
     const primary = currentIsDatabase ? event.user : other;
@@ -104,7 +125,7 @@ exports.onExecutePostLogin = async (event, api) => {
       throw new Error(`link ${link.status}: ${await link.text()}`);
     }
 
-    // 4. Si el login entró por la identidad secundaria, el resto del flujo y el
+    // 5. Si el login entró por la identidad secundaria, el resto del flujo y el
     // token deben emitirse como la primaria.
     if (!currentIsDatabase) {
       api.authentication.setPrimaryUser(primary.user_id);

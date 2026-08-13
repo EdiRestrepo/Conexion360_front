@@ -6,7 +6,41 @@
 }
 
 .user-menu__trigger {
+  flex: 0 0 auto;
   padding: 0 !important;
+}
+
+/* `min-width: 0` en la rejilla y en los hijos es lo que permite que el recorte
+   con puntos suspensivos funcione dentro del flex del sidebar. */
+.user-menu__identity {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.user-menu__identity strong,
+.user-menu__identity small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu__identity strong {
+  font-size: var(--font-size-label);
+  font-weight: 800;
+  color: inherit;
+}
+
+.user-menu__identity small {
+  font-size: 12px;
+  color: var(--color-on-dark-muted);
+}
+
+/* Al colapsar el sidebar solo queda el avatar. */
+:host-context(.shell--sidebar-collapsed) .user-menu__identity {
+  display: none;
 }
 
 .user-menu__avatar {
@@ -45,21 +79,12 @@
   line-height: 1;
 }
 
-.user-menu__logout {
-  color: inherit !important;
-}
-
-.user-menu__logout mat-icon {
-  font-size: 20px;
-}
-
 .user-menu--compact .user-menu__avatar {
   background: var(--color-primary-soft);
   color: var(--color-primary);
 }
 
-.user-menu__trigger:focus-visible,
-.user-menu__logout:focus-visible {
+.user-menu__trigger:focus-visible {
   outline: 3px solid var(--color-secondary);
   outline-offset: 2px;
 }

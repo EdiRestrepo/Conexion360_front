@@ -105,6 +105,13 @@
   border-top: 1px solid var(--color-on-dark-border);
 }
 
+/* El host es inline por defecto; sin esto el nombre no tiene un ancho contra el
+   que recortarse y se desborda del sidebar. */
+.sidebar__user app-user-menu {
+  display: block;
+  min-width: 0;
+}
+
 :host-context(.shell--sidebar-collapsed) .sidebar__brand {
   min-height: 112px;
   padding: 18px 8px;
@@ -112,9 +119,16 @@
 
 :host-context(.shell--sidebar-collapsed) .sidebar__brand span,
 :host-context(.shell--sidebar-collapsed) .sidebar__brand small,
-:host-context(.shell--sidebar-collapsed) .sidebar__badge,
-:host-context(.shell--sidebar-collapsed) .sidebar__user {
+:host-context(.shell--sidebar-collapsed) .sidebar__badge {
   display: none;
+}
+
+/* El avatar sigue visible al colapsar: es el único acceso a cerrar sesión
+   desde el sidebar. Solo se centra y se estrecha el padding. */
+:host-context(.shell--sidebar-collapsed) .sidebar__user {
+  display: flex;
+  justify-content: center;
+  padding: 14px 8px;
 }
 
 :host-context(.shell--sidebar-collapsed) .sidebar__brand-logo {

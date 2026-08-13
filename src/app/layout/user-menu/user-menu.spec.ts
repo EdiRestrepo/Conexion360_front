@@ -54,9 +54,13 @@ describe('UserMenu', () => {
     expect(image?.src).toContain('https://example.com/avatar.png');
   });
 
-  it('should not render a standalone logout button in compact mode', () => {
+  it('should never render a standalone logout button', () => {
     fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__logout')).toBeNull();
+
     fixture.componentRef.setInput('compact', true);
     fixture.detectChanges();
 
@@ -81,33 +85,27 @@ describe('UserMenu', () => {
     expect(logoutSpy).toHaveBeenCalled();
   });
 
-  it('should render a standalone logout button with tooltip when not compact', () => {
+  it('should render name and role beside the avatar only when identity is requested', () => {
     fixture = TestBed.createComponent(UserMenu);
-    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('session', createSession('ANALISTAOPE'));
     fixture.detectChanges();
 
-    const logoutButton = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__logout');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__identity')).toBeNull();
 
-    expect(logoutButton).not.toBeNull();
-    expect(logoutButton?.getAttribute('aria-label')).toBe('Cerrar sesión');
+    fixture.componentRef.setInput('showIdentity', true);
+    fixture.detectChanges();
+
+    const identity = (fixture.nativeElement as HTMLElement).querySelector('.user-menu__identity');
+
+    expect(identity?.textContent).toContain('Iván Valencia');
+    expect(identity?.textContent).toContain('Analista operativo');
   });
 
-  it('should emit logout when the standalone logout button is clicked', () => {
+  it('should emit logout from the menu item when not compact', () => {
     fixture = TestBed.createComponent(UserMenu);
     const logoutSpy = jasmine.createSpy('logout');
     fixture.componentRef.setInput('session', createSession('CLIENT'));
     fixture.componentInstance.logout.subscribe(logoutSpy);
-    fixture.detectChanges();
-
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__logout');
-    button?.click();
-
-    expect(logoutSpy).toHaveBeenCalled();
-  });
-
-  it('should not include a logout menu item when not compact', () => {
-    fixture = TestBed.createComponent(UserMenu);
-    fixture.componentRef.setInput('session', createSession('CLIENT'));
     fixture.detectChanges();
 
     openMenu(fixture);
@@ -115,8 +113,9 @@ describe('UserMenu', () => {
     const menuItem = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item')).find((item) =>
       item.textContent?.includes('Cerrar sesión'),
     );
+    menuItem?.click();
 
-    expect(menuItem).toBeUndefined();
+    expect(logoutSpy).toHaveBeenCalled();
   });
 
   it('should not render the notifications bell when not compact', () => {

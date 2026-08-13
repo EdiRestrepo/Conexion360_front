@@ -65,8 +65,14 @@ describe('MainLayout', () => {
   }));
 
   it('should delegate logout to the session service', () => {
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__logout');
-    button?.click();
+    const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__trigger');
+    trigger?.click();
+    fixture.detectChanges();
+
+    const menuItem = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item')).find((item) =>
+      item.textContent?.includes('Cerrar sesión'),
+    );
+    menuItem?.click();
 
     expect(logoutSpy).toHaveBeenCalled();
   });

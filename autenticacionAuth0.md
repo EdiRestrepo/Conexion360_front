@@ -267,6 +267,13 @@ El account linking va primero a propósito: si el usuario ya tiene una cuenta ve
 
 > El editor de Actions de Auth0 no guarda historial. Cualquier cambio hecho allí debe reflejarse en `auth0/actions/`.
 
+**Cuota de tokens M2M.** El plan actual incluye **1000 tokens Machine-to-Machine al mes** (aviso visible en *Applications → Account Linking M2M → Settings*). Cada token pedido a la Management API consume uno, así que el Action no puede pedirlo en cada login. Se controla con dos medidas:
+
+1. Corte temprano si `event.user.identities.length > 1` — el usuario ya está vinculado y no hace falta ninguna llamada. Cubre la mayoría de los logins.
+2. Caché del token en memoria del sandbox mientras siga vivo.
+
+Si la cuota se agotara, el `try/catch` del Action se traga el fallo y **las cuentas dejarían de vincularse en silencio**. Conviene vigilar el consumo en producción y revisar los logs buscando `[account-linking]`.
+
 ### Verificación de correo: redirigir, no denegar
 
 El Action `auth0/actions/require-verified-email.js` manda a `/verificar-correo` (en la propia app) a quien no haya confirmado el correo, usando `api.redirect.sendUserTo()` y pasando el correo como query param. La pantalla es `src/app/core/components/verify-email/`, con ruta declarada en `src/app/app.routes.ts` **fuera de `authGuard`** —el usuario llega sin sesión— y **antes de la ruta comodín `**`**, que si no la captura y redirige a `dashboard`.
@@ -297,6 +304,18 @@ Claves relevantes del prompt `signup`, pantalla `signup`:
 
 - `auth0-users-validation` — error genérico de registro fallido. Es el que se muestra cuando el correo ya existe y *"Use a generic response in public signup API error message"* (Settings → Advanced) está activado.
 - `email-taken` — solo se muestra si se desactiva esa respuesta genérica, lo que revela qué correos están registrados y habilita la enumeración de usuarios. Se mantiene activada a propósito.
+
+### Página de error del tenant: descartada
+
+Universal Login usa transacciones de un solo uso. Pulsar «atrás» en el navegador durante el registro —por ejemplo en el formulario de completar perfil— la invalida, y Auth0 muestra su pantalla genérica *"Oops!, something went wrong"*. No se puede hacer que el botón «atrás» funcione.
+
+Se puede sustituir esa pantalla por una propia, pero **se descartó**:
+
+- El ajuste ya **no está en el Dashboard**; solo se configura por Management API (`error_page` en `PATCH /api/v2/tenants/settings`), lo que consume cuota M2M y exige el scope `update:tenant_settings`.
+- La URL sería **única por tenant**, así que no puede adaptarse a los tres entornos como sí hace `require-verified-email.js` con `redirect_uri`. Desde local también redirigiría al entorno principal.
+- El beneficio es puramente estético, sobre un error poco frecuente.
+
+Si algún día se retoma, hacerlo con una app M2M aparte y de un solo uso, no con la del account linking.
 
 ### Checklist para el despliegue a producción
 

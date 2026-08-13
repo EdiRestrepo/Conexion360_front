@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
@@ -12,7 +11,7 @@ import { getUserRoleLabel } from '../../core/utils/display-labels';
 
 @Component({
   selector: 'app-user-menu',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, RouterLink],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +19,8 @@ import { getUserRoleLabel } from '../../core/utils/display-labels';
 export class UserMenu {
   readonly session = input<AuthSession | null>(null);
   readonly compact = input(false);
+  /** Muestra nombre y rol junto al avatar. Solo lo usa el sidebar expandido. */
+  readonly showIdentity = input(false);
   readonly logout = output<void>();
 
   private readonly notificationService = inject(NOTIFICATION_DATA_SOURCE);

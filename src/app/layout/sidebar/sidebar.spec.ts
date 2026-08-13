@@ -50,8 +50,14 @@ describe('Sidebar', () => {
     fixture.componentInstance.logout.subscribe(logoutSpy);
     fixture.detectChanges();
 
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button[aria-label="Cerrar sesión"]');
-    button?.click();
+    const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__trigger');
+    trigger?.click();
+    fixture.detectChanges();
+
+    const menuItem = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item')).find((item) =>
+      item.textContent?.includes('Cerrar sesión'),
+    );
+    menuItem?.click();
 
     expect(logoutSpy).toHaveBeenCalled();
   });
