@@ -843,3 +843,126 @@ real:
   centroide del territorio, no en el puerto o aeropuerto real. Si más
   adelante se requiere precisión operativa, habría que geocodificar por
   terminal o ciudad.
+
+## 21. Gestión de usuarios y roles desde la app (pendiente de definir con backend)
+
+Hoy "Ajustes → Gestión de usuarios" (`/settings/users`) es una pantalla
+informativa: le dice al administrador que la gestión de usuarios y roles se
+hace desde el dashboard de Auth0, sin listar usuarios ni permitir asignar
+roles dentro de Conexion360.
+
+Pregunta abierta para hablar con el compañero de backend: ¿el rol ADMIN
+dentro de la app debería poder ver el listado de usuarios registrados en
+Auth0 y asignarles roles sin salir de Conexion360, o esa gestión se mantiene
+exclusivamente en el dashboard de Auth0?
+
+Restricción técnica que condiciona la respuesta: la Management API de Auth0
+(la que expone listar usuarios y asignar roles) requiere credenciales de una
+aplicación Machine-to-Machine con client secret. Ese secreto no puede vivir
+en el bundle de Angular sin quedar expuesto a cualquiera que inspeccione el
+JS, así que el SPA no puede llamarla directamente.
+
+Si se decide implementarlo, el patrón coherente con el resto de la sección 8
+sería:
+
+- El backend valida que quien llama tenga rol ADMIN a partir del token del
+  usuario autenticado (igual que ya hace para derivar el rol en los
+  endpoints existentes), no confiar solo en ocultar la pantalla en el
+  frontend.
+- Angular consume esos endpoints nuevos como cualquier otro servicio real
+  (mismo patrón de `ApiHomeService`/`ApiMyShipmentsService`), sin hablar con
+  Auth0 Management API ni con el M2M client desde el frontend.
+
+### Convención de rutas ya establecida (a respetar en los endpoints nuevos)
+
+Revisando los servicios reales ya implementados
+(`ApiHomeService`, `ApiMyShipmentsService`, `ApiHistoryService`,
+`ApiShipmentDetailService`), el backend sigue estos patrones que los
+endpoints de usuarios deberían mantener:
+
+- Rutas agrupadas por recurso en minúscula, acción en el segundo segmento:
+  `/home/totals`, `/home/filters`, `/myshipments/allshipments`,
+  `/myshipments/filterShipments`, `/myshipments/allhistory`,
+  `/myshipments/detailsshipments`. El recurso nuevo seguiría el mismo
+  esquema: `/users/...`.
+- Parámetros de identidad/paginación como query params en minúscula
+  (`idClient`, `page`, `size`); parámetros de filtro específicos en
+  PascalCase (`ValueFilter`, `OperationType`, `ShipmentMode`, `State`). Esa
+  inconsistencia de mayúsculas ya existe en el backend actual, no es algo
+  que el frontend deba "corregir" al integrar endpoints nuevos.
+- Todas las peticiones son `GET` hasta ahora; no hay todavía ningún patrón
+  establecido de mutación (`POST`/`PUT`). Asignar un rol sería la primera
+  mutación real del backend, así que el contrato de esa parte queda
+  totalmente abierto a lo que proponga el compañero de backend.
+- El token de Auth0 se adjunta automáticamente a toda petición hacia
+  `environment.api.baseUrl` mediante `authHttpInterceptorFn`
+  (`@auth0/auth0-angular`, configurado en `app.config.ts`); ningún servicio
+  agrega el header `Authorization` a mano. Los endpoints nuevos no
+  necesitan un mecanismo de autenticación distinto.
+- La respuesta se envuelve en `dataResponse` (a veces `DataResponse`, el
+  backend no es consistente en mayúsculas) y los mappers del frontend leen
+  de forma tolerante, probando varios nombres de campo posibles en vez de
+  asumir uno solo (ver `unwrapPayload`/`getValue` en `ApiHomeService`,
+  `mapShipmentsPageResponse` en `core/mappers/shipments-page.mapper.ts`).
+  Si el backend puede confirmar de antemano el nombre exacto de los campos
+  para los endpoints de usuarios, el mapper del frontend puede ser directo
+  en vez de defensivo.
+
+### Propuesta concreta para comentar con el compañero de backend
+
+Solo como punto de partida para la conversación, no como contrato cerrado:
+
+**Listar usuarios**
+
+```
+GET /users/allusers
+Query params: idClient (documento del ADMIN que consulta, mismo patrón que
+  ya usan /home/totals y /myshipments/allshipments)
+Respuesta esperada (envuelta en dataResponse, igual que el resto):
+[
+  {
+    "auth0UserId": "auth0|6a6bfa1b9226bcfc6c315b0f",
+    "fullName": "Edison Restrepo",
+    "email": "edisonestival@gmail.com",
+    "company": "exito",
+    "document": "8110357412",
+    "role": "ADMIN",
+    "picture": "https://...",
+    "lastLogin": "2026-08-10T13:00:00Z"
+  }
+]
+```
+
+Los nombres de campo (`auth0UserId`, `fullName`, `document`, `company`,
+`role`, `picture`) se eligieron para que coincidan uno a uno con
+`Auth0Identity` (`core/models/user.model.ts`), así el mapper del frontend
+no necesita inventar una traducción nueva de nombres.
+
+**Asignar rol a un usuario**
+
+```
+POST /users/assignrole
+Body:
+{
+  "auth0UserId": "auth0|6a71456df4d54edf31aef8fd",
+  "role": "ANALISTAOPE"
+}
+Respuesta esperada: el usuario actualizado, misma forma que el listado.
+```
+
+Puntos a validar con el compañero de backend:
+
+- Si el backend ya tiene (o va a crear) la aplicación M2M en Auth0 con los
+  scopes `read:users`, `read:roles` y `create:role_members`/
+  `update:users` necesarios para estas dos operaciones.
+- Si "listar usuarios" debe traer todos los usuarios del tenant o solo los
+  que tienen algún rol de Conexion360 asignado (hoy el tenant de Auth0
+  puede tener usuarios de otras aplicaciones).
+- Si se necesita paginación (`page`/`size`, igual que
+  `/myshipments/allshipments`) en caso de que el listado de usuarios crezca.
+- Qué pasa si Auth0 tarda o falla (rate limit de la Management API): el
+  frontend ya tiene un patrón de estados Loading/Empty/Success/Error
+  (sección 15) que se puede reutilizar tal cual.
+
+Si no se implementa, la pantalla actual (enlace informativo al dashboard de
+Auth0) se mantiene como solución definitiva y no como estado temporal.

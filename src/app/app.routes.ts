@@ -16,6 +16,13 @@ export const routes: Routes = [
     loadComponent: () => import('./core/components/auth-redirect/auth-redirect').then((m) => m.AuthRedirect),
   },
   {
+    // Destino del Action "Requiere correo verificado" de Auth0. Debe quedar
+    // fuera de `authGuard`: el usuario llega aquí sin sesión en la app.
+    path: 'verificar-correo',
+    loadComponent: () =>
+      import('./core/components/verify-email/verify-email').then((m) => m.VerifyEmail),
+  },
+  {
     path: '',
     component: MainLayout,
     canActivate: [authGuard],

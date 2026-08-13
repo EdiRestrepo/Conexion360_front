@@ -1,0 +1,25 @@
+<main class="verify">
+  <section class="verify__card">
+    <mat-icon class="verify__icon" aria-hidden="true">mark_email_unread</mat-icon>
+
+    <h1 class="verify__title">Confirma tu correo</h1>
+
+    <p class="verify__text">
+      @if (email()) {
+        Te enviamos un enlace de activación a <strong>{{ email() }}</strong>.
+      } @else {
+        Te enviamos un enlace de activación a tu correo.
+      }
+      Ábrelo para activar tu cuenta y poder entrar a Conexion360.
+    </p>
+
+    <p class="verify__hint">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      ¿No lo encuentras? Revisa la carpeta de spam o correo no deseado.
+    </p>
+
+    <button type="button" class="verify__button" (click)="backToLogin()">
+      Ya confirmé mi correo, iniciar sesión
+    </button>
+  </section>
+</main>
