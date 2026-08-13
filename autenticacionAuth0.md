@@ -317,6 +317,41 @@ Se puede sustituir esa pantalla por una propia, pero **se descartó**:
 
 Si algún día se retoma, hacerlo con una app M2M aparte y de un solo uso, no con la del account linking.
 
+### Foto de perfil: estado y diseño pendiente
+
+**Mostrar una foto ya funciona.** La cadena está completa y no hay nada que construir para ello:
+
+```
+auth0User.picture  →  Auth0Identity.picture   (auth0-facade.service.ts)
+                   →  AuthSession.user.picture (auth-session.service.ts)
+                   →  <img class="user-menu__avatar">  (user-menu.html)
+```
+
+Las iniciales son solo el respaldo cuando `picture` viene vacío. Hoy viene vacío porque, tras el account linking, la identidad primaria es la de base de datos (`auth0|...`), que no trae foto; la de Google, que sí la tiene, quedó como secundaria.
+
+**Resuelto con un Action:** `auth0/actions/profile-picture.js` publica la foto en el claim `https://conexion360.space/picture`, leyéndola de `event.user.identities[].profileData`. No llama a la Management API, así que no consume tokens M2M. El frontend le da prioridad sobre `auth0User.picture` en `auth0-facade.service.ts`.
+
+Descarta las URLs de `s.gravatar.com` y `cdn.auth0.com/avatars`: Auth0 rellena con ellas el `picture` de las cuentas de base de datos, pero devuelven un avatar de iniciales. Si se dieran por buenas, nunca se llegaría a la foto real de Google.
+
+La foto se muestra **independientemente de por dónde haya entrado el usuario**: con el account linking, ambas identidades son la misma persona, y un avatar que cambiara según el método de acceso resultaría desconcertante.
+
+`user-menu.ts` cae a las iniciales si la imagen no carga (evento `error` del `<img>`), porque una URL remota siempre puede caducar o dejar de servirse. Guarda la URL fallida en lugar de un booleano, de modo que una foto nueva se reintente en vez de quedar descartada para siempre.
+
+El `<img>` lleva `referrerpolicy="no-referrer"`. Sin él, `lh3.googleusercontent.com` responde **429 Too Many Requests**: Google limita con dureza las fotos de perfil pedidas desde otro origen cuando la petición envía referrer. El síntoma era un avatar que caía a iniciales sin motivo aparente.
+
+> Depender de una URL de Google es frágil por diseño: puede caducar, limitarse o cambiar de formato. Cuando exista la subida propia contra el backend, la foto se servirá desde infraestructura propia y este problema desaparece.
+
+**Subida de foto propia: decisión tomada, implementación pendiente.** Se guardará en el backend (`C:\TCCWebApiCore\Apis`), no en `user_metadata` de Auth0. Motivo: escribir metadata exige la Management API en cada cambio, y el plan solo incluye 1000 tokens M2M al mes.
+
+Cuando llegue, **el Action no se retira**: la foto subida tendrá prioridad y la social quedará como respaldo, de modo que quien nunca suba una siga teniendo avatar en lugar de iniciales.
+
+Lo que hace falta antes de empezar:
+
+- **Endpoint de subida** en el backend (multipart), con validación del tipo real del archivo —no de la extensión— y límite de tamaño.
+- **Almacenamiento** de la imagen y una URL servible; columna para ella en PostgreSQL.
+- **Fetch de perfil en el frontend.** Es el cambio de fondo: hoy la sesión se construye **solo** con datos de Auth0 y la app no consulta al backend para el perfil. Habrá que introducir esa llamada y decidir la precedencia (foto propia por encima de la de Auth0).
+- Decidir recorte/redimensionado (en cliente o servidor), caché de la URL y qué ocurre al eliminar la foto.
+
 ### Checklist para el despliegue a producción
 
 El tenant actual (`dev-5lxfpxxjzz7ikezw`) es de desarrollo. Lo correcto es crear un tenant de producción aparte y replicar allí la configuración; así se puede romper dev sin afectar a los usuarios reales. Al hacerlo hay que revisar, en este orden:

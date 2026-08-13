@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -39,6 +39,22 @@ export class UserMenu {
   });
   protected readonly picture = computed(() => this.session()?.user.picture ?? null);
   protected readonly initials = computed(() => this.getInitials(this.displayName()));
+
+  /**
+   * Guarda la URL que falló, no un booleano: así una foto nueva vuelve a
+   * intentarse en lugar de quedarse descartada para siempre.
+   */
+  private readonly failedPicture = signal<string | null>(null);
+
+  protected readonly showPicture = computed(() => {
+    const picture = this.picture();
+    return !!picture && this.failedPicture() !== picture;
+  });
+
+  /** Una URL remota siempre puede caducar o dejar de servirse. */
+  protected onPictureError(): void {
+    this.failedPicture.set(this.picture());
+  }
 
   protected onLogout(): void {
     this.logout.emit();

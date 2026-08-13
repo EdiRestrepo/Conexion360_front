@@ -17,8 +17,18 @@
     [matMenuTriggerFor]="userMenuPanel"
     [attr.aria-label]="'Cuenta de ' + displayName()"
   >
-    @if (picture()) {
-      <img class="user-menu__avatar" [src]="picture() ?? ''" alt="" aria-hidden="true" />
+    @if (showPicture()) {
+      <!-- `no-referrer` evita el 429 de lh3.googleusercontent.com: Google
+           limita con dureza las fotos de perfil pedidas desde otro origen
+           cuando la petición lleva referrer. -->
+      <img
+        class="user-menu__avatar"
+        [src]="picture() ?? ''"
+        alt=""
+        aria-hidden="true"
+        referrerpolicy="no-referrer"
+        (error)="onPictureError()"
+      />
     } @else {
       <span class="user-menu__avatar" aria-hidden="true">{{ initials() }}</span>
     }

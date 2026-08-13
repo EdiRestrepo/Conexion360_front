@@ -85,6 +85,21 @@ describe('UserMenu', () => {
     expect(logoutSpy).toHaveBeenCalled();
   });
 
+  it('should fall back to initials when the picture fails to load', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT', 'https://example.com/rota.png'));
+    fixture.detectChanges();
+
+    const image = (fixture.nativeElement as HTMLElement).querySelector<HTMLImageElement>('img.user-menu__avatar');
+    image?.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('img.user-menu__avatar')).toBeNull();
+    expect(host.querySelector('span.user-menu__avatar')?.textContent?.trim()).toBe('IV');
+  });
+
   it('should render name and role beside the avatar only when identity is requested', () => {
     fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('ANALISTAOPE'));

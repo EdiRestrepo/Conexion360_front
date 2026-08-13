@@ -77,4 +77,36 @@ describe('Auth0FacadeService', () => {
       done();
     });
   });
+
+  it('should prefer the picture claim over the primary identity picture', (done) => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        Auth0FacadeService,
+        {
+          provide: AuthService,
+          useValue: {
+            error$: EMPTY,
+            isAuthenticated$: of(true),
+            isLoading$: of(false),
+            loginWithRedirect: loginWithRedirectSpy,
+            logout: logoutSpy,
+            user$: of({
+              sub: 'auth0|123',
+              email: 'edison@example.com',
+              picture: 'https://s.gravatar.com/avatar/abc',
+            }),
+            idTokenClaims$: of({
+              'https://conexion360.space/picture': 'https://lh3.googleusercontent.com/foto',
+            }),
+          },
+        },
+      ],
+    });
+
+    TestBed.inject(Auth0FacadeService).user$.subscribe((identity) => {
+      expect(identity?.picture).toBe('https://lh3.googleusercontent.com/foto');
+      done();
+    });
+  });
 });

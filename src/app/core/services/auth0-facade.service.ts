@@ -11,6 +11,7 @@ const userMetadataClaim = 'https://conexion360.space/user_metadata';
 const documentClaim = 'https://conexion360.space/document';
 const companyClaim = 'https://conexion360.space/company';
 const fullNameClaim = 'https://conexion360.space/fullName';
+const pictureClaim = 'https://conexion360.space/picture';
 const validRoles: readonly UserRole[] = ['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
 const appUrl = environment.appUrl || window.location.origin;
 type Auth0Record = Record<string, unknown>;
@@ -110,6 +111,10 @@ export class Auth0FacadeService {
       this.readString(auth0Record, companyClaim) ||
       this.readString(auth0Record, 'company') ||
       this.readString(userMetadata, 'company');
+    // El claim manda sobre `auth0User.picture`: tras vincular cuentas, esta
+    // última es la de la identidad primaria (de base de datos), que suele ser
+    // un gravatar de iniciales. El Action "Foto de perfil" resuelve la buena.
+    const picture = this.readString(auth0Record, pictureClaim) || auth0User.picture || '';
 
     return {
       auth0UserId: auth0User.sub ?? email,
@@ -119,7 +124,7 @@ export class Auth0FacadeService {
       fullName: fullName || undefined,
       document: document || undefined,
       company: company || undefined,
-      picture: auth0User.picture ?? undefined,
+      picture: picture || undefined,
       roles: this.mapRoles(auth0Record),
     };
   }
