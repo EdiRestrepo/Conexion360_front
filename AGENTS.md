@@ -224,7 +224,7 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Distribución por modalidad
 - Distribución por estado
 - Rutas más frecuentes
-- Top de clientes (aún simulado; el endpoint no lo devuelve)
+- Top de clientes (aún simulado; oculto para el rol CLIENT)
 - Exportación CSV de los indicadores en pantalla
 
 ### Ajustes
@@ -391,6 +391,12 @@ algo sigue mockeado):
   (`mocks/data/mock-top-clients.ts`) para que la tarjeta "Top clientes" siga
   visible. Ese respaldo es provisional y solo actúa si la respuesta no trae
   `topClients`; retirarlo en cuanto el backend lo incluya.
+  El ranking **no se muestra al rol `CLIENT`** (ni a una sesión sin rol): la
+  tarjeta lista otros clientes por nombre. `Reports.canSeeClientRanking()` vacía
+  `topClients` en un único punto, así que la restricción cubre el gráfico y el
+  CSV exportado. Es solo la capa visual: cuando `GET /reports/home` empiece a
+  devolver `topClients` de verdad, el backend debe filtrarlo por el rol del
+  token (ver "No confiar únicamente en ocultar elementos visuales").
 - `MockShipmentService` **ya no existe**: se eliminó al conectar Reportes al
   backend, que era su último consumidor. No recrearlo; las pantallas de envíos
   se prueban contra `HttpTestingController`, como en `api-*.service.spec.ts`.

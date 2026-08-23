@@ -1,21 +1,30 @@
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Observable, of, throwError } from 'rxjs';
 
+import { AuthSession } from '../../core/models/auth-session.model';
 import { ReportMetrics } from '../../core/models/shipment.model';
+import { UserRole } from '../../core/models/user.model';
 import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
+import { AuthSessionService } from '../../core/services/auth-session.service';
 import { Reports } from './reports';
 
 describe('Reports', () => {
   let fixture: ComponentFixture<Reports>;
   let getReportMetricsSpy: jasmine.Spy<() => Observable<ReportMetrics>>;
+  let currentSession: WritableSignal<AuthSession | null>;
 
   beforeEach(async () => {
     getReportMetricsSpy = jasmine.createSpy('getReportMetrics').and.returnValue(of(createReportMetrics()));
+    currentSession = signal(createSession('ADMIN'));
 
     await TestBed.configureTestingModule({
       imports: [Reports, NoopAnimationsModule],
-      providers: [{ provide: SHIPMENT_DATA_SOURCE, useValue: { getReportMetrics: getReportMetricsSpy } }],
+      providers: [
+        { provide: SHIPMENT_DATA_SOURCE, useValue: { getReportMetrics: getReportMetricsSpy } },
+        { provide: AuthSessionService, useValue: { currentSession } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Reports);
@@ -96,6 +105,58 @@ describe('Reports', () => {
     expect(getText()).toContain('Rutas más frecuentes');
   }));
 
+  it('should hide the top clients chart for the CLIENT role', fakeAsync(() => {
+    currentSession.set(createSession('CLIENT'));
+    fixture = TestBed.createComponent(Reports);
+    render();
+
+    expect(getText()).not.toContain('Top clientes por cantidad de envíos');
+    expect(getText()).not.toContain('Enka');
+    // El resto del reporte se sigue viendo completo.
+    expect(getText()).toContain('Total de envíos');
+    expect(getText()).toContain('Rutas más frecuentes');
+  }));
+
+  it('should hide the top clients chart when the session has no role', fakeAsync(() => {
+    currentSession.set(createSession(null));
+    fixture = TestBed.createComponent(Reports);
+    render();
+
+    expect(getText()).not.toContain('Top clientes por cantidad de envíos');
+  }));
+
+  it('should keep the top clients chart for internal roles', fakeAsync(() => {
+    (['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'] as UserRole[]).forEach((role) => {
+      currentSession.set(createSession(role));
+      fixture = TestBed.createComponent(Reports);
+      render();
+
+      expect(getText()).withContext(role).toContain('Top clientes por cantidad de envíos');
+    });
+  }));
+
+  // El CSV es la otra vía por la que el ranking podría escaparse.
+  it('should exclude the client ranking from the CSV export for the CLIENT role', async () => {
+    const blobs: Blob[] = [];
+    spyOn(globalThis.URL, 'createObjectURL').and.callFake((blob: Blob | MediaSource) => {
+      blobs.push(blob as Blob);
+      return 'blob:conexion360-report';
+    });
+    spyOn(globalThis.URL, 'revokeObjectURL');
+    spyOn(HTMLAnchorElement.prototype, 'click');
+    currentSession.set(createSession('CLIENT'));
+    fixture = TestBed.createComponent(Reports);
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    clickButton('Exportar');
+
+    const csv = await blobs[0].text();
+
+    expect(csv).not.toContain('Enka');
+    expect(csv).toContain('total_envios');
+  });
+
   it('should export CSV with the on screen indicators message', fakeAsync(() => {
     const createObjectUrlSpy = spyOn(globalThis.URL, 'createObjectURL').and.returnValue('blob:conexion360-report');
     const revokeObjectUrlSpy = spyOn(globalThis.URL, 'revokeObjectURL');
@@ -145,6 +206,20 @@ describe('Reports', () => {
     button.click();
   }
 });
+
+function createSession(role: UserRole | null): AuthSession {
+  return {
+    user: {
+      id: 'auth0|123',
+      name: 'Edison Restrepo',
+      email: 'edison@example.com',
+      role,
+      picture: null,
+    },
+    accessToken: '',
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+  };
+}
 
 function createReportMetrics(): ReportMetrics {
   return {

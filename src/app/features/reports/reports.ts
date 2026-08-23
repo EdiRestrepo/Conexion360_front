@@ -16,7 +16,9 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { Observable, Subject, catchError, map, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
 
 import { ReportMetrics, ShipmentStatus } from '../../core/models/shipment.model';
+import { UserRole } from '../../core/models/user.model';
 import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
+import { AuthSessionService } from '../../core/services/auth-session.service';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
@@ -39,6 +41,16 @@ const chartBlueDark = '#1D4ED8';
 const chartBlueLight = '#60A5FA';
 const chartTeal = '#00B8A9';
 const chartPurple = '#8B5CF6';
+/**
+ * Roles internos de TCC que pueden ver el ranking de clientes.
+ *
+ * `CLIENT` queda fuera a propósito: la tarjeta lista **otros** clientes por
+ * nombre, y un cliente no debe ver la operación de sus pares. Es una lista de
+ * permitidos, así que un rol nuevo de Auth0 no ve el ranking hasta agregarlo
+ * aquí. Ojo: esto solo oculta la interfaz; cuando el backend empiece a devolver
+ * `topClients` en `GET /reports/home`, debe filtrarlo también por rol.
+ */
+const clientRankingRoles: UserRole[] = ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
 const statusRowPalette = [
   'status-row--gray',
   'status-row--blue',
@@ -61,6 +73,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
   @ViewChildren('chartCanvas') private readonly chartCanvases?: QueryList<ElementRef<HTMLCanvasElement>>;
 
   private readonly shipmentService = inject(SHIPMENT_DATA_SOURCE);
+  private readonly authSession = inject(AuthSessionService);
   private readonly retry$ = new Subject<void>();
   private readonly currentViewModel = signal<ReportsViewModel>(initialViewModel);
   private readonly charts = new Map<string, Chart>();
@@ -154,9 +167,13 @@ export class Reports implements AfterViewChecked, OnDestroy {
       };
     }
 
+    // Se vacía `topClients` en un solo punto —y no solo al pintar el gráfico—
+    // para que el CSV exportado tampoco lleve el ranking.
+    const visibleMetrics = this.canSeeClientRanking() ? metrics : { ...metrics, topClients: [] };
+
     return {
       state: 'success',
-      metrics,
+      metrics: visibleMetrics,
       indicators: [
         { label: 'Total de envíos', value: metrics.totalShipments.toLocaleString('es-CO'), icon: 'inventory_2' },
         {
@@ -177,10 +194,21 @@ export class Reports implements AfterViewChecked, OnDestroy {
         { label: 'Total anticipos', value: this.formatCurrency(metrics.totalAdvancesUsd), icon: 'request_quote' },
         { label: 'Total demoras', value: this.formatCurrency(metrics.totalDelayUsd), icon: 'timer' },
       ],
-      charts: this.createCharts(metrics),
+      charts: this.createCharts(visibleMetrics),
       statusBreakdown: this.createStatusBreakdown(metrics),
       topRoutes: metrics.topRoutes.map((route) => ({ label: route.route, value: route.total })),
     };
+  }
+
+  /**
+   * Se lee el rol de la sesión ya resuelta: el servicio de reportes espera a
+   * que Auth0 emita la identidad antes de pedir los datos, así que aquí la
+   * sesión siempre está disponible. Sin rol conocido, no se muestra el ranking.
+   */
+  private canSeeClientRanking(): boolean {
+    const role = this.authSession.currentSession()?.user.role ?? null;
+
+    return role !== null && clientRankingRoles.includes(role);
   }
 
   private createCharts(metrics: ReportMetrics): ReportChart[] {
@@ -207,8 +235,8 @@ export class Reports implements AfterViewChecked, OnDestroy {
       },
     ];
 
-    // `GET /reports/home` todavía no devuelve ranking de clientes. Sin datos se
-    // omite la tarjeta en vez de pintar un gráfico de barras vacío.
+    // Sin ranking —porque el rol no puede verlo, o porque el backend todavía no
+    // lo devuelve— se omite la tarjeta en vez de pintar un gráfico vacío.
     if (metrics.topClients.length > 0) {
       charts.push({
         id: 'clients',
