@@ -1,0 +1,41 @@
+<h2 mat-dialog-title class="notification-dialog__title">
+  <mat-icon aria-hidden="true">{{ typeIcon }}</mat-icon>
+  {{ notification.title }}
+</h2>
+
+<mat-dialog-content class="notification-dialog__content">
+  <p class="notification-dialog__message">{{ notification.description }}</p>
+
+  <dl class="notification-dialog__meta">
+    @if (notification.shipmentDocument) {
+      <div>
+        <dt>Documento de transporte</dt>
+        <dd>{{ notification.shipmentDocument }}</dd>
+      </div>
+    }
+    <div>
+      <dt>Tipo</dt>
+      <dd>
+        <mat-icon aria-hidden="true">{{ typeIcon }}</mat-icon>
+        {{ typeLabel }}
+      </dd>
+    </div>
+    <div>
+      <dt>Fecha de la notificación</dt>
+      <dd><time [attr.datetime]="notification.createdAt">{{ createdAt }}</time></dd>
+    </div>
+    @if (eventDate) {
+      <div>
+        <dt>Fecha del evento</dt>
+        <dd><time [attr.datetime]="notification.eventDate">{{ eventDate }}</time></dd>
+      </div>
+    }
+  </dl>
+</mat-dialog-content>
+
+<mat-dialog-actions class="notification-dialog__actions">
+  <button mat-button type="button" (click)="close()">Cerrar</button>
+  @if (notification.shipmentDocument) {
+    <button mat-flat-button type="button" (click)="openShipment()">Ver envío</button>
+  }
+</mat-dialog-actions>

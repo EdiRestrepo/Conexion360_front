@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
@@ -12,10 +12,14 @@ describe('Notifications', () => {
   let fixture: ComponentFixture<Notifications>;
   let getAllSpy: jasmine.Spy<() => Observable<Notification[]>>;
   let markAsReadSpy: jasmine.Spy<(id: string) => Observable<Notification | null>>;
+  let reloadSpy: jasmine.Spy<() => void>;
 
   beforeEach(async () => {
     getAllSpy = jasmine.createSpy('getAll').and.returnValue(of(createNotifications()));
-    markAsReadSpy = jasmine.createSpy('markAsRead').and.callFake((id: string) => of(createNotifications().find((notification) => notification.id === id) ?? null));
+    reloadSpy = jasmine.createSpy('reload');
+    markAsReadSpy = jasmine
+      .createSpy('markAsRead')
+      .and.callFake((id: string) => of(createNotifications().find((notification) => notification.id === id) ?? null));
 
     await TestBed.configureTestingModule({
       imports: [Notifications, NoopAnimationsModule],
@@ -26,6 +30,7 @@ describe('Notifications', () => {
           useValue: {
             getAll: getAllSpy,
             markAsRead: markAsReadSpy,
+            reload: reloadSpy,
           },
         },
       ],
@@ -38,20 +43,20 @@ describe('Notifications', () => {
     render();
 
     expect(getText()).toContain('Notificaciones');
-    expect(getText()).toContain('AWB-001');
-    expect(getText()).toContain('Demora en puerto');
+    expect(getText()).toContain('HBL-5U6HC36K');
+    expect(getText()).toContain('Cambio de estado a pendiente');
   }));
 
-  it('should render document, headline and date like the mockup', fakeAsync(() => {
+  it('should render document, headline and notification date', fakeAsync(() => {
     render();
 
-    const card = fixture.nativeElement.querySelector('.notification-card') as HTMLAnchorElement;
+    const card = getCards()[0];
 
-    expect(card.querySelector('.notification-card__document')?.textContent).toContain('AWB-001');
-    expect(card.querySelector('.notification-card__headline')?.textContent).toContain('Demora en puerto');
-    expect(card.querySelector('.notification-card__description')?.textContent).toContain('congestión portuaria');
-    expect(card.querySelector('.notification-card__meta')?.textContent).toContain('5 ene, 10:30');
-    expect(card.querySelector('.notification-card__meta')?.textContent).not.toContain('Cartagena, Colombia');
+    expect(card.querySelector('.notification-card__document')?.textContent).toContain('HBL-5U6HC36K');
+    expect(card.querySelector('.notification-card__headline')?.textContent).toContain('Cambio de estado a pendiente');
+    expect(card.querySelector('.notification-card__description')?.textContent).toContain('queda pendiente de procesamiento');
+    // Ordena y muestra `notificationDate` (17 ago), no `messageDate` (14 ago).
+    expect(card.querySelector('.notification-card__meta')?.textContent).toContain('17 ago');
   }));
 
   it('should filter unread notifications', fakeAsync(() => {
@@ -60,19 +65,53 @@ describe('Notifications', () => {
     tick();
     fixture.detectChanges();
 
-    expect(getText()).toContain('AWB-001');
-    expect(getText()).not.toContain('HBL-002');
+    expect(getText()).toContain('HBL-5U6HC36K');
+    expect(getText()).not.toContain('AWB-0000063Z');
   }));
 
-  it('should mark a notification as read when its card is opened', fakeAsync(() => {
+  it('should open the detail dialog and mark the notification as read', fakeAsync(() => {
     render();
 
-    const card = fixture.nativeElement.querySelector('.notification-card') as HTMLAnchorElement;
-    card.click();
+    getCards()[0].click();
     tick();
+    fixture.detectChanges();
 
-    expect(card.getAttribute('href')).toContain('/shipments/shipment-001');
-    expect(markAsReadSpy).toHaveBeenCalledWith('notification-001');
+    const dialog = document.querySelector('mat-dialog-container');
+
+    expect(dialog?.textContent).toContain('Cambio de estado a pendiente');
+    expect(dialog?.textContent).toContain('Se registra el envío en el sistema');
+    expect(dialog?.textContent).toContain('Documento de transporte');
+    expect(markAsReadSpy).toHaveBeenCalledWith('1');
+
+    closeDialog('Cerrar');
+  }));
+
+  it('should navigate to the shipment from the dialog', fakeAsync(() => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
+    render();
+
+    getCards()[0].click();
+    tick();
+    fixture.detectChanges();
+
+    closeDialog('Ver envío');
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/shipments', 'HBL-5U6HC36K'], {
+      queryParams: { document: 'HBL-5U6HC36K' },
+    });
+  }));
+
+  it('should not mark an already read notification again', fakeAsync(() => {
+    render();
+
+    getCards()[1].click();
+    tick();
+    fixture.detectChanges();
+
+    expect(markAsReadSpy).not.toHaveBeenCalled();
+
+    closeDialog('Cerrar');
   }));
 
   it('should render empty state', fakeAsync(() => {
@@ -94,7 +133,7 @@ describe('Notifications', () => {
     tick();
     fixture.detectChanges();
 
-    expect(getText()).toContain('AWB-001');
+    expect(getText()).toContain('HBL-5U6HC36K');
   }));
 
   function render(): void {
@@ -107,14 +146,38 @@ describe('Notifications', () => {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
-  function clickButton(label: string): void {
-    const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((item) =>
+  function getCards(): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.notification-card') as NodeListOf<HTMLButtonElement>);
+  }
+
+  function findButton(root: ParentNode, label: string): HTMLButtonElement {
+    const button = Array.from(root.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((item) =>
       item.textContent?.includes(label),
     );
+
     if (!button) {
       throw new Error(`No se encontró el botón ${label}`);
     }
-    button.click();
+
+    return button;
+  }
+
+  function clickButton(label: string): void {
+    findButton(fixture.nativeElement, label).click();
+  }
+
+  /** Cierra el modal y deja el DOM limpio para la siguiente prueba. */
+  function closeDialog(label: string): void {
+    const container = document.querySelector('mat-dialog-container');
+
+    if (!container) {
+      throw new Error('No se encontró el modal de detalle');
+    }
+
+    findButton(container, label).click();
+    tick();
+    fixture.detectChanges();
+    flush();
   }
 });
 
@@ -124,40 +187,24 @@ class BlankRouteComponent {}
 function createNotifications(): Notification[] {
   return [
     {
-      id: 'notification-001',
-      type: 'DELAY',
-      shipmentId: 'shipment-001',
-      shipmentDocument: 'AWB-001',
-      title: 'Demora en puerto',
-      description: 'El envío de Zenú presenta una demora de 2 días en el puerto de Cartagena por congestión portuaria.',
-      createdAt: '2026-01-05T10:30:00.000Z',
-      location: 'Cartagena, Colombia',
+      id: '1',
+      type: 'STATUS_CHANGE',
+      shipmentDocument: 'HBL-5U6HC36K',
+      title: 'Cambio de estado a pendiente.',
+      description: 'Se registra el envío en el sistema, queda pendiente de procesamiento.',
+      createdAt: '2026-08-17T21:54:08.000Z',
+      eventDate: '2026-08-14T21:54:08.000Z',
       read: false,
-      status: 'WITH_ISSUE',
     },
     {
-      id: 'notification-002',
-      type: 'DELIVERY',
-      shipmentId: 'shipment-002',
-      shipmentDocument: 'HBL-002',
-      title: 'Envío entregado',
-      description: 'El envío de Postobon (Cartagena → Miami) ha sido entregado exitosamente.',
-      createdAt: '2026-01-04T09:00:00.000Z',
-      location: 'Miami, Estados Unidos',
+      id: '2',
+      type: 'COMMENT',
+      shipmentDocument: 'AWB-0000063Z',
+      title: 'Comentario del analista',
+      description: 'Se solicitó al proveedor la confirmación del zarpe.',
+      createdAt: '2026-08-16T09:00:00.000Z',
+      eventDate: null,
       read: true,
-      status: 'DELIVERED',
-    },
-    {
-      id: 'notification-003',
-      type: 'DOCUMENT',
-      shipmentId: 'shipment-003',
-      shipmentDocument: 'AWB-003',
-      title: 'Documento pendiente',
-      description: 'El envío de Enka tiene documentos pendientes de validación.',
-      createdAt: '2026-01-03T08:00:00.000Z',
-      location: null,
-      read: false,
-      status: 'WITH_ISSUE',
     },
   ];
 }

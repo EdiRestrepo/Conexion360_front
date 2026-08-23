@@ -1,30 +1,21 @@
-﻿import { ShipmentStatus } from './shipment.model';
-
-export type NotificationType =
-  | 'DELAY'
-  | 'STATUS_CHANGE'
-  | 'IN_TRANSIT'
-  | 'CUSTOMS'
-  | 'DELIVERY'
-  | 'DOCUMENT'
-  | 'CONTAINER_EXPIRING';
+/**
+ * Espeja el enum `notificationType` de `GET /notifications/allnotifications`
+ * (0 = cambio de estado, 1 = comentario). Si el backend agrega valores, hay que
+ * ampliar este tipo y las tablas de `core/utils/notification-labels.ts`.
+ */
+export type NotificationType = 'STATUS_CHANGE' | 'COMMENT';
 
 export interface Notification {
   id: string;
   type: NotificationType;
-  shipmentId: string;
   shipmentDocument: string;
   title: string;
   description: string;
+  /** `notificationDate`: cuándo se generó la alerta. Ordena la bandeja. */
   createdAt: string;
-  location: string | null;
+  /** `messageDate`: cuándo ocurrió el hecho logístico que la originó. */
+  eventDate: string | null;
   read: boolean;
-  status?: ShipmentStatus;
-}
-
-export interface NotificationPreference {
-  type: NotificationType;
-  enabled: boolean;
 }
 
 export interface UserNotificationPreferences {

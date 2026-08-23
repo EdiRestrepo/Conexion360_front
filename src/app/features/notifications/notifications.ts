@@ -1,20 +1,18 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BehaviorSubject, Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
-import { Notification, NotificationType } from '../../core/models/notification.model';
-import {
-  NotificationTone,
-  getNotificationTone,
-  getNotificationTypeEmoji,
-  getNotificationTypeIcon,
-} from '../../core/utils/notification-labels';
+import { Notification } from '../../core/models/notification.model';
+import { getNotificationTypeIcon } from '../../core/utils/notification-labels';
+import { NotificationDetailDialog } from './components/notification-detail-dialog/notification-detail-dialog';
+import { formatNotificationDateTime } from './notification-date';
 import type { NotificationFilter, NotificationsViewModel } from './models/notifications-view.model';
 
 const initialViewModel: NotificationsViewModel = {
@@ -33,6 +31,8 @@ const initialViewModel: NotificationsViewModel = {
 export class Notifications {
   private readonly destroyRef = inject(DestroyRef);
   private readonly notificationService = inject(NOTIFICATION_DATA_SOURCE);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private readonly filter$ = new BehaviorSubject<NotificationFilter>('all');
   private readonly refresh$ = new Subject<void>();
 
@@ -57,17 +57,38 @@ export class Notifications {
   );
 
   protected readonly getNotificationTypeIcon = getNotificationTypeIcon;
-  protected readonly getNotificationTypeEmoji = getNotificationTypeEmoji;
+  protected readonly formatDateTime = formatNotificationDateTime;
 
   protected setFilter(filter: NotificationFilter): void {
     this.filter$.next(filter);
   }
 
   protected retry(): void {
+    this.notificationService.reload();
     this.refresh$.next();
   }
 
-  protected markAsRead(notification: Notification): void {
+  /**
+   * Abrir el detalle es lo que marca la notificación como leída: se muestra el
+   * mensaje completo en un modal y, si el usuario lo pide, se navega al envío.
+   */
+  protected openDetail(notification: Notification): void {
+    this.markAsRead(notification);
+
+    this.dialog
+      .open(NotificationDetailDialog, { data: notification, width: '32rem', maxWidth: '92vw', autoFocus: 'dialog' })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((openShipment) => {
+        if (openShipment && notification.shipmentDocument) {
+          void this.router.navigate(['/shipments', notification.shipmentDocument], {
+            queryParams: { document: notification.shipmentDocument },
+          });
+        }
+      });
+  }
+
+  private markAsRead(notification: Notification): void {
     if (notification.read) {
       return;
     }
@@ -76,30 +97,6 @@ export class Notifications {
       .markAsRead(notification.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.refresh$.next());
-  }
-
-  protected getToneClass(type: NotificationType): string {
-    const classes: Record<NotificationTone, string> = {
-      info: 'notification-card--info',
-      warning: 'notification-card--warning',
-      success: 'notification-card--success',
-    };
-
-    return classes[getNotificationTone(type)];
-  }
-
-  protected formatDateTime(value: string): string {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return '-';
-    }
-
-    const day = new Intl.DateTimeFormat('es-CO', { day: 'numeric', timeZone: 'UTC' }).format(date);
-    const month = new Intl.DateTimeFormat('es-CO', { month: 'short', timeZone: 'UTC' }).format(date).replace('.', '');
-    const time = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(date);
-
-    return `${day} ${month}, ${time}`;
   }
 
   private createViewModel(notifications: Notification[], filter: NotificationFilter): NotificationsViewModel {

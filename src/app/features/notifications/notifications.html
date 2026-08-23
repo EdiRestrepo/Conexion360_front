@@ -36,14 +36,12 @@
     } @else {
       <div class="notifications-list">
         @for (notification of viewModel.notifications; track notification.id) {
-          <a
+          <button
+            type="button"
             class="notification-card"
-            [class]="'notification-card ' + getToneClass(notification.type)"
             [class.notification-card--unread]="!notification.read"
-            [routerLink]="['/shipments', notification.shipmentId]"
-            [queryParams]="{ document: notification.shipmentDocument }"
-            [attr.aria-label]="'Abrir envío ' + notification.shipmentDocument"
-            (click)="markAsRead(notification)"
+            [attr.aria-label]="'Ver detalle de ' + notification.title"
+            (click)="openDetail(notification)"
           >
             <span class="notification-card__icon" aria-hidden="true">
               <mat-icon>{{ getNotificationTypeIcon(notification.type) }}</mat-icon>
@@ -51,9 +49,10 @@
 
             <div class="notification-card__body">
               <h2 class="notification-card__title">
-                <span class="notification-card__emoji" aria-hidden="true">{{ getNotificationTypeEmoji(notification.type) }}</span>
-                <span class="notification-card__document">{{ notification.shipmentDocument }}</span>
-                <span class="notification-card__separator" aria-hidden="true">—</span>
+                @if (notification.shipmentDocument) {
+                  <span class="notification-card__document">{{ notification.shipmentDocument }}</span>
+                  <span class="notification-card__separator" aria-hidden="true">—</span>
+                }
                 <span class="notification-card__headline">{{ notification.title }}</span>
               </h2>
               <p class="notification-card__description">{{ notification.description }}</p>
@@ -61,7 +60,7 @@
                 <time [attr.datetime]="notification.createdAt">{{ formatDateTime(notification.createdAt) }}</time>
               </p>
             </div>
-          </a>
+          </button>
         }
       </div>
     }

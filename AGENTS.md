@@ -205,12 +205,9 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 
 - Listado de notificaciones
 - Leídas y no leídas
-- Notificación de demora
-- Cambio de estado
-- En tránsito
-- En aduana
-- Entregado
-- Preferencias simuladas
+- Dos tipos, los que expone el backend: cambio de estado y comentario
+- Modal de detalle al abrir una notificación, que además la marca como leída
+- Preferencias (en Ajustes, sobre `localStorage`; sin endpoint todavía)
 
 ### Reportes
 
@@ -273,9 +270,8 @@ src/app/
     settings/
 
   mocks/
-    data/
-    services/
-    factories/
+    data/          (solo `mock-top-clients.ts`; desaparece cuando el backend
+                    devuelva `topClients` en `GET /reports/home`)
 
 No crear un único componente grande.
 
@@ -297,7 +293,7 @@ Definir interfaces y tipos explícitos para al menos:
 - Invoice
 - AdvancePayment
 - Notification
-- NotificationPreference
+- UserNotificationPreferences
 - DashboardMetrics
 - ReportMetrics
 - PaginatedResult
@@ -400,26 +396,24 @@ algo sigue mockeado):
 - `MockShipmentService` **ya no existe**: se eliminó al conectar Reportes al
   backend, que era su último consumidor. No recrearlo; las pantallas de envíos
   se prueban contra `HttpTestingController`, como en `api-*.service.spec.ts`.
-- `mocks/data/mock-shipments.ts` y `mocks/factories/mock-shipment.factory.ts`
-  siguen siendo necesarios: alimentan a `MockNotificationService`
-  (notificaciones), que deriva las notificaciones simuladas de esos envíos, y
-  al ranking de clientes de Reportes vía `mocks/data/mock-top-clients.ts`.
-  `MockNotificationService` lee casi todo el `Shipment` (`issue`, `container`,
-  `logisticDates`, `events`, `merchandiseDescription`, `cargoType`,
-  `origin.city`), así que la factoría no se puede podar.
-- `MockNotificationService` (implementa `NotificationDataSource`, definida
-  en `core/contracts/notification-data-source.ts`): sigue en uso para
-  notificaciones. Los componentes (`Notifications`, `Sidebar`) no lo inyectan
-  directamente: inyectan el token `NOTIFICATION_DATA_SOURCE`, que se resuelve
-  en `app.config.ts`. Para pasar a backend real basta con cambiar ahí el
-  proveedor por el servicio HTTP equivalente, sin tocar los componentes.
+- `ApiNotificationsService` (`core/services/api-notifications.service.ts`):
+  resuelve el token `NOTIFICATION_DATA_SOURCE` contra
+  `GET /notifications/allnotifications?idClient=...`. Mantiene una **copia local**
+  de la bandeja en un `BehaviorSubject`, porque la lista y el badge de no leídas
+  (barra lateral, menú de usuario y navegación móvil) la piden a la vez y porque
+  marcar como leída todavía no se persiste. `reload()` invalida esa copia; es lo
+  que usa el botón "Reintentar".
+- `MockNotificationService` y los datos de envíos simulados
+  (`mocks/data/mock-shipments.ts`, `mocks/factories/mock-shipment.factory.ts`)
+  **ya no existen**: se eliminaron al conectar Notificaciones al backend. No
+  recrearlos.
+- Lo único simulado que queda en la app es `mocks/data/mock-top-clients.ts`
+  (5 nombres de cliente fijos). Cuando `GET /reports/home` devuelva `topClients`,
+  se borra ese archivo y la carpeta `mocks/` entera desaparece.
 
 Las interfaces/contratos de acceso a datos (`ShipmentDataSource`,
 `NotificationDataSource`) viven en `core/contracts/`, separadas de las
-implementaciones (`core/services/` para las reales, `mocks/services/` para
-las simuladas).
-
-Simular latencia usando RxJS en los servicios que sigan siendo mock.
+implementaciones, todas en `core/services/`.
 
 Los servicios deben devolver `Observable`.
 
