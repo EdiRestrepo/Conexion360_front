@@ -44,6 +44,7 @@ export const appConfig: ApplicationConfig = {
         allowedList: apiAllowedList,
       },
       cacheLocation: 'localstorage',
+      useRefreshTokens: true,
     }),
     provideAnimationsAsync(),
     // Notificaciones aún sin endpoint. Para pasar a backend real basta con
