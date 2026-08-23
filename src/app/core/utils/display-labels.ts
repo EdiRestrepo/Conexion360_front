@@ -100,10 +100,6 @@ export function getShipmentIssueTitle(value: ShipmentIssue): string {
   return shipmentIssueTitles[value.type];
 }
 
-export function isTerminalShipmentStatus(value: ShipmentStatus): boolean {
-  return value === 'DELIVERED';
-}
-
 export function getUserRoleLabel(value: UserRole): string {
   return userRoleLabels[value];
 }

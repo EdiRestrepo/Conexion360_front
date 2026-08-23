@@ -352,6 +352,67 @@ Lo que hace falta antes de empezar:
 - **Fetch de perfil en el frontend.** Es el cambio de fondo: hoy la sesión se construye **solo** con datos de Auth0 y la app no consulta al backend para el perfil. Habrá que introducir esa llamada y decidir la precedencia (foto propia por encima de la de Auth0).
 - Decidir recorte/redimensionado (en cliente o servidor), caché de la URL y qué ocurre al eliminar la foto.
 
+### Migración al custom domain `login.conexion360.space`
+
+El custom domain ya existe y está **VERIFIED** en *Branding → Custom Domains*, marcado como dominio por defecto. Falta que la aplicación lo use: hoy `environment.auth0.domain` sigue apuntando a `dev-5lxfpxxjzz7ikezw.us.auth0.com`, y por eso el usuario ve esa URL al iniciar sesión.
+
+**Es un cambio coordinado entre frontend y backend.** El frontend no puede migrar solo: en cuanto cambie de dominio, los tokens llevarán otro `iss` y el API rechazará todas las peticiones con 401.
+
+#### Lo que debe implementar el backend (`C:\TCCWebApiCore\Apis`)
+
+Único cambio necesario: **aceptar el nuevo issuer**.
+
+```
+Antes:  https://dev-5lxfpxxjzz7ikezw.us.auth0.com/
+Ahora:  https://login.conexion360.space/
+```
+
+Durante la migración conviene aceptar **los dos**, para poder cambiar el frontend, probar y revertir en un minuto sin volver a tocar el backend:
+
+```csharp
+options.Authority = "https://dev-5lxfpxxjzz7ikezw.us.auth0.com/";
+options.TokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuer = true,
+    ValidIssuers = new[]
+    {
+        "https://login.conexion360.space/",
+        "https://dev-5lxfpxxjzz7ikezw.us.auth0.com/",
+    },
+    ValidateAudience = true,
+    ValidAudience = "https://api.conexion360.com",
+};
+```
+
+Ambos dominios pertenecen al mismo tenant y **comparten las claves de firma**, así que el JWKS puede seguir descargándose del dominio canónico; lo que hay que ampliar es la lista de issuers aceptados. Conviene confirmarlo comparando las dos respuestas:
+
+```
+https://dev-5lxfpxxjzz7ikezw.us.auth0.com/.well-known/jwks.json
+https://login.conexion360.space/.well-known/jwks.json
+```
+
+#### Lo que NO cambia
+
+Importante para acotar el alcance del trabajo en backend:
+
+- **El `audience` sigue siendo `https://api.conexion360.com`.** No se toca.
+- **El `sub` de los usuarios no cambia.** No hay migración de datos en PostgreSQL: las filas existentes siguen siendo válidas.
+- Los custom claims (`https://conexion360.space/roles`, `/picture`, etc.) se mantienen igual.
+- Los Actions no se modifican. En concreto, el secreto `AUTH0_DOMAIN` de *Account Linking* debe **seguir apuntando al dominio canónico**: la Management API se consume por ahí, no por el custom domain.
+
+#### Orden de despliegue
+
+1. **Google Cloud** — añadir el origin `https://login.conexion360.space` y el redirect `https://login.conexion360.space/login/callback`, conservando los de `dev-...`. *(Hecho el 12/08/2026.)*
+2. **Backend** — aceptar ambos issuers y desplegar. ← *pendiente, bloquea al resto*
+3. **Frontend** — `environment.auth0.domain` y la variable `AUTH0_DOMAIN` de GitHub Actions → `login.conexion360.space`.
+4. **Probar** login con contraseña y con Google, y una llamada al API autenticada.
+5. Avisar a los usuarios: los tokens cacheados en `localStorage` llevan el issuer viejo y puede que necesiten cerrar sesión una vez.
+6. Cuando esté estable, retirar el issuer antiguo de la lista del backend.
+
+#### Beneficio adicional
+
+Con el callback en `login.conexion360.space`, el dominio raíz pasa a ser `conexion360.space`, que sí es propiedad del proyecto. Añadiéndolo en *Google Auth Platform → Branding → Authorized domains* (previa verificación en Google Search Console), la pantalla de consentimiento de Google mostrará **"Conexion360"** en lugar de "auth0.com" — el problema descrito más abajo en este documento.
+
 ### Checklist para el despliegue a producción
 
 El tenant actual (`dev-5lxfpxxjzz7ikezw`) es de desarrollo. Lo correcto es crear un tenant de producción aparte y replicar allí la configuración; así se puede romper dev sin afectar a los usuarios reales. Al hacerlo hay que revisar, en este orden:

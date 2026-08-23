@@ -223,8 +223,9 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Distribución por operación
 - Distribución por modalidad
 - Distribución por estado
-- Top de clientes
-- Exportación simulada
+- Rutas más frecuentes
+- Top de clientes (aún simulado; el endpoint no lo devuelve)
+- Exportación CSV de los indicadores en pantalla
 
 ### Ajustes
 
@@ -381,19 +382,25 @@ algo sigue mockeado):
   `historyShipments` al modelo `Shipment`. Tolera que los números lleguen
   como texto y que las fechas vengan en ISO o en formato estadounidense
   (`MM/DD/YYYY`, caso de `invoiceDate`).
-- `MockShipmentService` (implementa `ShipmentDataSource`, definida en
-  `core/contracts/shipment-data-source.ts`): sigue en uso únicamente para
-  reportes, mientras no exista integración con el backend para esa pantalla.
-  Su superficie pública se redujo a `getReportMetrics()` más la configuración
-  de simulación (`configureSimulation` / `resetSimulation`) usada para
-  ejercitar los estados vacío y de error. Las operaciones de listado,
-  búsqueda, paginación, detalle y métricas de dashboard se eliminaron al
-  conectar esas pantallas al backend real; no volver a agregarlas.
+- `ApiReportsService` (`core/services/api-reports.service.ts`): resuelve hoy el
+  token `SHIPMENT_DATA_SOURCE` contra `GET /reports/home?idClient=...`. El
+  backend devuelve los totales ya agregados; `mapReportsResponse`
+  (`core/mappers/reports.mapper.ts`) solo renombra claves. Ese endpoint todavía
+  **no** devuelve ranking de clientes ni avance promedio: `averageProgress`
+  queda en 0 (hoy no se pinta) y `topClients` se rellena con `mockTopClients`
+  (`mocks/data/mock-top-clients.ts`) para que la tarjeta "Top clientes" siga
+  visible. Ese respaldo es provisional y solo actúa si la respuesta no trae
+  `topClients`; retirarlo en cuanto el backend lo incluya.
+- `MockShipmentService` **ya no existe**: se eliminó al conectar Reportes al
+  backend, que era su último consumidor. No recrearlo; las pantallas de envíos
+  se prueban contra `HttpTestingController`, como en `api-*.service.spec.ts`.
 - `mocks/data/mock-shipments.ts` y `mocks/factories/mock-shipment.factory.ts`
-  siguen siendo necesarios: alimentan tanto a `MockShipmentService`
-  (reportes) como a `MockNotificationService` (notificaciones), que deriva
-  las notificaciones simuladas de esos envíos. No eliminarlos mientras
-  cualquiera de esas dos pantallas siga sin backend.
+  siguen siendo necesarios: alimentan a `MockNotificationService`
+  (notificaciones), que deriva las notificaciones simuladas de esos envíos, y
+  al ranking de clientes de Reportes vía `mocks/data/mock-top-clients.ts`.
+  `MockNotificationService` lee casi todo el `Shipment` (`issue`, `container`,
+  `logisticDates`, `events`, `merchandiseDescription`, `cargoType`,
+  `origin.city`), así que la factoría no se puede podar.
 - `MockNotificationService` (implementa `NotificationDataSource`, definida
   en `core/contracts/notification-data-source.ts`): sigue en uso para
   notificaciones. Los componentes (`Notifications`, `Sidebar`) no lo inyectan
@@ -448,8 +455,9 @@ Los datos deben incluir casos variados:
 - Con documentos
 - Con eventos históricos
 
-Los indicadores del dashboard y reportes deben calcularse desde los datos mock,
-no escribirse como valores fijos en el HTML.
+Los indicadores del dashboard y de reportes vienen del backend
+(`ApiHomeService` y `ApiReportsService`); nunca se escriben como valores fijos
+en el HTML.
 
 ## 10. Autenticación y perfil con Auth0
 

@@ -139,10 +139,10 @@ export class Reports implements AfterViewChecked, OnDestroy {
     const link = globalThis.document.createElement('a');
 
     link.href = url;
-    link.download = 'conexion360-reporte-prototipo.csv';
+    link.download = 'conexion360-reportes.csv';
     link.click();
     globalThis.URL.revokeObjectURL(url);
-    this.exportMessage.set('Exportación generada con datos simulados del prototipo.');
+    this.exportMessage.set('Exportación generada con los indicadores en pantalla.');
   }
 
   private createViewModel(metrics: ReportMetrics): ReportsViewModel {
@@ -150,7 +150,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
       return {
         ...initialViewModel,
         state: 'empty',
-        message: 'No hay datos simulados suficientes para construir reportes.',
+        message: 'Todavía no hay envíos registrados para construir reportes.',
       };
     }
 
@@ -184,7 +184,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
   }
 
   private createCharts(metrics: ReportMetrics): ReportChart[] {
-    return [
+    const charts: ReportChart[] = [
       {
         id: 'operation',
         title: 'Por tipo de operación',
@@ -205,14 +205,21 @@ export class Reports implements AfterViewChecked, OnDestroy {
         ],
         summary: `Aéreos: ${metrics.byTransportMode.AIR}. Marítimos: ${metrics.byTransportMode.SEA}.`,
       },
-      {
+    ];
+
+    // `GET /reports/home` todavía no devuelve ranking de clientes. Sin datos se
+    // omite la tarjeta en vez de pintar un gráfico de barras vacío.
+    if (metrics.topClients.length > 0) {
+      charts.push({
         id: 'clients',
         title: 'Top clientes por cantidad de envíos',
         kind: 'bar',
         values: metrics.topClients.map((client) => ({ label: client.client, value: client.total })),
         summary: metrics.topClients.map((client) => `${client.client}: ${client.total}`).join('. '),
-      },
-    ];
+      });
+    }
+
+    return charts;
   }
 
   private createStatusBreakdown(metrics: ReportMetrics): StatusBreakdownItem[] {

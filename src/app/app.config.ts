@@ -8,8 +8,8 @@ import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { NOTIFICATION_DATA_SOURCE } from './core/contracts/notification-data-source';
 import { SHIPMENT_DATA_SOURCE } from './core/contracts/shipment-data-source';
+import { ApiReportsService } from './core/services/api-reports.service';
 import { MockNotificationService } from './mocks/services/mock-notification.service';
-import { MockShipmentService } from './mocks/services/mock-shipment.service';
 
 const appUrl = environment.appUrl || window.location.origin;
 const apiAllowedList = environment.api.baseUrl
@@ -50,8 +50,6 @@ export const appConfig: ApplicationConfig = {
     // Notificaciones aún sin endpoint. Para pasar a backend real basta con
     // sustituir `MockNotificationService` por el servicio HTTP equivalente.
     { provide: NOTIFICATION_DATA_SOURCE, useExisting: MockNotificationService },
-    // Reportes aún sin endpoint. Para pasar a backend real basta con
-    // sustituir `MockShipmentService` por el servicio HTTP equivalente.
-    { provide: SHIPMENT_DATA_SOURCE, useExisting: MockShipmentService },
+    { provide: SHIPMENT_DATA_SOURCE, useExisting: ApiReportsService },
   ],
 };

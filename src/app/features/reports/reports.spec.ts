@@ -86,7 +86,17 @@ describe('Reports', () => {
     expect(getText()).toContain('Sin datos para reportar');
   }));
 
-  it('should export CSV with non sensitive simulated data message', fakeAsync(() => {
+  it('should hide the top clients chart when the endpoint returns no ranking', fakeAsync(() => {
+    getReportMetricsSpy.and.returnValue(of({ ...createReportMetrics(), topClients: [] }));
+    fixture = TestBed.createComponent(Reports);
+    render();
+
+    expect(getText()).not.toContain('Top clientes por cantidad de envíos');
+    expect(fixture.nativeElement.querySelectorAll('canvas[role="img"]').length).toBe(2);
+    expect(getText()).toContain('Rutas más frecuentes');
+  }));
+
+  it('should export CSV with the on screen indicators message', fakeAsync(() => {
     const createObjectUrlSpy = spyOn(globalThis.URL, 'createObjectURL').and.returnValue('blob:conexion360-report');
     const revokeObjectUrlSpy = spyOn(globalThis.URL, 'revokeObjectURL');
     spyOn(HTMLAnchorElement.prototype, 'click');
@@ -97,7 +107,7 @@ describe('Reports', () => {
 
     expect(createObjectUrlSpy).toHaveBeenCalled();
     expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:conexion360-report');
-    expect(getText()).toContain('Exportación generada con datos simulados del prototipo.');
+    expect(getText()).toContain('Exportación generada con los indicadores en pantalla.');
   }));
 
   it('should render error state and retry', fakeAsync(() => {
