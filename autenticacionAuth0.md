@@ -354,37 +354,38 @@ Lo que hace falta antes de empezar:
 
 ### Migración al custom domain `login.conexion360.space`
 
-El custom domain ya existe y está **VERIFIED** en *Branding → Custom Domains*, marcado como dominio por defecto. Falta que la aplicación lo use: hoy `environment.auth0.domain` sigue apuntando a `dev-5lxfpxxjzz7ikezw.us.auth0.com`, y por eso el usuario ve esa URL al iniciar sesión.
+> **Estado: aplicado el 23/08/2026.** El custom domain está **VERIFIED** y por
+> defecto en *Branding → Custom Domains*, y tanto el frontend como el backend ya
+> lo usan. El usuario ve `login.conexion360.space` al iniciar sesión. Lo que
+> sigue queda como registro de qué se tocó y por qué.
 
-**Es un cambio coordinado entre frontend y backend.** El frontend no puede migrar solo: en cuanto cambie de dominio, los tokens llevarán otro `iss` y el API rechazará todas las peticiones con 401.
+**Es un cambio coordinado entre frontend y backend.** El frontend no puede migrar solo: en cuanto cambie de dominio, los tokens llevan otro `iss` y el API rechaza todas las peticiones con 401.
 
-#### Lo que debe implementar el backend (`C:\TCCWebApiCore\Apis`)
+#### Lo que se cambió en el backend (`C:\TCCWebApiCore\Connection360_back`)
 
-Único cambio necesario: **aceptar el nuevo issuer**.
+Único cambio necesario: **el issuer**. Resultó ser configuración, no código, así que
+no hubo que recompilar: basta reiniciar con `StartApis_Connection360.bat`.
 
 ```
 Antes:  https://dev-5lxfpxxjzz7ikezw.us.auth0.com/
 Ahora:  https://login.conexion360.space/
 ```
 
-Durante la migración conviene aceptar **los dos**, para poder cambiar el frontend, probar y revertir en un minuto sin volver a tocar el backend:
+Son **dos** archivos, uno por servicio; cambiar solo uno deja media API en 401:
 
-```csharp
-options.Authority = "https://dev-5lxfpxxjzz7ikezw.us.auth0.com/";
-options.TokenValidationParameters = new TokenValidationParameters
-{
-    ValidateIssuer = true,
-    ValidIssuers = new[]
-    {
-        "https://login.conexion360.space/",
-        "https://dev-5lxfpxxjzz7ikezw.us.auth0.com/",
-    },
-    ValidateAudience = true,
-    ValidAudience = "https://api.conexion360.com",
-};
+```
+Apis\Connection360.ApiGateway\appsettings.json   → Jwt:Issuer
+Apis\Connection360.Api\appsettings.json          → Jwt:Issuer
 ```
 
-Ambos dominios pertenecen al mismo tenant y **comparten las claves de firma**, así que el JWKS puede seguir descargándose del dominio canónico; lo que hay que ampliar es la lista de issuers aceptados. Conviene confirmarlo comparando las dos respuestas:
+Se hizo corte directo en vez de aceptar ambos issuers a la vez (`ValidIssuers`),
+porque eso sí habría exigido tocar `Program.cs` y recompilar. Para revertir están
+los `.bak-auth0domain` junto a cada archivo.
+
+La barra final importa: Auth0 la incluye en el `iss` del token y la comparación es
+exacta.
+
+Ambos dominios pertenecen al mismo tenant y **comparten las claves de firma**, así que el JWKS se sirve igual en el dominio nuevo. Conviene confirmarlo comparando las dos respuestas:
 
 ```
 https://dev-5lxfpxxjzz7ikezw.us.auth0.com/.well-known/jwks.json
@@ -403,10 +404,13 @@ Importante para acotar el alcance del trabajo en backend:
 #### Orden de despliegue
 
 1. **Google Cloud** — añadir el origin `https://login.conexion360.space` y el redirect `https://login.conexion360.space/login/callback`, conservando los de `dev-...`. *(Hecho el 12/08/2026.)*
-2. **Backend** — aceptar ambos issuers y desplegar. ← *pendiente, bloquea al resto*
-3. **Frontend** — `environment.auth0.domain` y la variable `AUTH0_DOMAIN` de GitHub Actions → `login.conexion360.space`.
+2. **Backend** — `Jwt:Issuer` en los dos `appsettings.json` y reiniciar. *(Hecho el 23/08/2026.)*
+3. **Frontend** — `environment.auth0.domain`. *(Hecho el 23/08/2026.)* Falta la variable
+   `AUTH0_DOMAIN` de GitHub Actions: `environment.ts` está en `.gitignore` y el pipeline
+   lo genera desde esa variable, así que sin cambiarla el despliegue seguiría usando el
+   dominio viejo.
 4. **Probar** login con contraseña y con Google, y una llamada al API autenticada.
-5. Avisar a los usuarios: los tokens cacheados en `localStorage` llevan el issuer viejo y puede que necesiten cerrar sesión una vez.
+5. Avisar a los usuarios: los tokens cacheados en `localStorage` llevan el issuer viejo y necesitan cerrar sesión una vez.
 6. Cuando esté estable, retirar el issuer antiguo de la lista del backend.
 
 #### Beneficio adicional
