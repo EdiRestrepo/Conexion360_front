@@ -64,6 +64,19 @@ export class Auth0FacadeService {
     });
   }
 
+  /**
+   * Access token para consumidores que no pasan por `HttpClient` y, por tanto,
+   * no ven el interceptor de Auth0 — hoy, la conexión SignalR.
+   */
+  getAccessToken(): Observable<string> {
+    return this.auth0.getAccessTokenSilently({
+      authorizationParams: {
+        audience: environment.auth0.audience,
+        scope: environment.auth0.scope,
+      },
+    });
+  }
+
   logout(): Observable<void> {
     return this.auth0.logout({
       logoutParams: {

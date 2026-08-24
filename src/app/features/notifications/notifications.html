@@ -1,10 +1,41 @@
 <section class="page notifications-page">
   <header class="page__header notifications-header">
     <h1 class="page__title">Notificaciones</h1>
-    <a mat-icon-button routerLink="/settings/notifications" aria-label="Preferencias" matTooltip="Preferencias">
-      <mat-icon aria-hidden="true">settings</mat-icon>
-    </a>
+
+    <div class="notifications-header__actions">
+      @if (realtimeState$ | async; as realtimeState) {
+        <span
+          class="realtime-badge"
+          [class.realtime-badge--connected]="realtimeState === 'connected'"
+          [attr.aria-label]="'Tiempo real: ' + realtimeState"
+        >
+          <span class="realtime-badge__dot" aria-hidden="true"></span>
+          @switch (realtimeState) {
+            @case ('connected') { Tiempo real }
+            @case ('connecting') { Conectando... }
+            @default { Sin tiempo real }
+          }
+          @if (realtimeCount$ | async; as received) {
+            <span class="realtime-badge__count">· {{ received }}</span>
+          }
+        </span>
+      }
+
+      <!-- TEMPORAL: se retira junto con `NotificationsSimulatorService`. -->
+      <button mat-stroked-button type="button" [disabled]="generating()" (click)="simulateNotification()">
+        <mat-icon aria-hidden="true">notification_add</mat-icon>
+        Simular notificación
+      </button>
+
+      <a mat-icon-button routerLink="/settings/notifications" aria-label="Preferencias" matTooltip="Preferencias">
+        <mat-icon aria-hidden="true">settings</mat-icon>
+      </a>
+    </div>
   </header>
+
+  @if (generateError(); as error) {
+    <p class="surface-card error-state" role="alert">{{ error }}</p>
+  }
 
   @if (viewModel$ | async; as viewModel) {
     <div class="notification-filter" role="group" aria-label="Filtro de notificaciones">

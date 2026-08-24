@@ -4,10 +4,11 @@ import { BehaviorSubject, Observable, catchError, filter, map, of, shareReplay, 
 
 import { environment } from '../../../environments/environment';
 import { NotificationDataSource } from '../contracts/notification-data-source';
-import { mapNotificationsResponse } from '../mappers/notifications.mapper';
+import { mapNotificationsResponse, mapRealtimeNotification } from '../mappers/notifications.mapper';
 import { Notification } from '../models/notification.model';
 import { Auth0Identity } from '../models/user.model';
 import { Auth0FacadeService } from './auth0-facade.service';
+import { NotificationsHubService } from './notifications-hub.service';
 
 @Injectable({
   providedIn: 'root',
@@ -15,15 +16,26 @@ import { Auth0FacadeService } from './auth0-facade.service';
 export class ApiNotificationsService implements NotificationDataSource {
   private readonly http = inject(HttpClient);
   private readonly auth0Facade = inject(Auth0FacadeService);
+  private readonly hub = inject(NotificationsHubService);
   private readonly notificationsUrl = `${environment.api.baseUrl}/notifications/allnotifications`;
 
   /**
-   * Copia local de la bandeja. Es la fuente de la lista y del contador del
-   * badge, así que marcar una notificación como leída se refleja en ambos sin
-   * volver a consultar el backend —que además todavía no persiste ese cambio.
+   * Copia local de la bandeja. Es la fuente tanto de la lista como del contador
+   * del badge, así que un aviso del Hub o un "marcar como leída" se reflejan en
+   * ambos a la vez.
    */
   private readonly notifications$ = new BehaviorSubject<Notification[]>([]);
+  /**
+   * Ids marcados como leídos en esta sesión. Se reaplican después de cada
+   * consulta porque el backend todavía no persiste el cambio; sin esto, la
+   * primera notificación que llegara por el Hub revertiría lo ya leído.
+   */
+  private readonly locallyRead = new Set<string>();
   private request$: Observable<Notification[]> | null = null;
+
+  constructor() {
+    this.hub.notificationReceived$.subscribe((payload) => this.onRealtimeNotification(payload));
+  }
 
   getAll(): Observable<Notification[]> {
     return this.load().pipe(switchMap(() => this.notifications$));
@@ -37,6 +49,17 @@ export class ApiNotificationsService implements NotificationDataSource {
     this.request$ = null;
   }
 
+  /**
+   * Agrega al principio de la bandeja la notificación que anunció el Hub, sin
+   * volver a pedir la lista completa: lo que se quiere ver es *llegar* una
+   * notificación. La lista y el badge la reflejan de inmediato.
+   */
+  private onRealtimeNotification(payload: unknown): void {
+    const notification = mapRealtimeNotification(payload);
+
+    this.notifications$.next([notification, ...this.notifications$.value]);
+  }
+
   markAsRead(id: string): Observable<Notification | null> {
     const notifications = this.notifications$.value;
     const target = notifications.find((notification) => notification.id === id) ?? null;
@@ -45,9 +68,10 @@ export class ApiNotificationsService implements NotificationDataSource {
       return of(target);
     }
 
-    const updated: Notification = { ...target, read: true };
     // TODO(backend): falta el endpoint que persista el cambio de estado. Hasta
-    // entonces lo leído se pierde al recargar la página.
+    // entonces lo leído vive en `locallyRead` y se pierde al recargar la página.
+    this.locallyRead.add(id);
+    const updated: Notification = { ...target, read: true };
     this.notifications$.next(notifications.map((notification) => (notification.id === id ? updated : notification)));
 
     return of(updated);
@@ -60,12 +84,8 @@ export class ApiNotificationsService implements NotificationDataSource {
    */
   private load(): Observable<Notification[]> {
     this.request$ ??= this.getIdentity().pipe(
-      switchMap((identity) =>
-        this.http.get<unknown>(this.notificationsUrl, {
-          params: new HttpParams().set('idClient', identity.document ?? ''),
-        }),
-      ),
-      map((response) => mapNotificationsResponse(response)),
+      tap((identity) => void this.hub.connect(identity.document ?? '')),
+      switchMap((identity) => this.fetch(identity)),
       tap((notifications) => this.notifications$.next(notifications)),
       catchError((error: unknown) => {
         this.request$ = null;
@@ -75,6 +95,22 @@ export class ApiNotificationsService implements NotificationDataSource {
     );
 
     return this.request$;
+  }
+
+  private fetch(identity: Auth0Identity): Observable<Notification[]> {
+    return this.http
+      .get<unknown>(this.notificationsUrl, { params: new HttpParams().set('idClient', identity.document ?? '') })
+      .pipe(map((response) => this.applyLocalReads(mapNotificationsResponse(response))));
+  }
+
+  private applyLocalReads(notifications: Notification[]): Notification[] {
+    if (this.locallyRead.size === 0) {
+      return notifications;
+    }
+
+    return notifications.map((notification) =>
+      this.locallyRead.has(notification.id) ? { ...notification, read: true } : notification,
+    );
   }
 
   private getIdentity(): Observable<Auth0Identity> {

@@ -16,6 +16,46 @@
   line-height: 1.12;
 }
 
+.notifications-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Estado de la conexión SignalR */
+.realtime-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.04));
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.realtime-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.realtime-badge__count {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.realtime-badge--connected {
+  color: var(--color-success-strong);
+}
+
+.realtime-badge--connected .realtime-badge__dot {
+  background: var(--color-success);
+}
+
 /* Filtro segmentado tipo pill, como en el mockup */
 .notification-filter {
   display: inline-flex;

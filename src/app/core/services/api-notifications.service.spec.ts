@@ -1,18 +1,24 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Notification } from '../models/notification.model';
 import { Auth0FacadeService } from './auth0-facade.service';
+import { NotificationsHubService } from './notifications-hub.service';
 import { ApiNotificationsService } from './api-notifications.service';
 
 describe('ApiNotificationsService', () => {
   let service: ApiNotificationsService;
   let httpMock: HttpTestingController;
+  let notificationReceived$: Subject<unknown>;
+  let connectSpy: jasmine.Spy<(idClient: string) => Promise<void>>;
 
   beforeEach(() => {
+    notificationReceived$ = new Subject<unknown>();
+    connectSpy = jasmine.createSpy('connect').and.resolveTo();
+
     TestBed.configureTestingModule({
       providers: [
         ApiNotificationsService,
@@ -28,6 +34,10 @@ describe('ApiNotificationsService', () => {
               roles: ['CLIENT'],
             }),
           },
+        },
+        {
+          provide: NotificationsHubService,
+          useValue: { notificationReceived$, connect: connectSpy },
         },
       ],
     });
@@ -129,6 +139,133 @@ describe('ApiNotificationsService', () => {
 
     service.markAsRead('1').subscribe((notification) => expect(notification?.read).toBeTrue());
     service.markAsRead('does-not-exist').subscribe((notification) => expect(notification).toBeNull());
+  });
+
+  it('should subscribe to the hub with the Auth0 document', () => {
+    service.getAll().subscribe();
+    expectRequest().flush({ dataResponse: [] });
+
+    expect(connectSpy).toHaveBeenCalledWith('8110357412');
+  });
+
+  it('should add the pushed notification without querying the inbox again', () => {
+    let listed: Notification[] = [];
+    let unreadCount = -1;
+
+    service.getAll().subscribe((value) => (listed = value));
+    service.getUnreadCount().subscribe((value) => (unreadCount = value));
+    expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 1, notificationStatus: 1 }] });
+
+    expect(unreadCount).toBe(0);
+
+    notificationReceived$.next([
+      {
+        message: 'Se registra el envío en el sistema.',
+        data: { ...createBackendNotification(), idNotification: 9, notificationStatus: 0 },
+        timestamp: '2026-08-24T01:05:00.000Z',
+      },
+    ]);
+
+    expect(listed.length).toBe(2);
+    expect(listed[0].title).toBe('Cambio de estado a pendiente.');
+    expect(listed[0].shipmentDocument).toBe('HBL-5U6HC36K');
+    expect(listed[0].read).toBeFalse();
+    expect(unreadCount).toBe(1);
+    // Lo importante: el push NO dispara `allnotifications`.
+    httpMock.expectNone(() => true);
+  });
+
+  it('should build a card from the message when the push carries no row', () => {
+    let listed: Notification[] = [];
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [] });
+
+    notificationReceived$.next([
+      {
+        message: 'Se presenta una novedad documental que retrasa el proceso.',
+        data: null,
+        timestamp: '2026-08-24T01:05:00.000Z',
+      },
+    ]);
+
+    expect(listed.length).toBe(1);
+    expect(listed[0].description).toBe('Se presenta una novedad documental que retrasa el proceso.');
+    expect(listed[0].read).toBeFalse();
+    httpMock.expectNone(() => true);
+  });
+
+  // Lo que rompía antes: dos avisos sobre la misma fila se tomaban por
+  // repetidos y solo entraba el primero.
+  it('should add one card per push, even when the payload repeats itself', () => {
+    let listed: Notification[] = [];
+    const push = [
+      {
+        message: 'Mensaje',
+        data: { ...createBackendNotification(), idNotification: 9, notificationStatus: 0 },
+        timestamp: '2026-08-24T01:05:00.000Z',
+      },
+    ];
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [] });
+
+    notificationReceived$.next(push);
+    notificationReceived$.next(push);
+    notificationReceived$.next(push);
+
+    expect(listed.length).toBe(3);
+    expect(new Set(listed.map((item) => item.id)).size).toBe(3);
+    httpMock.expectNone(() => true);
+  });
+
+  it('should read the row when the hub sends the arguments separately', () => {
+    let listed: Notification[] = [];
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [] });
+
+    // `SendAsync(metodo, mensaje, fila, marcaDeTiempo)`
+    notificationReceived$.next([
+      'Se registra el envío en el sistema.',
+      { ...createBackendNotification(), idNotification: 9, notificationStatus: 0 },
+      '2026-08-24T01:05:00.000Z',
+    ]);
+
+    expect(listed.length).toBe(1);
+    expect(listed[0].title).toBe('Cambio de estado a pendiente.');
+    expect(listed[0].shipmentDocument).toBe('HBL-5U6HC36K');
+    expect(listed[0].read).toBeFalse();
+  });
+
+  it('should show the raw payload when nothing in it is recognizable', () => {
+    let listed: Notification[] = [];
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [] });
+
+    notificationReceived$.next([{ algoInesperado: 42 }]);
+
+    expect(listed.length).toBe(1);
+    expect(listed[0].description).toContain('algoInesperado');
+  });
+
+  it('should keep locally read notifications read when the same one is pushed again', () => {
+    let listed: Notification[] = [];
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 1, notificationStatus: 0 }] });
+
+    service.markAsRead('1').subscribe();
+
+    expect(listed[0].read).toBeTrue();
+
+    service.reload();
+    service.getAll().subscribe();
+    // El backend todavía la devuelve como no leída, porque no persiste el cambio.
+    expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 1, notificationStatus: 0 }] });
+
+    expect(listed[0].read).toBeTrue();
   });
 
   it('should go back to the backend after reload', () => {

@@ -402,7 +402,32 @@ algo sigue mockeado):
   de la bandeja en un `BehaviorSubject`, porque la lista y el badge de no leídas
   (barra lateral, menú de usuario y navegación móvil) la piden a la vez y porque
   marcar como leída todavía no se persiste. `reload()` invalida esa copia; es lo
-  que usa el botón "Reintentar".
+  que usa el botón "Reintentar". Los ids marcados como leídos en la sesión viven
+  en `locallyRead` y se reaplican tras cada consulta; sin eso, el primer aviso
+  del Hub revertiría lo ya leído.
+- `NotificationsHubService` (`core/services/notifications-hub.service.ts`):
+  suscripción SignalR a `GET /hubs/notifications?idClient=...`. El Hub valida
+  JWT y lee el token del query `access_token` (verificado en
+  `Connection360.Api.dll`), por eso se usa `accessTokenFactory`: SignalR no pasa
+  por `HttpClient` y el interceptor de Auth0 no lo alcanza. El método que el
+  backend invoca en los clientes es **`ReceiveNotification`**
+  (`Connection360.Infrastructure.dll`); si lo renombran, aquí deja de llegar
+  todo en silencio. El Hub manda un objeto anónimo `{ message, data, timestamp }`;
+  `mapRealtimeNotification` lo traduce y `ApiNotificationsService` lo **agrega a
+  la bandeja**, sin volver a consultar `allnotifications` — recargar la lista
+  entera en cada push es justo lo que no se quiere. Prefiere `data` (la fila
+  creada) y cae al `message` cuando no viene. Descarta ids repetidos, porque el
+  Hub puede reenviar. `proxy.conf.json` necesita `"ws": true` para que el
+  WebSocket llegue al backend en desarrollo.
+- `NotificationsSimulatorService` (`core/services/notifications-simulator.service.ts`)
+  y el botón "Simular notificación" de la pantalla son **temporales**: llaman a
+  `GET /notifications/generatenotifications?idClient=&Message=` para provocar un
+  push y poder ver el tiempo real sin esperar un evento logístico real. Se
+  borran cuando el backend genere notificaciones de verdad.
+  El simulador **no agrega nada a la bandeja**: la nueva llega por el Hub, igual
+  que llegaría una real, así que el botón es una prueba de extremo a extremo del
+  tiempo real. Solo rota el `Message` entre ejemplos tomados de la semilla del
+  backend.
 - `MockNotificationService` y los datos de envíos simulados
   (`mocks/data/mock-shipments.ts`, `mocks/factories/mock-shipment.factory.ts`)
   **ya no existen**: se eliminaron al conectar Notificaciones al backend. No

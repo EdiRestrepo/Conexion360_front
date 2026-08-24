@@ -3,6 +3,7 @@
     "target": "https://localhost:44368",
     "secure": false,
     "changeOrigin": true,
+    "ws": true,
     "logLevel": "debug"
   }
 }

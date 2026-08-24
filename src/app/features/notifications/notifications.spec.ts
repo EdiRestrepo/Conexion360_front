@@ -2,10 +2,12 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { Notification } from '../../core/models/notification.model';
+import { NotificationsHubService, RealtimeState } from '../../core/services/notifications-hub.service';
+import { NotificationsSimulatorService } from '../../core/services/notifications-simulator.service';
 import { Notifications } from './notifications';
 
 describe('Notifications', () => {
@@ -13,10 +15,14 @@ describe('Notifications', () => {
   let getAllSpy: jasmine.Spy<() => Observable<Notification[]>>;
   let markAsReadSpy: jasmine.Spy<(id: string) => Observable<Notification | null>>;
   let reloadSpy: jasmine.Spy<() => void>;
+  let generateSpy: jasmine.Spy<() => Observable<void>>;
+  let realtimeState$: BehaviorSubject<RealtimeState>;
 
   beforeEach(async () => {
     getAllSpy = jasmine.createSpy('getAll').and.returnValue(of(createNotifications()));
     reloadSpy = jasmine.createSpy('reload');
+    generateSpy = jasmine.createSpy('generate').and.returnValue(of(undefined));
+    realtimeState$ = new BehaviorSubject<RealtimeState>('connected');
     markAsReadSpy = jasmine
       .createSpy('markAsRead')
       .and.callFake((id: string) => of(createNotifications().find((notification) => notification.id === id) ?? null));
@@ -33,6 +39,8 @@ describe('Notifications', () => {
             reload: reloadSpy,
           },
         },
+        { provide: NotificationsHubService, useValue: { state$: realtimeState$, receivedCount$: of(0) } },
+        { provide: NotificationsSimulatorService, useValue: { generate: generateSpy } },
       ],
     }).compileComponents();
 
@@ -112,6 +120,43 @@ describe('Notifications', () => {
     expect(markAsReadSpy).not.toHaveBeenCalled();
 
     closeDialog('Cerrar');
+  }));
+
+  it('should show the realtime connection state', fakeAsync(() => {
+    render();
+
+    expect(getText()).toContain('Tiempo real');
+
+    realtimeState$.next('disconnected');
+    fixture.detectChanges();
+
+    expect(getText()).toContain('Sin tiempo real');
+  }));
+
+  it('should ask the backend for a simulated notification without reloading the inbox', fakeAsync(() => {
+    render();
+    getAllSpy.calls.reset();
+
+    clickButton('Simular notificación');
+    tick();
+    fixture.detectChanges();
+
+    expect(generateSpy).toHaveBeenCalled();
+    // La nueva se agrega a la bandeja; no se vuelve a pedir la lista completa.
+    expect(reloadSpy).not.toHaveBeenCalled();
+    expect(getAllSpy).not.toHaveBeenCalled();
+    expect(getText()).not.toContain('No fue posible generar');
+  }));
+
+  it('should report a failure to generate the simulated notification', fakeAsync(() => {
+    generateSpy.and.returnValue(throwError(() => new Error('fallo')));
+    render();
+
+    clickButton('Simular notificación');
+    tick();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('No fue posible generar la notificación de prueba.');
   }));
 
   it('should render empty state', fakeAsync(() => {
