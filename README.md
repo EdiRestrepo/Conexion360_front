@@ -431,7 +431,24 @@ APP_URL
 API_BASE_URL
 NGINX_APP_URL
 NGINX_API_BASE_URL
+PAGES_BASE_HREF
+PAGES_CUSTOM_DOMAIN
 ```
+
+Las dos ultimas solo hacen falta al servir GitHub Pages desde un dominio propio
+en vez de `usuario.github.io/<repo>/`:
+
+- `PAGES_CUSTOM_DOMAIN` (por ejemplo `conexion360.space`) hace que el workflow
+  escriba el archivo `CNAME` en cada despliegue. Sin el, GitHub borra el Custom
+  domain configurado en *Settings -> Pages* cada vez que se publica.
+- `PAGES_BASE_HREF=/` porque con dominio propio la aplicacion se sirve desde la
+  raiz. Si se deja vacia, el workflow usa `/<repo>/` como hasta ahora. Poner el
+  dominio y olvidar esta variable deja la pagina en blanco: los CSS y JS se
+  buscarian en `/<repo>/` y darian 404.
+
+Al activar el dominio propio hay que actualizar tambien `APP_URL`, agregar la
+nueva URL en Auth0 (Callback, Logout, Web Origins y CORS) y en el bloque `Cors`
+del backend.
 
 En Angular, estos valores quedan incluidos en los archivos JavaScript compilados. Por esa razon no se deben guardar secretos privados en esas variables.
 

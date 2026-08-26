@@ -4,6 +4,7 @@ import { User as Auth0User } from '@auth0/auth0-spa-js';
 import { Observable, combineLatest, map } from 'rxjs';
 
 import { Auth0Identity, UserRole } from '../models/user.model';
+import { clearBrowserSession } from '../utils/browser-session';
 import { environment } from '../../../environments/environment';
 
 const rolesClaim = 'https://conexion360.space/roles';
@@ -78,6 +79,8 @@ export class Auth0FacadeService {
   }
 
   logout(): Observable<void> {
+    clearBrowserSession();
+
     return this.auth0.logout({
       logoutParams: {
         returnTo: appUrl,
