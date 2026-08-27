@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +11,6 @@ import { BehaviorSubject, Observable, Subject, catchError, combineLatest, map, o
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { Notification } from '../../core/models/notification.model';
 import { NotificationsHubService } from '../../core/services/notifications-hub.service';
-import { NotificationsSimulatorService } from '../../core/services/notifications-simulator.service';
 import { getNotificationTypeIcon } from '../../core/utils/notification-labels';
 import { NotificationDetailDialog } from './components/notification-detail-dialog/notification-detail-dialog';
 import { formatNotificationDateTime } from './notification-date';
@@ -36,7 +35,6 @@ export class Notifications {
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly hub = inject(NotificationsHubService);
-  private readonly simulator = inject(NotificationsSimulatorService);
   private readonly filter$ = new BehaviorSubject<NotificationFilter>('all');
   private readonly refresh$ = new Subject<void>();
 
@@ -44,8 +42,6 @@ export class Notifications {
   protected readonly realtimeState$ = this.hub.state$;
   /** Avisos entregados por el Hub; se muestra junto al estado mientras se depura. */
   protected readonly realtimeCount$ = this.hub.receivedCount$;
-  protected readonly generating = signal(false);
-  protected readonly generateError = signal<string | null>(null);
 
   protected readonly viewModel$: Observable<NotificationsViewModel> = combineLatest([
     this.filter$,
@@ -77,30 +73,6 @@ export class Notifications {
   protected retry(): void {
     this.notificationService.reload();
     this.refresh$.next();
-  }
-
-  /**
-   * TEMPORAL. Pide al backend que genere una notificación de prueba; el propio
-   * simulador la agrega a la bandeja como no leída, sin recargar la lista.
-   */
-  protected simulateNotification(): void {
-    if (this.generating()) {
-      return;
-    }
-
-    this.generating.set(true);
-    this.generateError.set(null);
-
-    this.simulator
-      .generate()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.generating.set(false),
-        error: () => {
-          this.generating.set(false);
-          this.generateError.set('No fue posible generar la notificación de prueba.');
-        },
-      });
   }
 
   /**

@@ -21,21 +21,11 @@
         </span>
       }
 
-      <!-- TEMPORAL: se retira junto con `NotificationsSimulatorService`. -->
-      <button mat-stroked-button type="button" [disabled]="generating()" (click)="simulateNotification()">
-        <mat-icon aria-hidden="true">notification_add</mat-icon>
-        Simular notificación
-      </button>
-
       <a mat-icon-button routerLink="/settings/notifications" aria-label="Preferencias" matTooltip="Preferencias">
         <mat-icon aria-hidden="true">settings</mat-icon>
       </a>
     </div>
   </header>
-
-  @if (generateError(); as error) {
-    <p class="surface-card error-state" role="alert">{{ error }}</p>
-  }
 
   @if (viewModel$ | async; as viewModel) {
     <div class="notification-filter" role="group" aria-label="Filtro de notificaciones">
