@@ -1,0 +1,201 @@
+@startuml Sistema_de_Aeronaves
+
+' ─── Estilo ────────────────────────────────────────────────
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor White
+  BorderColor #34495E
+  ArrowColor #34495E
+  FontName Helvetica
+}
+hide empty members
+left to right direction
+
+' ─── ABSTRACCIÓN ───────────────────────────────────────────
+abstract class Avion {
+  - matricula : String
+  - fabricante : String
+  - modelo : String
+  - velocidadMaxima : double
+  - autonomia : double
+  # altitudActual : double
+  # enVuelo : boolean
+  --
+  + Avion(matricula : String, fabricante : String, modelo : String)
+  + getMatricula() : String
+  + getModelo() : String
+  + getAltitudActual() : double
+  # setAltitudActual(altitud : double) : void
+  + despegar() : void
+  + aterrizar() : void
+  + volar(altitudObjetivo : double) : void
+  + calcularAutonomia() : double
+  + {abstract} realizarMision() : String
+  + {abstract} capacidadOperativa() : double
+  + toString() : String
+}
+
+interface Mantenible {
+  + programarMantenimiento(fecha : LocalDate) : void
+  + horasDeVuelo() : double
+}
+
+' ─── HERENCIA (generalización) ──────────────────────────────
+class AvionCombate {
+  - tipoArmamento : String
+  - capacidadMisiles : int
+  - sigiloso : boolean
+  --
+  + AvionCombate(matricula : String, tipoArmamento : String, capacidadMisiles : int)
+  + getTipoArmamento() : String
+  + setCapacidadMisiles(cantidad : int) : void
+  + ejecutarMisionCombate(objetivo : String) : void
+  + realizarMision() : String
+  + capacidadOperativa() : double
+}
+
+class AvionCarga {
+  - capacidadCargaKg : double
+  - volumenCargaM3 : double
+  - cargaActualKg : double
+  --
+  + AvionCarga(matricula : String, capacidadCargaKg : double, volumenCargaM3 : double)
+  + getCapacidadCargaKg() : double
+  + cargarMercancia(pesoKg : double) : boolean
+  + descargarMercancia(pesoKg : double) : boolean
+  + realizarMision() : String
+  + capacidadOperativa() : double
+}
+
+class AvionComercial {
+  - capacidadPasajeros : int
+  - aerolinea : String
+  - pasajerosABordo : int
+  --
+  + AvionComercial(matricula : String, capacidadPasajeros : int, aerolinea : String)
+  + getAerolinea() : String
+  + embarcarPasajeros(cantidad : int) : boolean
+  + desembarcarPasajeros(cantidad : int) : boolean
+  + realizarMision() : String
+  + capacidadOperativa() : double
+}
+
+' ─── CLASES RELACIONADAS ───────────────────────────────────
+class Motor {
+  - numeroSerie : String
+  - tipo : String
+  - empujeKN : double
+  - horasUso : double
+  --
+  + getNumeroSerie() : String
+  + encender() : void
+  + apagar() : void
+  + requiereRevision() : boolean
+}
+
+class TanqueCombustible {
+  - identificador : String
+  - capacidadLitros : double
+  - nivelActualLitros : double
+  --
+  + getNivelActualLitros() : double
+  + tanquear(litros : double) : void
+  + consumir(litros : double) : boolean
+}
+
+class SistemaNavegacion {
+  - version : String
+  - gpsActivo : boolean
+  - rutaCargada : String
+  --
+  + cargarRuta(ruta : String) : void
+  + calcularPosicion() : String
+  + activarPilotoAutomatico() : void
+}
+
+class Piloto {
+  - licencia : String
+  - nombre : String
+  - horasVuelo : double
+  - rango : String
+  --
+  + getLicencia() : String
+  + getNombre() : String
+  + estaHabilitado(modelo : String) : boolean
+  + registrarHoras(horas : double) : void
+}
+
+class Vuelo {
+  - codigoVuelo : String
+  - salidaProgramada : LocalDateTime
+  - llegadaProgramada : LocalDateTime
+  - estado : EstadoVuelo
+  --
+  + getCodigoVuelo() : String
+  + iniciarVuelo() : void
+  + finalizarVuelo() : void
+  + duracionEstimada() : double
+  + ejecutarMision() : String
+}
+
+class Aeropuerto {
+  - codigoIATA : String
+  - nombre : String
+  - ciudad : String
+  - numeroPistas : int
+  --
+  + getCodigoIATA() : String
+  + registrarVuelo(v : Vuelo) : void
+  + pistasDisponibles() : int
+}
+
+enum EstadoVuelo {
+  PROGRAMADO
+  EN_VUELO
+  ATERRIZADO
+  CANCELADO
+}
+
+' ─── RELACIONES ────────────────────────────────────────────
+
+' Realización (implementación de interfaz)
+Avion ..|> Mantenible
+
+' Generalización / Herencia
+AvionCombate   --|> Avion
+AvionCarga     --|> Avion
+AvionComercial --|> Avion
+
+' Composición: la parte no existe sin el todo
+Avion "1" *-- "1..*" TanqueCombustible : contiene >
+Avion "1" *-- "1"    SistemaNavegacion  : integra >
+
+' Agregación: la parte puede existir de forma independiente
+Avion "1" o-- "1..*" Motor : utiliza >
+
+' Asociación con nombre, dirección y multiplicidad
+Piloto "0..*" --> "0..*" Avion       : pilota >
+Vuelo  "0..*" --> "1"    Avion       : utiliza >
+Vuelo  "0..*" --> "1"    Aeropuerto  : sale de >
+Vuelo  "0..*" --> "1"    Aeropuerto  : llega a >
+Vuelo  "1"    --> "1..2" Piloto      : tripulado por >
+Aeropuerto "1" --> "0..*" Vuelo      : gestiona >
+
+' Dependencia (uso puntual, sin atributo)
+Vuelo ..> EstadoVuelo : usa
+
+note right of Avion
+  Abstracción
+  Clase abstracta: no se instancia.
+  realizarMision() y capacidadOperativa()
+  son métodos abstractos.
+end note
+
+note "Polimorfismo\nrealizarMision() se sobrescribe\nen las tres subclases y Vuelo\nla invoca sin conocer el tipo\nconcreto de avión." as N2
+N2 .. AvionCombate
+N2 .. AvionCarga
+N2 .. AvionComercial
+
+@enduml
