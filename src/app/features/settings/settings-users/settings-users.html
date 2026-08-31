@@ -5,25 +5,182 @@
     </a>
     <div>
       <h2>Gestión de usuarios</h2>
-      <p>Usuarios y roles se administran desde Auth0.</p>
+      <p>Consulta, edita y controla el acceso de los usuarios registrados en Auth0.</p>
     </div>
   </header>
 
-  <article class="surface-card auth0-panel" aria-labelledby="auth0-users-title">
-    <span class="auth0-panel__icon" aria-hidden="true">
-      <mat-icon>admin_panel_settings</mat-icon>
-    </span>
+  @if (actionMessage(); as message) {
+    <p class="users-action-message" role="status">{{ message }}</p>
+  }
 
-    <div class="auth0-panel__content">
-      <h3 id="auth0-users-title">Gestión centralizada en Auth0</h3>
-      <p>
-        Conexion360 ya no mantiene usuarios, invitaciones ni roles simulados en el frontend.
-        Los datos del usuario autenticado se leen desde el <strong>id_token</strong> de Auth0,
-        incluyendo roles, documento, nombre, empresa, correo y foto cuando están disponibles.
-      </p>
-      <p class="auth0-panel__note">
-        Para crear usuarios, asignar roles o modificar permisos, usa el panel de Auth0.
-      </p>
+  @if (viewModel$ | async; as viewModel) {
+    <div class="surface-card users-card">
+      @if (viewModel.state === 'loading') {
+        <div class="loading-state">
+          <strong>Cargando usuarios...</strong>
+          <p>Consultando las cuentas registradas en Auth0.</p>
+        </div>
+      } @else if (viewModel.state === 'error') {
+        <div class="error-state">
+          <strong>No se pudo cargar la información</strong>
+          <p>{{ viewModel.message }}</p>
+          <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (viewModel.state === 'empty') {
+        <div class="empty-state">
+          <strong>No hay usuarios para mostrar</strong>
+          <p>{{ viewModel.message }}</p>
+          <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+        </div>
+      } @else {
+        <div class="users-table-wrap">
+          <div class="users-table" role="table" aria-label="Listado de usuarios registrados">
+            <div class="users-table__row users-table__row--head" role="row">
+              <span role="columnheader">Usuario</span>
+              <span role="columnheader">Rol</span>
+              <span role="columnheader">Empresa</span>
+              <span role="columnheader">Documento</span>
+              <span role="columnheader">Teléfono</span>
+              <span role="columnheader">Acciones</span>
+            </div>
+
+            @for (user of viewModel.users; track user.userId) {
+              <div class="users-table__row" role="row">
+                <span role="cell" class="user-cell">
+                  @if (user.picture) {
+                    <img class="user-cell__avatar" [src]="user.picture" alt="" aria-hidden="true" />
+                  } @else {
+                    <span class="user-cell__avatar user-cell__avatar--fallback" aria-hidden="true">
+                      <mat-icon>person</mat-icon>
+                    </span>
+                  }
+                  <span class="user-cell__text">
+                    <strong>{{ getDisplayName(user) }}</strong>
+                    <small>
+                      {{ user.nickname || '—' }}
+                      @if (user.emailVerified === false) {
+                        <span class="status-chip status-chip--issue">Sin verificar</span>
+                      }
+                    </small>
+                  </span>
+                </span>
+
+                <span role="cell">{{ user.role ? getUserRoleLabel(user.role) : '—' }}</span>
+
+                <span role="cell">{{ user.company || '—' }}</span>
+
+                <span role="cell">{{ user.document || '—' }}</span>
+
+                <span role="cell">{{ user.phoneNumber || '—' }}</span>
+
+                <span role="cell" class="users-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [attr.aria-label]="'Ver y editar ' + getDisplayName(user)"
+                    title="Ver y editar"
+                    (click)="openDetail(user)"
+                  >
+                    <mat-icon aria-hidden="true">edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [disabled]="isSelf(user)"
+                    [attr.aria-label]="(user.isBlocked ? 'Desbloquear a ' : 'Bloquear a ') + getDisplayName(user)"
+                    [title]="isSelf(user) ? 'No puedes bloquear tu propia cuenta' : (user.isBlocked ? 'Desbloquear' : 'Bloquear')"
+                    (click)="toggleBlocked(user)"
+                  >
+                    <mat-icon aria-hidden="true">{{ user.isBlocked ? 'lock_open' : 'block' }}</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="users-actions__delete"
+                    [disabled]="isSelf(user)"
+                    [attr.aria-label]="'Eliminar a ' + getDisplayName(user)"
+                    [title]="isSelf(user) ? 'No puedes eliminar tu propia cuenta' : 'Eliminar'"
+                    (click)="confirmDelete(user)"
+                  >
+                    <mat-icon aria-hidden="true">delete_outline</mat-icon>
+                  </button>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="users-mobile-list" aria-label="Listado móvil de usuarios">
+          @for (user of viewModel.users; track user.userId) {
+            <article class="user-mobile-card">
+              <header>
+                @if (user.picture) {
+                  <img class="user-cell__avatar" [src]="user.picture" alt="" aria-hidden="true" />
+                } @else {
+                  <span class="user-cell__avatar user-cell__avatar--fallback" aria-hidden="true">
+                    <mat-icon>person</mat-icon>
+                  </span>
+                }
+                <div>
+                  <strong>{{ getDisplayName(user) }}</strong>
+                  <small>{{ user.nickname || '—' }}</small>
+                </div>
+                <button
+                  mat-icon-button
+                  type="button"
+                  [attr.aria-label]="'Ver y editar ' + getDisplayName(user)"
+                  title="Ver y editar"
+                  (click)="openDetail(user)"
+                >
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                </button>
+              </header>
+              <div class="user-mobile-card__meta">
+                <span>{{ user.role ? getUserRoleLabel(user.role) : 'Sin rol asignado' }}</span>
+                <span>{{ user.company || '—' }} · {{ user.document || '—' }}</span>
+                <span>{{ user.phoneNumber || '—' }}</span>
+              </div>
+              <div class="user-mobile-card__actions">
+                <button mat-stroked-button type="button" [disabled]="isSelf(user)" (click)="toggleBlocked(user)">
+                  {{ user.isBlocked ? 'Desbloquear' : 'Bloquear' }}
+                </button>
+                <button mat-stroked-button type="button" [disabled]="isSelf(user)" (click)="confirmDelete(user)">
+                  Eliminar
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+
+        <footer class="users-pagination" aria-label="Paginación de usuarios">
+          <div class="users-pagination__meta">
+            <label>
+              <span>Filas por página</span>
+              <select [formControl]="pageSizeControl" aria-label="Usuarios por página">
+                @for (size of pageSizeOptions; track size) {
+                  <option [value]="size">{{ size }}</option>
+                }
+              </select>
+            </label>
+            <p>{{ viewModel.rangeStart }}-{{ viewModel.rangeEnd }} de {{ viewModel.totalItems }}</p>
+          </div>
+          <div class="users-pagination__buttons">
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(1)" aria-label="Primera página" title="Primera página">
+              <mat-icon aria-hidden="true">first_page</mat-icon>
+            </button>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === 1" (click)="goToPage(viewModel.filters.page - 1)" aria-label="Página anterior" title="Página anterior">
+              <mat-icon aria-hidden="true">chevron_left</mat-icon>
+            </button>
+            <span class="users-pagination__page">Página {{ viewModel.filters.page }} de {{ viewModel.totalPages }}</span>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.filters.page + 1)" aria-label="Página siguiente" title="Página siguiente">
+              <mat-icon aria-hidden="true">chevron_right</mat-icon>
+            </button>
+            <button mat-icon-button type="button" [disabled]="viewModel.filters.page === viewModel.totalPages" (click)="goToPage(viewModel.totalPages)" aria-label="Última página" title="Última página">
+              <mat-icon aria-hidden="true">last_page</mat-icon>
+            </button>
+          </div>
+        </footer>
+      }
     </div>
-  </article>
+  }
 </section>

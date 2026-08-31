@@ -1,0 +1,35 @@
+<h2 mat-dialog-title class="delete-dialog__title">
+  <mat-icon aria-hidden="true">warning</mat-icon>
+  Eliminar usuario
+</h2>
+
+<mat-dialog-content class="delete-dialog__content">
+  <p>
+    Vas a eliminar a <strong>{{ displayName }}</strong> del tenant de Auth0. La cuenta perderá el acceso
+    a Conexion360 de forma permanente y <strong>esta acción no se puede deshacer</strong>.
+  </p>
+
+  <label>
+    <span>Escribe <strong>{{ user.email }}</strong> para confirmar</span>
+    <input
+      type="email"
+      [formControl]="confirmControl"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Confirmar correo del usuario a eliminar"
+    />
+  </label>
+</mat-dialog-content>
+
+<mat-dialog-actions class="delete-dialog__actions">
+  <button mat-button type="button" (click)="cancel()">Cancelar</button>
+  <button
+    mat-flat-button
+    type="button"
+    class="delete-dialog__confirm"
+    [disabled]="!canDelete"
+    (click)="confirm()"
+  >
+    Eliminar definitivamente
+  </button>
+</mat-dialog-actions>

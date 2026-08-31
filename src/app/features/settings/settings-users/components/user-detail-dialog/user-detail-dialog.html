@@ -1,0 +1,121 @@
+<h2 mat-dialog-title class="user-dialog__title">
+  <mat-icon aria-hidden="true">manage_accounts</mat-icon>
+  {{ displayName }}
+</h2>
+
+<mat-dialog-content class="user-dialog__content">
+  <dl class="user-dialog__meta">
+    <div>
+      <dt>Correo</dt>
+      <dd>
+        {{ user.email }}
+        @if (user.emailVerified === false) {
+          <span class="status-chip status-chip--issue">Sin verificar</span>
+        }
+      </dd>
+    </div>
+    <div>
+      <dt>ID de Auth0</dt>
+      <dd class="user-dialog__id">
+        <code>{{ user.userId }}</code>
+        <button
+          mat-icon-button
+          type="button"
+          class="user-dialog__copy"
+          title="Copiar ID de Auth0"
+          [attr.aria-label]="'Copiar ID de Auth0 ' + user.userId"
+          (click)="copyUserId()"
+        >
+          <mat-icon aria-hidden="true">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+        </button>
+      </dd>
+    </div>
+    <div>
+      <dt>Empresa</dt>
+      <dd>{{ user.company || '—' }}</dd>
+    </div>
+    <div>
+      <dt>Documento</dt>
+      <dd>{{ user.document || '—' }}</dd>
+    </div>
+    <div>
+      <dt>Registro</dt>
+      <dd>{{ createdDate }}</dd>
+    </div>
+    <div>
+      <dt>Último acceso</dt>
+      <dd>{{ lastLogin }}</dd>
+    </div>
+    <div>
+      <dt>Última modificación</dt>
+      <dd>{{ updatedDate }}</dd>
+    </div>
+    <div>
+      <dt>Política de datos</dt>
+      <dd>
+        @if (user.acceptedDataPolicy === true) {
+          <span class="status-chip status-chip--success">Aceptada</span>
+        } @else if (user.acceptedDataPolicy === false) {
+          <span class="status-chip status-chip--issue">No aceptada</span>
+        } @else {
+          —
+        }
+      </dd>
+    </div>
+  </dl>
+
+  <form class="user-dialog__form" [formGroup]="form" (ngSubmit)="save()">
+    <label>
+      <span>Nombre</span>
+      <input type="text" formControlName="userName" autocomplete="off" />
+    </label>
+
+    <label>
+      <span>Alias</span>
+      <input type="text" formControlName="nickname" autocomplete="off" />
+    </label>
+
+    <label>
+      <span>Teléfono</span>
+      <input
+        type="tel"
+        formControlName="phoneNumber"
+        placeholder="+573175766335"
+        autocomplete="off"
+        [attr.aria-invalid]="phoneNumberHasError"
+        [attr.aria-describedby]="phoneNumberHasError ? 'phone-error' : null"
+      />
+    </label>
+    @if (phoneNumberHasError) {
+      <p id="phone-error" class="user-dialog__error" role="alert">
+        El teléfono debe ir en formato internacional, empezando por «+» (ej. +573175766335).
+      </p>
+    }
+
+    <label>
+      <span>Rol</span>
+      <select [formControl]="roleControl">
+        <option value="">Sin rol asignado</option>
+        @for (role of roleOptions; track role) {
+          <option [value]="role">{{ getUserRoleLabel(role) }}</option>
+        }
+      </select>
+    </label>
+    <p class="user-dialog__note">
+      La asignación de roles todavía no está disponible en el API de usuarios; se gestiona desde Auth0.
+    </p>
+
+    <label class="user-dialog__toggle">
+      <input type="checkbox" formControlName="isBlocked" />
+      <span>Bloquear el acceso de este usuario</span>
+    </label>
+    @if (isSelf) {
+      <p class="user-dialog__note">No puedes bloquear tu propia cuenta.</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="user-dialog__actions">
+  <button mat-button type="button" (click)="close()">Cancelar</button>
+  <button mat-flat-button type="button" [disabled]="form.invalid" (click)="save()">Guardar cambios</button>
+</mat-dialog-actions>

@@ -1,7 +1,6 @@
 import { PaginatedResult, SearchFilters } from '../models/common.model';
 import { OperationType, Shipment, ShipmentStatus, TransportMode } from '../models/shipment.model';
-
-type JsonRecord = Record<string, unknown>;
+import { asRecord, getValue, readArray, readNumber, readString, toDateValue } from './json-record.util';
 
 export interface MyShipmentsSummary {
   total: number;
@@ -93,77 +92,6 @@ function toShipment(value: unknown): Shipment {
 
 function firstPayloadItem(value: unknown): unknown {
   return Array.isArray(value) ? value[0] ?? {} : value;
-}
-
-function readArray(record: JsonRecord, keys: string[]): unknown[] {
-  for (const key of keys) {
-    const value = getValue(record, [key]);
-
-    if (Array.isArray(value)) {
-      return value;
-    }
-  }
-
-  return [];
-}
-
-function readString(record: JsonRecord, keys: string[]): string {
-  const value = getValue(record, keys);
-
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  if (typeof value === 'number') {
-    return String(value);
-  }
-
-  return '';
-}
-
-function readNumber(record: JsonRecord, keys: string[], fallback: number): number {
-  const value = getValue(record, keys);
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value.replace(',', '.'));
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-
-  return fallback;
-}
-
-function getValue(record: JsonRecord, keys: string[]): unknown {
-  for (const key of keys) {
-    const directValue = record[key];
-
-    if (directValue !== undefined) {
-      return directValue;
-    }
-
-    const matchingKey = Object.keys(record).find((candidate) => candidate.toLowerCase() === key.toLowerCase());
-
-    if (matchingKey) {
-      return record[matchingKey];
-    }
-  }
-
-  return undefined;
-}
-
-function asRecord(value: unknown): JsonRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as JsonRecord) : {};
-}
-
-function toDateValue(value: string): string | null {
-  if (!value || value.startsWith('0001-01-01')) {
-    return null;
-  }
-
-  return value.split('T')[0] || null;
 }
 
 function toOperationType(value: string): OperationType {

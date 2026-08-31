@@ -877,125 +877,85 @@ real:
   adelante se requiere precisión operativa, habría que geocodificar por
   terminal o ciudad.
 
-## 21. Gestión de usuarios y roles desde la app (pendiente de definir con backend)
+## 21. Gestión de usuarios y roles desde la app
 
-Hoy "Ajustes → Gestión de usuarios" (`/settings/users`) es una pantalla
-informativa: le dice al administrador que la gestión de usuarios y roles se
-hace desde el dashboard de Auth0, sin listar usuarios ni permitir asignar
-roles dentro de Conexion360.
+`Ajustes → Gestión de usuarios` (`/settings/users`) es una pantalla real de
+administración: lista los usuarios de Auth0, permite editarlos, bloquearlos y
+eliminarlos. Solo la ve el rol ADMIN (`roleGuard` en `app.routes.ts`).
 
-Pregunta abierta para hablar con el compañero de backend: ¿el rol ADMIN
-dentro de la app debería poder ver el listado de usuarios registrados en
-Auth0 y asignarles roles sin salir de Conexion360, o esa gestión se mantiene
-exclusivamente en el dashboard de Auth0?
+La pregunta que esta sección dejaba abierta ("¿se gestionan los usuarios dentro
+de Conexion360 o solo desde el dashboard de Auth0?") ya está resuelta a favor de
+la app, con el patrón que aquí se proponía: **el SPA no habla nunca con la
+Management API de Auth0**. Esa API exige el secreto de una aplicación M2M, que no
+puede vivir en el bundle de Angular sin quedar expuesto. El backend hace de
+intermediario y valida el rol a partir del token.
 
-Restricción técnica que condiciona la respuesta: la Management API de Auth0
-(la que expone listar usuarios y asignar roles) requiere credenciales de una
-aplicación Machine-to-Machine con client secret. Ese secreto no puede vivir
-en el bundle de Angular sin quedar expuesto a cualquiera que inspeccione el
-JS, así que el SPA no puede llamarla directamente.
-
-Si se decide implementarlo, el patrón coherente con el resto de la sección 8
-sería:
-
-- El backend valida que quien llama tenga rol ADMIN a partir del token del
-  usuario autenticado (igual que ya hace para derivar el rol en los
-  endpoints existentes), no confiar solo en ocultar la pantalla en el
-  frontend.
-- Angular consume esos endpoints nuevos como cualquier otro servicio real
-  (mismo patrón de `ApiHomeService`/`ApiMyShipmentsService`), sin hablar con
-  Auth0 Management API ni con el M2M client desde el frontend.
-
-### Convención de rutas ya establecida (a respetar en los endpoints nuevos)
-
-Revisando los servicios reales ya implementados
-(`ApiHomeService`, `ApiMyShipmentsService`, `ApiHistoryService`,
-`ApiShipmentDetailService`), el backend sigue estos patrones que los
-endpoints de usuarios deberían mantener:
-
-- Rutas agrupadas por recurso en minúscula, acción en el segundo segmento:
-  `/home/totals`, `/home/filters`, `/myshipments/allshipments`,
-  `/myshipments/filterShipments`, `/myshipments/allhistory`,
-  `/myshipments/detailsshipments`. El recurso nuevo seguiría el mismo
-  esquema: `/users/...`.
-- Parámetros de identidad/paginación como query params en minúscula
-  (`idClient`, `page`, `size`); parámetros de filtro específicos en
-  PascalCase (`ValueFilter`, `OperationType`, `ShipmentMode`, `State`). Esa
-  inconsistencia de mayúsculas ya existe en el backend actual, no es algo
-  que el frontend deba "corregir" al integrar endpoints nuevos.
-- Todas las peticiones son `GET` hasta ahora; no hay todavía ningún patrón
-  establecido de mutación (`POST`/`PUT`). Asignar un rol sería la primera
-  mutación real del backend, así que el contrato de esa parte queda
-  totalmente abierto a lo que proponga el compañero de backend.
-- El token de Auth0 se adjunta automáticamente a toda petición hacia
-  `environment.api.baseUrl` mediante `authHttpInterceptorFn`
-  (`@auth0/auth0-angular`, configurado en `app.config.ts`); ningún servicio
-  agrega el header `Authorization` a mano. Los endpoints nuevos no
-  necesitan un mecanismo de autenticación distinto.
-- La respuesta se envuelve en `dataResponse` (a veces `DataResponse`, el
-  backend no es consistente en mayúsculas) y los mappers del frontend leen
-  de forma tolerante, probando varios nombres de campo posibles en vez de
-  asumir uno solo (ver `unwrapPayload`/`getValue` en `ApiHomeService`,
-  `mapShipmentsPageResponse` en `core/mappers/shipments-page.mapper.ts`).
-  Si el backend puede confirmar de antemano el nombre exacto de los campos
-  para los endpoints de usuarios, el mapper del frontend puede ser directo
-  en vez de defensivo.
-
-### Propuesta concreta para comentar con el compañero de backend
-
-Solo como punto de partida para la conversación, no como contrato cerrado:
-
-**Listar usuarios**
+### Endpoints reales (controlador `Settings`)
 
 ```
-GET /users/allusers
-Query params: idClient (documento del ADMIN que consulta, mismo patrón que
-  ya usan /home/totals y /myshipments/allshipments)
-Respuesta esperada (envuelta en dataResponse, igual que el resto):
-[
-  {
-    "auth0UserId": "auth0|6a6bfa1b9226bcfc6c315b0f",
-    "fullName": "Edison Restrepo",
-    "email": "edisonestival@gmail.com",
-    "company": "exito",
-    "document": "8110357412",
-    "role": "ADMIN",
-    "picture": "https://...",
-    "lastLogin": "2026-08-10T13:00:00Z"
-  }
-]
+GET    /api/v1/settings/listusers?page&size
+GET    /api/v1/settings/getuser?userId
+PATCH  /api/v1/settings/updateuser/{idClient}   body: Auth0UserDto
+DELETE /api/v1/settings/deleteuser/{userId}
 ```
 
-Los nombres de campo (`auth0UserId`, `fullName`, `document`, `company`,
-`role`, `picture`) se eligieron para que coincidan uno a uno con
-`Auth0Identity` (`core/models/user.model.ts`), así el mapper del frontend
-no necesita inventar una traducción nueva de nombres.
+`Auth0UserDto` = `userId`, `email`, `userName`, `phoneNumber`, `createdDate`,
+`updatedDate`, `isBlocked`, `nickname`. El `phoneNumber` respeta el patrón
+`^\+[0-9]{1,15}$` (E.164) — es la única validación de formulario del proyecto.
 
-**Asignar rol a un usuario**
+La propuesta de contrato que documentaba esta sección (`GET /users/allusers`,
+`POST /users/assignrole`) quedó obsoleta; manda el swagger.
 
-```
-POST /users/assignrole
-Body:
-{
-  "auth0UserId": "auth0|6a71456df4d54edf31aef8fd",
-  "role": "ANALISTAOPE"
-}
-Respuesta esperada: el usuario actualizado, misma forma que el listado.
-```
+### Archivos
 
-Puntos a validar con el compañero de backend:
+| Archivo | Rol |
+|---|---|
+| `core/services/api-settings-users.service.ts` | Consumo de los cuatro endpoints |
+| `core/mappers/settings-users.mapper.ts` | Lectura tolerante de la respuesta |
+| `core/mappers/json-record.util.ts` | Helpers compartidos con `shipments-page.mapper.ts` |
+| `core/models/settings-user.model.ts` | `SettingsUser`, `SettingsUserUpdate` |
+| `core/utils/date-format.ts` | `formatDate` / `formatDateTime` |
+| `features/settings/settings-users/` | Pantalla, diálogo de edición y de borrado |
 
-- Si el backend ya tiene (o va a crear) la aplicación M2M en Auth0 con los
-  scopes `read:users`, `read:roles` y `create:role_members`/
-  `update:users` necesarios para estas dos operaciones.
-- Si "listar usuarios" debe traer todos los usuarios del tenant o solo los
-  que tienen algún rol de Conexion360 asignado (hoy el tenant de Auth0
-  puede tener usuarios de otras aplicaciones).
-- Si se necesita paginación (`page`/`size`, igual que
-  `/myshipments/allshipments`) en caso de que el listado de usuarios crezca.
-- Qué pasa si Auth0 tarda o falla (rate limit de la Management API): el
-  frontend ya tiene un patrón de estados Loading/Empty/Success/Error
-  (sección 15) que se puede reutilizar tal cual.
+### Brecha pendiente con backend
 
-Si no se implementa, la pantalla actual (enlace informativo al dashboard de
-Auth0) se mantiene como solución definitiva y no como estado temporal.
+El DTO **no expone `role`, `document`, `company`, `picture`, `emailVerified` ni
+`lastLogin`**, aunque Auth0 sí los guarda en `user_metadata` y en el claim de
+roles. El mapper ya los lee de forma tolerante (prueba `role`/`rol`,
+`emailVerified`/`email_verified`, un `user_metadata` anidado, etc.), así que esas
+columnas pintan `—` hoy y se llenan solas cuando el backend las agregue, sin
+tocar la tabla. El selector de rol del diálogo está visible pero deshabilitado
+por la misma razón: que el admin vea qué falta en vez de creer que lo guardó.
+
+Peticiones abiertas al compañero de backend:
+
+1. **`updateuser/{idClient}`: ¿qué espera el path?** El nombre dice `idClient`
+   (el documento, como en `/home/totals`) pero la simetría con `deleteuser`
+   sugiere el `userId` de Auth0. Hoy el frontend envía el `userId`, aislado en
+   `ApiSettingsUsersService.getUpdatePathId()` para que el cambio sea de una
+   línea. Si es el `userId`, confirmar que el backend tolera el `|`
+   URL-encoded en la ruta.
+2. **Ampliar `Auth0UserDto`** con los seis campos de arriba.
+3. **Filtro y búsqueda en `listusers`** (`ValueFilter` por nombre/email/documento
+   y filtro por rol, en PascalCase como `/myshipments/filterShipments`). Sin eso
+   la pantalla va solo con paginación: filtrar en cliente sobre la página
+   cargada daría resultados engañosos.
+4. **¿Endpoint para asignar rol?** No está en el swagger. Requiere el scope
+   `create:role_members` en la app M2M.
+5. **Autorización en servidor:** `listusers` no recibe `idClient`, así que se
+   asume que el backend deriva al llamante del token y valida que sea ADMIN.
+   Ocultar la pantalla en el frontend no es protección.
+6. **Semántica de `deleteuser`:** ¿borra solo en Auth0 o también el registro de
+   cliente? ¿Qué pasa con los envíos asociados a ese `document`? Si deja
+   huérfanos, la acción correcta para la UI es bloquear, no eliminar.
+7. **Higiene de datos:** el registro guarda 13 claves para el mismo teléfono en
+   `user_metadata` (`countryCodeIso` y `country_code_iso`, `internationalFormat`
+   e `international_format`, `nationalNumber`, `number`...). Conviene normalizar
+   a `number` en E.164 + `countryCodeIso`.
+
+### Salvaguardas de la pantalla
+
+- El admin autenticado no puede bloquearse ni eliminarse a sí mismo (se compara
+  `user.userId` con `identity.auth0UserId`): quedaría fuera de la pantalla que
+  lo desbloquearía.
+- El DELETE exige teclear el correo del usuario para habilitar el botón.
