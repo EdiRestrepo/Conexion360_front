@@ -36,42 +36,33 @@
         <div class="users-table-wrap">
           <div class="users-table" role="table" aria-label="Listado de usuarios registrados">
             <div class="users-table__row users-table__row--head" role="row">
-              <span role="columnheader">Usuario</span>
-              <span role="columnheader">Rol</span>
-              <span role="columnheader">Empresa</span>
               <span role="columnheader">Documento</span>
-              <span role="columnheader">Teléfono</span>
+              <span role="columnheader">Empresa</span>
+              <span role="columnheader">Nombre</span>
+              <span role="columnheader">Rol</span>
+              <span role="columnheader">Celular</span>
+              <span role="columnheader">Correo</span>
               <span role="columnheader">Acciones</span>
             </div>
 
             @for (user of viewModel.users; track user.userId) {
               <div class="users-table__row" role="row">
-                <span role="cell" class="user-cell">
-                  @if (user.picture) {
-                    <img class="user-cell__avatar" [src]="user.picture" alt="" aria-hidden="true" />
-                  } @else {
-                    <span class="user-cell__avatar user-cell__avatar--fallback" aria-hidden="true">
-                      <mat-icon>person</mat-icon>
-                    </span>
-                  }
-                  <span class="user-cell__text">
-                    <strong>{{ getDisplayName(user) }}</strong>
-                    <small>
-                      {{ user.nickname || '—' }}
-                      @if (user.emailVerified === false) {
-                        <span class="status-chip status-chip--issue">Sin verificar</span>
-                      }
-                    </small>
-                  </span>
-                </span>
-
-                <span role="cell">{{ user.role ? getUserRoleLabel(user.role) : '—' }}</span>
+                <span role="cell">{{ user.document || '—' }}</span>
 
                 <span role="cell">{{ user.company || '—' }}</span>
 
-                <span role="cell">{{ user.document || '—' }}</span>
+                <span role="cell">{{ user.fullName || '—' }}</span>
+
+                <span role="cell">{{ user.role ? getUserRoleLabel(user.role) : '—' }}</span>
 
                 <span role="cell">{{ user.phoneNumber || '—' }}</span>
+
+                <span role="cell" class="user-email-cell">
+                  <span class="user-email-cell__text">{{ user.email || '—' }}</span>
+                  @if (user.emailVerified === false) {
+                    <span class="status-chip status-chip--issue">Sin verificar</span>
+                  }
+                </span>
 
                 <span role="cell" class="users-actions">
                   <button
@@ -122,8 +113,7 @@
                   </span>
                 }
                 <div>
-                  <strong>{{ getDisplayName(user) }}</strong>
-                  <small>{{ user.nickname || '—' }}</small>
+                  <strong>{{ user.fullName || '—' }}</strong>
                 </div>
                 <button
                   mat-icon-button
@@ -136,9 +126,10 @@
                 </button>
               </header>
               <div class="user-mobile-card__meta">
+                <span>{{ user.document || '—' }} · {{ user.company || '—' }}</span>
                 <span>{{ user.role ? getUserRoleLabel(user.role) : 'Sin rol asignado' }}</span>
-                <span>{{ user.company || '—' }} · {{ user.document || '—' }}</span>
                 <span>{{ user.phoneNumber || '—' }}</span>
+                <span>{{ user.email || '—' }}</span>
               </div>
               <div class="user-mobile-card__actions">
                 <button mat-stroked-button type="button" [disabled]="isSelf(user)" (click)="toggleBlocked(user)">

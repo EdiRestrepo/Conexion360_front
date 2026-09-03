@@ -4,23 +4,13 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { Observable, catchError, map, of, startWith, switchMap, take } from 'rxjs';
+import { Observable, catchError, combineLatest, map, of, startWith, switchMap, take } from 'rxjs';
 
-import { UserNotificationPreferences } from '../../../core/models/notification.model';
+import { defaultNotificationPreferences } from '../../../core/models/notification.model';
+import { ApiSettingsService } from '../../../core/services/api-settings.service';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
 import { NotificationPreferencesService } from '../../../core/services/notification-preferences.service';
 import type { NotificationPreferenceForm, PreferencesState, PreferencesViewModel } from '../models/settings-view.model';
-
-const defaultPreferences: UserNotificationPreferences = {
-  email: true,
-  inApp: true,
-  sms: false,
-  shipmentStatusChanges: true,
-  delivery: true,
-  delays: true,
-  shipmentEnRoute: false,
-  deliveryReminders: false,
-};
 
 @Component({
   selector: 'app-settings-notifications',
@@ -32,18 +22,19 @@ const defaultPreferences: UserNotificationPreferences = {
 export class SettingsNotifications {
   private readonly auth0Facade = inject(Auth0FacadeService);
   private readonly preferencesService = inject(NotificationPreferencesService);
+  private readonly settingsService = inject(ApiSettingsService);
   private readonly currentAuth0UserId = signal<string | null>(null);
 
   protected readonly saveMessage = signal<string | null>(null);
   protected readonly form = new FormGroup<NotificationPreferenceForm>({
-    email: new FormControl(defaultPreferences.email, { nonNullable: true }),
-    inApp: new FormControl(defaultPreferences.inApp, { nonNullable: true }),
-    sms: new FormControl(defaultPreferences.sms, { nonNullable: true }),
-    shipmentStatusChanges: new FormControl(defaultPreferences.shipmentStatusChanges, { nonNullable: true }),
-    delivery: new FormControl(defaultPreferences.delivery, { nonNullable: true }),
-    delays: new FormControl(defaultPreferences.delays, { nonNullable: true }),
-    shipmentEnRoute: new FormControl(defaultPreferences.shipmentEnRoute, { nonNullable: true }),
-    deliveryReminders: new FormControl(defaultPreferences.deliveryReminders, { nonNullable: true }),
+    email: new FormControl(defaultNotificationPreferences.email, { nonNullable: true }),
+    inApp: new FormControl(defaultNotificationPreferences.inApp, { nonNullable: true }),
+    sms: new FormControl(defaultNotificationPreferences.sms, { nonNullable: true }),
+    shipmentStatusChanges: new FormControl(defaultNotificationPreferences.shipmentStatusChanges, { nonNullable: true }),
+    delivery: new FormControl(defaultNotificationPreferences.delivery, { nonNullable: true }),
+    delays: new FormControl(defaultNotificationPreferences.delays, { nonNullable: true }),
+    shipmentEnRoute: new FormControl(defaultNotificationPreferences.shipmentEnRoute, { nonNullable: true }),
+    deliveryReminders: new FormControl(defaultNotificationPreferences.deliveryReminders, { nonNullable: true }),
   });
 
   protected readonly viewModel$: Observable<PreferencesViewModel> = this.auth0Facade.user$.pipe(
@@ -54,9 +45,15 @@ export class SettingsNotifications {
 
       this.currentAuth0UserId.set(identity.auth0UserId);
 
-      return this.preferencesService.getPreferences(identity.auth0UserId).pipe(
-        map((storedPreferences) => {
-          const preferences = { ...defaultPreferences, ...(storedPreferences ?? {}) };
+      // El backend manda la configuración del cliente y el navegador lo que el
+      // usuario guardó aquí; lo local gana porque es lo único que conserva sus
+      // cambios mientras no exista un endpoint para persistirlos.
+      return combineLatest([
+        this.settingsService.getNotificationSettings(),
+        this.preferencesService.getPreferences(identity.auth0UserId),
+      ]).pipe(
+        map(([clientPreferences, storedPreferences]) => {
+          const preferences = { ...clientPreferences, ...(storedPreferences ?? {}) };
           this.form.patchValue(preferences, { emitEvent: false });
 
           return { state: 'success', preferences } satisfies PreferencesViewModel;

@@ -1,82 +1,31 @@
 <h2 mat-dialog-title class="user-dialog__title">
   <mat-icon aria-hidden="true">manage_accounts</mat-icon>
-  {{ displayName }}
+  {{ user.fullName || '—' }}
 </h2>
 
 <mat-dialog-content class="user-dialog__content">
   <dl class="user-dialog__meta">
     <div>
-      <dt>Correo</dt>
-      <dd>
-        {{ user.email }}
-        @if (user.emailVerified === false) {
-          <span class="status-chip status-chip--issue">Sin verificar</span>
-        }
-      </dd>
-    </div>
-    <div>
-      <dt>ID de Auth0</dt>
-      <dd class="user-dialog__id">
-        <code>{{ user.userId }}</code>
-        <button
-          mat-icon-button
-          type="button"
-          class="user-dialog__copy"
-          title="Copiar ID de Auth0"
-          [attr.aria-label]="'Copiar ID de Auth0 ' + user.userId"
-          (click)="copyUserId()"
-        >
-          <mat-icon aria-hidden="true">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
-        </button>
-      </dd>
+      <dt>Documento</dt>
+      <dd>{{ user.document || '—' }}</dd>
     </div>
     <div>
       <dt>Empresa</dt>
       <dd>{{ user.company || '—' }}</dd>
     </div>
     <div>
-      <dt>Documento</dt>
-      <dd>{{ user.document || '—' }}</dd>
+      <dt>Nombre completo</dt>
+      <dd>{{ user.fullName || '—' }}</dd>
     </div>
     <div>
-      <dt>Registro</dt>
-      <dd>{{ createdDate }}</dd>
-    </div>
-    <div>
-      <dt>Último acceso</dt>
-      <dd>{{ lastLogin }}</dd>
-    </div>
-    <div>
-      <dt>Última modificación</dt>
-      <dd>{{ updatedDate }}</dd>
-    </div>
-    <div>
-      <dt>Política de datos</dt>
-      <dd>
-        @if (user.acceptedDataPolicy === true) {
-          <span class="status-chip status-chip--success">Aceptada</span>
-        } @else if (user.acceptedDataPolicy === false) {
-          <span class="status-chip status-chip--issue">No aceptada</span>
-        } @else {
-          —
-        }
-      </dd>
+      <dt>Rol</dt>
+      <dd>{{ roleLabel || 'Sin rol asignado' }}</dd>
     </div>
   </dl>
 
   <form class="user-dialog__form" [formGroup]="form" (ngSubmit)="save()">
     <label>
-      <span>Nombre</span>
-      <input type="text" formControlName="userName" autocomplete="off" />
-    </label>
-
-    <label>
-      <span>Alias</span>
-      <input type="text" formControlName="nickname" autocomplete="off" />
-    </label>
-
-    <label>
-      <span>Teléfono</span>
+      <span>Celular</span>
       <input
         type="tel"
         formControlName="phoneNumber"
@@ -93,17 +42,18 @@
     }
 
     <label>
-      <span>Rol</span>
-      <select [formControl]="roleControl">
-        <option value="">Sin rol asignado</option>
-        @for (role of roleOptions; track role) {
-          <option [value]="role">{{ getUserRoleLabel(role) }}</option>
-        }
-      </select>
+      <span>Correo</span>
+      <input
+        type="email"
+        formControlName="email"
+        autocomplete="off"
+        [attr.aria-invalid]="emailHasError"
+        [attr.aria-describedby]="emailHasError ? 'email-error' : null"
+      />
     </label>
-    <p class="user-dialog__note">
-      La asignación de roles todavía no está disponible en el API de usuarios; se gestiona desde Auth0.
-    </p>
+    @if (emailHasError) {
+      <p id="email-error" class="user-dialog__error" role="alert">El correo debe tener un formato válido.</p>
+    }
 
     <label class="user-dialog__toggle">
       <input type="checkbox" formControlName="isBlocked" />

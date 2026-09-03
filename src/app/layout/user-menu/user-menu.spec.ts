@@ -1,22 +1,35 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
+import { SettingsUser } from '../../core/models/settings-user.model';
+import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
 import { UserMenu } from './user-menu';
 
 describe('UserMenu', () => {
   let fixture: ComponentFixture<UserMenu>;
   let getUnreadCountSpy: jasmine.Spy<() => Observable<number>>;
+  let usersService: jasmine.SpyObj<ApiSettingsUsersService>;
 
   beforeEach(async () => {
     getUnreadCountSpy = jasmine.createSpy('getUnreadCount').and.returnValue(of(3));
+    usersService = jasmine.createSpyObj<ApiSettingsUsersService>('ApiSettingsUsersService', [
+      'list',
+      'getById',
+      'update',
+      'delete',
+    ]);
 
     await TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, UserMenu],
-      providers: [provideRouter([]), { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: getUnreadCountSpy } }],
+      providers: [
+        provideRouter([]),
+        { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: getUnreadCountSpy } },
+        { provide: ApiSettingsUsersService, useValue: usersService },
+      ],
     }).compileComponents();
   });
 
@@ -178,12 +191,89 @@ describe('UserMenu', () => {
 
     expect(bell?.getAttribute('href')).toContain('/notifications');
   });
+
+  it('fetches the signed-in user and opens the shared detail dialog to edit phone and email', async () => {
+    usersService.getById.and.returnValue(of(createSettingsUser()));
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+    clickMenuItem('Actualizar datos personales');
+
+    expect(usersService.getById).toHaveBeenCalledWith('auth0|123');
+
+    // El diálogo se importa de forma dinámica (chunk lazy real, servido por
+    // Karma): se espera con temporizador real en vez de `whenStable()`, que no
+    // siempre detecta la carga del chunk.
+    await waitFor(() => !!document.querySelector('.mat-mdc-dialog-title'));
+    fixture.detectChanges();
+
+    const dialogTitle = document.querySelector('.mat-mdc-dialog-title')?.textContent ?? '';
+    expect(dialogTitle).toContain('Iván Valencia');
+  });
+
+  it('shows an error message when loading the signed-in user fails', async () => {
+    usersService.getById.and.returnValue(throwError(() => new Error('boom')));
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+    clickMenuItem('Actualizar datos personales');
+    fixture.detectChanges();
+
+    const snackMessage = document.querySelector('.mat-mdc-snack-bar-label')?.textContent ?? '';
+    expect(snackMessage).toContain('No fue posible cargar tus datos.');
+  });
 });
 
 function openMenu(fixture: ComponentFixture<UserMenu>): void {
   const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__trigger');
   trigger?.click();
   fixture.detectChanges();
+}
+
+async function waitFor(predicate: () => boolean, timeoutMs = 3000): Promise<void> {
+  const start = Date.now();
+
+  while (!predicate()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('Timed out waiting for condition');
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+}
+
+/** El menú de Material se renderiza en el overlay, fuera del fixture. */
+function clickMenuItem(label: string): void {
+  const item = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item')).find((button) =>
+    button.textContent?.includes(label),
+  );
+  item?.click();
+}
+
+function createSettingsUser(overrides: Partial<SettingsUser> = {}): SettingsUser {
+  return {
+    userId: 'auth0|123',
+    email: 'ivan.valencia@conexion360.com',
+    userName: 'ivanvalencia',
+    nickname: 'ivanvalencia',
+    phoneNumber: '+573001112233',
+    isBlocked: false,
+    createdDate: null,
+    updatedDate: null,
+    fullName: 'Iván Valencia',
+    document: '123456789',
+    company: 'Conexion360',
+    picture: null,
+    role: 'CLIENT',
+    lastLogin: null,
+    emailVerified: true,
+    acceptedDataPolicy: true,
+    ...overrides,
+  };
 }
 
 function createSession(role: AuthSession['user']['role'], picture: string | null = null): AuthSession {

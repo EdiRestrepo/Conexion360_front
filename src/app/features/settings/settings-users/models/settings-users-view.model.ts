@@ -18,10 +18,13 @@ export interface SettingsUsersViewModel {
   message?: string;
 }
 
-/** Campos editables del `Auth0UserDto`; el resto del diálogo es solo lectura. */
+/**
+ * Campos que el diálogo permite editar. `userName` y `nickname` siguen siendo
+ * parte del `Auth0UserDto` que exige el PATCH, pero ya no se muestran en la
+ * tabla ni en el formulario: se reenvían sin cambios desde `UserDetailDialog`.
+ */
 export interface SettingsUserForm {
-  userName: FormControl<string>;
-  nickname: FormControl<string>;
   phoneNumber: FormControl<string>;
+  email: FormControl<string>;
   isBlocked: FormControl<boolean>;
 }

@@ -73,11 +73,12 @@
 .users-table__row {
   display: grid;
   grid-template-columns:
-    minmax(240px, 1.4fr)
-    minmax(150px, 1fr)
+    minmax(120px, 1fr)
     minmax(140px, 1fr)
+    minmax(220px, 1.4fr)
+    minmax(130px, 1fr)
     minmax(140px, 1fr)
-    minmax(140px, 1fr)
+    minmax(200px, 1.2fr)
     148px;
   gap: 12px;
   align-items: center;
@@ -106,13 +107,6 @@
   border-bottom: 0;
 }
 
-.user-cell {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-}
-
 .user-cell__avatar {
   width: 36px;
   height: 36px;
@@ -133,25 +127,16 @@
   font-size: 20px;
 }
 
-.user-cell__text {
+.user-email-cell {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
-.user-cell__text strong,
-.user-cell__text small {
+.user-email-cell__text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.user-cell__text small {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--color-text-muted);
-  font-size: 12px;
 }
 
 .status-chip {
@@ -176,9 +161,16 @@
 }
 
 .users-actions button {
+  /*
+   * El círculo de hover/foco de Material (state layer) usa su propia variable
+   * de tamaño, no el `width`/`height` del botón: si no se iguala aquí, queda
+   * en 40px por defecto y se ve desplazado respecto al ícono de 36px.
+   */
+  --mdc-icon-button-state-layer-size: 36px;
   flex: 0 0 36px;
   width: 36px;
   height: 36px;
+  padding: 0;
   color: var(--color-primary);
 }
 
@@ -309,6 +301,7 @@
 }
 
 .users-pagination__buttons button {
+  --mdc-icon-button-state-layer-size: 36px;
   flex: 0 0 36px;
   width: 36px;
   height: 36px;

@@ -13,69 +13,94 @@
     <p class="settings-message" role="status">{{ message }}</p>
   }
 
-  <article class="surface-card master-section" aria-labelledby="general-parameters-title">
-    <header>
-      <h3 id="general-parameters-title"><mat-icon aria-hidden="true">tune</mat-icon> Parámetros generales</h3>
-    </header>
-    <div class="parameter-list">
-      <div class="parameter-row">
-        <div>
-          <strong>Actualización automática de seguimiento</strong>
-          <span>Refresca el estado de los envíos en tiempo real</span>
+  @if (viewModel$ | async; as viewModel) {
+    @if (viewModel.state === 'loading') {
+      <div class="state-box"><strong>Cargando configuración...</strong></div>
+    } @else if (viewModel.state === 'error') {
+      <div class="state-box state-box--error"><strong>{{ viewModel.message }}</strong></div>
+    } @else if (viewModel.settings; as settings) {
+      <article class="surface-card master-section" aria-labelledby="general-parameters-title">
+        <header>
+          <h3 id="general-parameters-title"><mat-icon aria-hidden="true">tune</mat-icon> Parámetros generales</h3>
+        </header>
+        <div class="parameter-list">
+          <div class="parameter-row">
+            <div>
+              <strong>Actualización automática de seguimiento</strong>
+              <span>Refresca el estado de los envíos en tiempo real</span>
+            </div>
+            <span
+              class="static-switch"
+              [class.static-switch--on]="settings.automaticTrackingUpdate"
+              [attr.aria-label]="settings.automaticTrackingUpdate ? 'Activado' : 'Desactivado'"
+            ></span>
+          </div>
+          <div class="parameter-row">
+            <div>
+              <strong>Exigir carga de documentos</strong>
+              <span>Obliga a adjuntar documentos al crear envíos</span>
+            </div>
+            <span
+              class="static-switch"
+              [class.static-switch--on]="settings.requireDocumentUpload"
+              [attr.aria-label]="settings.requireDocumentUpload ? 'Activado' : 'Desactivado'"
+            ></span>
+          </div>
+          <div class="parameter-row">
+            <div>
+              <strong>Seguimiento público</strong>
+              <span>Permite rastrear envíos sin iniciar sesión</span>
+            </div>
+            <span
+              class="static-switch"
+              [class.static-switch--on]="settings.publicMonitoring"
+              [attr.aria-label]="settings.publicMonitoring ? 'Activado' : 'Desactivado'"
+            ></span>
+          </div>
         </div>
-        <span class="static-switch static-switch--on" aria-label="Activado"></span>
-      </div>
-      <div class="parameter-row">
-        <div>
-          <strong>Exigir carga de documentos</strong>
-          <span>Obliga a adjuntar documentos al crear envíos</span>
-        </div>
-        <span class="static-switch" aria-label="Desactivado"></span>
-      </div>
-      <div class="parameter-row">
-        <div>
-          <strong>Seguimiento público</strong>
-          <span>Permite rastrear envíos sin iniciar sesión</span>
-        </div>
-        <span class="static-switch static-switch--on" aria-label="Activado"></span>
-      </div>
-    </div>
-  </article>
+      </article>
 
-  <section class="master-config-grid" aria-label="Configuración local y del sistema">
-    <article class="surface-card master-section">
-      <h3><mat-icon aria-hidden="true">language</mat-icon> Localización</h3>
-      <label>
-        Moneda predeterminada
-        <select aria-label="Moneda predeterminada">
-          <option>USD - Dólar</option>
-          <option>COP - Peso colombiano</option>
-        </select>
-      </label>
-      <label>
-        Idioma
-        <select aria-label="Idioma">
-          <option>Español</option>
-        </select>
-      </label>
-    </article>
+      <section class="master-config-grid" aria-label="Configuración local y del sistema">
+        <article class="surface-card master-section">
+          <h3><mat-icon aria-hidden="true">language</mat-icon> Localización</h3>
+          <label>
+            Moneda predeterminada
+            <select aria-label="Moneda predeterminada">
+              @for (currency of viewModel.currencies; track currency) {
+                <option [value]="currency" [selected]="currency === settings.currency">{{ currency }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Idioma
+            <select aria-label="Idioma">
+              @for (language of viewModel.languages; track language) {
+                <option [value]="language" [selected]="language === settings.language">{{ language }}</option>
+              }
+            </select>
+          </label>
+        </article>
 
-    <article class="surface-card master-section">
-      <h3><mat-icon aria-hidden="true">schedule</mat-icon> Sistema</h3>
-      <label>
-        Zona horaria
-        <select aria-label="Zona horaria">
-          <option>America/Bogota (UTC-5)</option>
-        </select>
-      </label>
-      <label>
-        Retención de datos (días)
-        <input type="number" value="365" min="30" aria-label="Retención de datos en días" />
-      </label>
-    </article>
-  </section>
+        <article class="surface-card master-section">
+          <h3><mat-icon aria-hidden="true">schedule</mat-icon> Sistema</h3>
+          <label>
+            Zona horaria
+            <select aria-label="Zona horaria">
+              @for (timeZone of viewModel.timeZones; track timeZone) {
+                <option [value]="timeZone" [selected]="timeZone === settings.timeZone">{{ timeZone }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Retención de datos (días)
+            <input type="number" [value]="settings.dataRetentionDays" min="30" aria-label="Retención de datos en días" />
+          </label>
+        </article>
+      </section>
 
-  <button mat-flat-button type="button" class="settings-save-button" (click)="saveConfiguration()">
-    Guardar configuración
-  </button>
+      <button mat-flat-button type="button" class="settings-save-button" (click)="saveConfiguration()">
+        Guardar configuración
+      </button>
+    }
+  }
 </section>

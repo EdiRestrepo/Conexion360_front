@@ -45,25 +45,6 @@
   overflow-wrap: anywhere;
 }
 
-.user-dialog__id code {
-  font-size: 0.75rem;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-.user-dialog__copy {
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
-  color: var(--color-primary);
-}
-
-.user-dialog__copy mat-icon {
-  width: 16px;
-  height: 16px;
-  font-size: 16px;
-}
-
 .user-dialog__form {
   display: grid;
   gap: 0.875rem;
@@ -82,7 +63,7 @@
 
 .user-dialog__form input[type='text'],
 .user-dialog__form input[type='tel'],
-.user-dialog__form select {
+.user-dialog__form input[type='email'] {
   width: 100%;
   min-height: 42px;
   padding: 0 14px;
@@ -93,16 +74,9 @@
   outline: none;
 }
 
-.user-dialog__form input:focus,
-.user-dialog__form select:focus {
+.user-dialog__form input:focus {
   border-color: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--color-secondary-soft);
-}
-
-.user-dialog__form select:disabled {
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
-  cursor: not-allowed;
 }
 
 .user-dialog__toggle {

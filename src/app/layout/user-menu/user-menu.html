@@ -49,6 +49,11 @@
     <small>{{ roleLabel() }}</small>
   </div>
 
+  <button mat-menu-item type="button" (click)="openProfileDialog()">
+    <mat-icon aria-hidden="true">manage_accounts</mat-icon>
+    <span>Actualizar datos personales</span>
+  </button>
+
   <button mat-menu-item type="button" (click)="onLogout()">
     <mat-icon aria-hidden="true">logout</mat-icon>
     <span>Cerrar sesión</span>

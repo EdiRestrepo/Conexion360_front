@@ -3,7 +3,8 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
-import { UserNotificationPreferences } from '../../../core/models/notification.model';
+import { UserNotificationPreferences, defaultNotificationPreferences } from '../../../core/models/notification.model';
+import { ApiSettingsService } from '../../../core/services/api-settings.service';
 import { Auth0Identity } from '../../../core/models/user.model';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
 import { NotificationPreferencesService } from '../../../core/services/notification-preferences.service';
@@ -13,18 +14,23 @@ describe('SettingsNotifications', () => {
   let fixture: ComponentFixture<SettingsNotifications>;
   let getPreferencesSpy: jasmine.Spy<(auth0UserId: string) => Observable<UserNotificationPreferences | null>>;
   let savePreferencesSpy: jasmine.Spy<(auth0UserId: string, preferences: UserNotificationPreferences) => Observable<UserNotificationPreferences>>;
+  let getNotificationSettingsSpy: jasmine.Spy<() => Observable<UserNotificationPreferences>>;
 
   beforeEach(async () => {
     getPreferencesSpy = jasmine.createSpy('getPreferences').and.returnValue(of(createPreferences()));
     savePreferencesSpy = jasmine
       .createSpy('savePreferences')
       .and.callFake((auth0UserId: string, preferences: UserNotificationPreferences) => of(preferences));
+    getNotificationSettingsSpy = jasmine
+      .createSpy('getNotificationSettings')
+      .and.returnValue(of(defaultNotificationPreferences));
 
     await TestBed.configureTestingModule({
       imports: [SettingsNotifications, NoopAnimationsModule],
       providers: [provideRouter([]), 
         { provide: Auth0FacadeService, useValue: { user$: of(createIdentity()) } },
         { provide: NotificationPreferencesService, useValue: { getPreferences: getPreferencesSpy, savePreferences: savePreferencesSpy } },
+        { provide: ApiSettingsService, useValue: { getNotificationSettings: getNotificationSettingsSpy } },
       ],
     }).compileComponents();
 
@@ -55,6 +61,35 @@ describe('SettingsNotifications', () => {
     expect(getText()).toContain('Preferencias guardadas.');
   }));
 
+  it('should apply the settings returned by the backend', fakeAsync(() => {
+    getNotificationSettingsSpy.and.returnValue(of({ ...createPreferences(), sms: true, delays: false }));
+    getPreferencesSpy.and.returnValue(of(null));
+    fixture = TestBed.createComponent(SettingsNotifications);
+    render();
+
+    expect(getCheckbox('sms').checked).toBeTrue();
+    expect(getCheckbox('delays').checked).toBeFalse();
+  }));
+
+  it('should let what the user saved locally win over the backend', fakeAsync(() => {
+    getNotificationSettingsSpy.and.returnValue(of({ ...createPreferences(), sms: true }));
+    getPreferencesSpy.and.returnValue(of({ ...createPreferences(), sms: false }));
+    fixture = TestBed.createComponent(SettingsNotifications);
+    render();
+
+    // Lo local es lo unico que conserva los cambios del usuario: no hay endpoint
+    // que los persista, asi que no puede pisarlo la respuesta del backend.
+    expect(getCheckbox('sms').checked).toBeFalse();
+  }));
+
+  it('should render error state when the settings endpoint fails', fakeAsync(() => {
+    getNotificationSettingsSpy.and.returnValue(throwError(() => new Error('fallo')));
+    fixture = TestBed.createComponent(SettingsNotifications);
+    render();
+
+    expect(getText()).toContain('No fue posible cargar las preferencias.');
+  }));
+
   it('should render error state', fakeAsync(() => {
     getPreferencesSpy.and.returnValue(throwError(() => new Error('fallo')));
     fixture = TestBed.createComponent(SettingsNotifications);
@@ -67,6 +102,10 @@ describe('SettingsNotifications', () => {
     fixture.detectChanges();
     tick();
     fixture.detectChanges();
+  }
+
+  function getCheckbox(controlName: string): HTMLInputElement {
+    return fixture.nativeElement.querySelector(`input[formcontrolname="${controlName}"]`) as HTMLInputElement;
   }
 
   function getText(): string {

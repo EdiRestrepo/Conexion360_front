@@ -128,8 +128,57 @@ describe('ApiNotificationsService', () => {
 
     service.markAsRead('1').subscribe((notification) => expect(notification?.read).toBeTrue());
 
+    // El contador baja apenas se hace click, sin esperar la respuesta del PATCH.
     expect(unreadCount).toBe(1);
-    // Todavía no hay endpoint que persista el cambio.
+    expectReadRequest('1').flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(unreadCount).toBe(1);
+  });
+
+  it('should persist the read state with a PATCH to readnotification', () => {
+    service.getAll().subscribe();
+    expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 7, notificationStatus: 0 }] });
+
+    service.markAsRead('7').subscribe();
+
+    const request = expectReadRequest('7');
+
+    expect(request.request.method).toBe('PATCH');
+    request.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('should keep the notification read when the backend rejects the change', () => {
+    let listed: Notification[] = [];
+    let failed = false;
+    let result: Notification | null | undefined;
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 1, notificationStatus: 0 }] });
+
+    service.markAsRead('1').subscribe({ next: (value) => (result = value), error: () => (failed = true) });
+
+    expect(listed[0].read).toBeTrue();
+
+    // El endpoint todavía responde 500 y tampoco persiste cuando responde bien:
+    // devolver la tarjeta a "no leída" delante del usuario no ayudaría.
+    expectReadRequest('1').flush('boom', { status: 500, statusText: 'Server Error' });
+
+    expect(failed).toBeFalse();
+    expect(result?.read).toBeTrue();
+    expect(listed[0].read).toBeTrue();
+  });
+
+  it('should not send the PATCH for a notification pushed by the hub', () => {
+    let listed: Notification[] = [];
+
+    service.getAll().subscribe((value) => (listed = value));
+    expectRequest().flush({ dataResponse: [] });
+
+    notificationReceived$.next([{ message: 'Aviso en vivo', timestamp: '2026-08-24T01:05:00.000Z' }]);
+    service.markAsRead(listed[0].id).subscribe();
+
+    // El id lo inventó el mapper; el backend no lo reconocería.
+    expect(listed[0].read).toBeTrue();
     httpMock.expectNone(() => true);
   });
 
@@ -250,19 +299,20 @@ describe('ApiNotificationsService', () => {
     expect(listed[0].description).toContain('algoInesperado');
   });
 
-  it('should keep locally read notifications read when the same one is pushed again', () => {
+  it('should keep the read state while a stale response is in flight', () => {
     let listed: Notification[] = [];
 
     service.getAll().subscribe((value) => (listed = value));
     expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 1, notificationStatus: 0 }] });
 
     service.markAsRead('1').subscribe();
+    expectReadRequest('1').flush(null, { status: 204, statusText: 'No Content' });
 
     expect(listed[0].read).toBeTrue();
 
     service.reload();
     service.getAll().subscribe();
-    // El backend todavía la devuelve como no leída, porque no persiste el cambio.
+    // Una respuesta que todavía trae el estado anterior no debe revertir lo leído.
     expectRequest().flush({ dataResponse: [{ ...createBackendNotification(), idNotification: 1, notificationStatus: 0 }] });
 
     expect(listed[0].read).toBeTrue();
@@ -300,6 +350,12 @@ describe('ApiNotificationsService', () => {
 
   function expectRequest() {
     return httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/notifications/allnotifications`);
+  }
+
+  function expectReadRequest(idNotification: string) {
+    return httpMock.expectOne(
+      (item) => item.url === `${environment.api.baseUrl}/notifications/readnotification/8110357412/${idNotification}`,
+    );
   }
 
   function createBackendNotification(): Record<string, unknown> {

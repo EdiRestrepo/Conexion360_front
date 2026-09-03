@@ -28,3 +28,19 @@ export interface UserNotificationPreferences {
   shipmentEnRoute: boolean;
   deliveryReminders: boolean;
 }
+
+/**
+ * Valores con los que se pinta el formulario mientras llega
+ * `GET /settings/viewnotifications`, y con los que se completa un campo que esa
+ * respuesta no traiga.
+ */
+export const defaultNotificationPreferences: UserNotificationPreferences = {
+  email: true,
+  inApp: true,
+  sms: false,
+  shipmentStatusChanges: true,
+  delivery: true,
+  delays: true,
+  shipmentEnRoute: false,
+  deliveryReminders: false,
+};

@@ -1,13 +1,20 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import { take } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
+import type { SettingsUser, SettingsUserUpdate } from '../../core/models/settings-user.model';
+import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
+import { getApiErrorMessage } from '../../core/utils/api-error';
 import { getUserRoleLabel } from '../../core/utils/display-labels';
+import type { UserDetailDialogData } from '../../features/settings/settings-users/components/user-detail-dialog/user-detail-dialog';
 
 @Component({
   selector: 'app-user-menu',
@@ -24,6 +31,9 @@ export class UserMenu {
   readonly logout = output<void>();
 
   private readonly notificationService = inject(NOTIFICATION_DATA_SOURCE);
+  private readonly usersService = inject(ApiSettingsUsersService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly unreadCount$ = this.notificationService.getUnreadCount();
 
@@ -58,6 +68,65 @@ export class UserMenu {
 
   protected onLogout(): void {
     this.logout.emit();
+  }
+
+  /**
+   * Reutiliza el diálogo de `Gestión de usuarios` para que cualquier usuario
+   * edite su propio celular y correo. Los endpoints de `/settings` los expone
+   * hoy el backend solo para ADMIN (ver AGENTS.md §21): para otros roles esta
+   * acción devolverá 403 hasta que el backend habilite el autoservicio.
+   */
+  protected openProfileDialog(): void {
+    const userId = this.session()?.user.id;
+
+    if (!userId) {
+      return;
+    }
+
+    this.usersService
+      .getById(userId)
+      .pipe(take(1))
+      .subscribe({
+        next: (user) => void this.showProfileDialog(user),
+        error: (error: unknown) =>
+          this.snackBar.open(getApiErrorMessage(error, 'No fue posible cargar tus datos.'), 'Cerrar', { duration: 6000 }),
+      });
+  }
+
+  /**
+   * Import dinámico: el diálogo vive en el chunk lazy de `settings-users` y
+   * este componente forma parte del shell, que carga en cada ruta.
+   */
+  private async showProfileDialog(user: SettingsUser): Promise<void> {
+    const { UserDetailDialog } = await import(
+      '../../features/settings/settings-users/components/user-detail-dialog/user-detail-dialog'
+    );
+
+    this.dialog
+      .open<InstanceType<typeof UserDetailDialog>, UserDetailDialogData, SettingsUserUpdate | null>(UserDetailDialog, {
+        data: { user, isSelf: true },
+        width: '640px',
+        maxWidth: '95vw',
+        autoFocus: false,
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((changes) => {
+        if (changes) {
+          this.applyProfileUpdate(user, changes);
+        }
+      });
+  }
+
+  private applyProfileUpdate(user: SettingsUser, changes: SettingsUserUpdate): void {
+    this.usersService
+      .update(user, changes)
+      .pipe(take(1))
+      .subscribe({
+        next: () => this.snackBar.open('Datos actualizados.', 'Cerrar', { duration: 4000 }),
+        error: (error: unknown) =>
+          this.snackBar.open(getApiErrorMessage(error, 'No fue posible guardar los cambios.'), 'Cerrar', { duration: 6000 }),
+      });
   }
 
   private getInitials(value: string): string {

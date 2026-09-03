@@ -1,18 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
-import {
-  SettingsUser,
-  SettingsUserUpdate,
-  getSettingsUserDisplayName,
-  phoneNumberPattern,
-} from '../../../../../core/models/settings-user.model';
-import { UserRole } from '../../../../../core/models/user.model';
-import { copyToClipboard } from '../../../../../core/utils/clipboard';
-import { formatDate, formatDateTime } from '../../../../../core/utils/date-format';
+import { SettingsUser, SettingsUserUpdate, phoneNumberPattern } from '../../../../../core/models/settings-user.model';
 import { getUserRoleLabel } from '../../../../../core/utils/display-labels';
 import type { SettingsUserForm } from '../../models/settings-users-view.model';
 
@@ -35,31 +27,19 @@ export class UserDetailDialog {
 
   protected readonly user = this.data.user;
   protected readonly isSelf = this.data.isSelf;
-  protected readonly displayName = getSettingsUserDisplayName(this.user);
   protected readonly roleLabel = this.user.role ? getUserRoleLabel(this.user.role) : null;
-  protected readonly copied = signal(false);
-
-  protected readonly createdDate = formatDate(this.user.createdDate);
-  protected readonly updatedDate = formatDateTime(this.user.updatedDate);
-  protected readonly lastLogin = formatDateTime(this.user.lastLogin);
 
   protected readonly form = new FormGroup<SettingsUserForm>({
-    userName: new FormControl(this.user.userName, { nonNullable: true }),
-    nickname: new FormControl(this.user.nickname, { nonNullable: true }),
     phoneNumber: new FormControl(this.user.phoneNumber, {
       nonNullable: true,
       validators: [Validators.pattern(phoneNumberPattern)],
     }),
+    email: new FormControl(this.user.email, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
     isBlocked: new FormControl({ value: this.user.isBlocked, disabled: this.isSelf }, { nonNullable: true }),
   });
-
-  /**
-   * El rol todavía no viaja en el `Auth0UserDto`, así que el selector queda
-   * visible pero deshabilitado: el admin ve qué falta sin creer que lo guardó.
-   */
-  protected readonly roleControl = new FormControl<UserRole | ''>({ value: this.user.role ?? '', disabled: true }, { nonNullable: true });
-  protected readonly roleOptions: UserRole[] = ['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
-  protected readonly getUserRoleLabel = getUserRoleLabel;
 
   protected get phoneNumberHasError(): boolean {
     const control = this.form.controls.phoneNumber;
@@ -67,8 +47,10 @@ export class UserDetailDialog {
     return control.invalid && (control.dirty || control.touched);
   }
 
-  protected copyUserId(): void {
-    void copyToClipboard(this.user.userId).then((ok) => this.copied.set(ok));
+  protected get emailHasError(): boolean {
+    const control = this.form.controls.email;
+
+    return control.invalid && (control.dirty || control.touched);
   }
 
   protected save(): void {
@@ -77,13 +59,15 @@ export class UserDetailDialog {
       return;
     }
 
-    const { userName, nickname, phoneNumber, isBlocked } = this.form.getRawValue();
+    const { phoneNumber, email, isBlocked } = this.form.getRawValue();
 
     this.dialogRef.close({
       userId: this.user.userId,
-      email: this.user.email,
-      userName: userName.trim(),
-      nickname: nickname.trim(),
+      // `userName`/`nickname` ya no se editan aquí (no aparecen en la tabla),
+      // pero el PATCH del Auth0UserDto los sigue exigiendo: se reenvían tal cual.
+      userName: this.user.userName,
+      nickname: this.user.nickname,
+      email: email.trim(),
       phoneNumber: phoneNumber.trim(),
       isBlocked,
     });

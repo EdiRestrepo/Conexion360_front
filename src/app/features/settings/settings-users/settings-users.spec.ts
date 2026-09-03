@@ -81,16 +81,16 @@ describe('SettingsUsers', () => {
     expect(content).toContain('8110357412');
   });
 
-  it('shows the nickname under the name instead of repeating the email', async () => {
-    // El backend manda hoy `userName === email`, así que mostrar el correo
-    // debajo del nombre lo duplicaba en la misma celda.
+  it('shows a dash for the name until the backend sends fullName, without falling back to email or userName', async () => {
+    // La columna Nombre solo debe mostrar `fullName`: mientras el backend no lo
+    // envíe, cae a "—" en vez de repetir el correo (que ya tiene su propia
+    // columna), el userName o el nickname.
     await setup(of(createPage([createUser({ userName: 'edisonestival@gmail.com', fullName: '', nickname: 'edisonestival' })])));
 
-    const nameCell = (fixture.nativeElement as HTMLElement).querySelectorAll('.users-table__row')[1];
-    const emailMatches = (nameCell.textContent ?? '').match(/edisonestival@gmail\.com/g) ?? [];
+    const row = (fixture.nativeElement as HTMLElement).querySelectorAll('.users-table__row')[1];
+    const nameCell = row.querySelectorAll('[role="cell"]')[2];
 
-    expect(emailMatches.length).toBe(1);
-    expect(nameCell.querySelector('.user-cell__text small')?.textContent?.trim()).toBe('edisonestival');
+    expect(nameCell.textContent?.trim()).toBe('—');
   });
 
   it('shows the empty state when there are no users', async () => {

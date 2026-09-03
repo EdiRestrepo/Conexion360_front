@@ -161,6 +161,18 @@
   font-weight: 900;
 }
 
+.state-box {
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-muted);
+}
+
+.state-box--error {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
 @media (max-width: 900px) {
   .master-config-grid {
     grid-template-columns: 1fr;

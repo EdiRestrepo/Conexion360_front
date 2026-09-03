@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, catchError, filter, map, of, shareReplay, switchMap, take, tap, throwError } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, catchError, defaultIfEmpty, filter, map, of, shareReplay, switchMap, take, tap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { NotificationDataSource } from '../contracts/notification-data-source';
@@ -18,6 +18,7 @@ export class ApiNotificationsService implements NotificationDataSource {
   private readonly auth0Facade = inject(Auth0FacadeService);
   private readonly hub = inject(NotificationsHubService);
   private readonly notificationsUrl = `${environment.api.baseUrl}/notifications/allnotifications`;
+  private readonly readNotificationUrl = `${environment.api.baseUrl}/notifications/readnotification`;
 
   /**
    * Copia local de la bandeja. Es la fuente tanto de la lista como del contador
@@ -26,9 +27,10 @@ export class ApiNotificationsService implements NotificationDataSource {
    */
   private readonly notifications$ = new BehaviorSubject<Notification[]>([]);
   /**
-   * Ids marcados como leídos en esta sesión. Se reaplican después de cada
-   * consulta porque el backend todavía no persiste el cambio; sin esto, la
-   * primera notificación que llegara por el Hub revertiría lo ya leído.
+   * Ids marcados como leídos en esta sesión. El backend ya persiste el cambio
+   * (`PATCH /notifications/readnotification/{idClient}/{idNotification}`), pero
+   * se reaplican después de cada consulta para cubrir la ventana en que una
+   * respuesta ya en vuelo traería el estado anterior.
    */
   private readonly locallyRead = new Set<string>();
   private request$: Observable<Notification[]> | null = null;
@@ -60,21 +62,48 @@ export class ApiNotificationsService implements NotificationDataSource {
     this.notifications$.next([notification, ...this.notifications$.value]);
   }
 
+  /**
+   * Marca la notificación como leída en la bandeja y avisa al backend.
+   *
+   * El cambio se pinta antes de la petición para que la tarjeta y el badge
+   * respondan al click. Un fallo del `PATCH` no lo revierte: hoy el endpoint
+   * responde 500 y, aun cuando responde bien, no persiste nada (su acción arma
+   * el DTO y devuelve `NoContent`), así que lo leído sigue viviendo en
+   * `locallyRead` hasta que el backend lo guarde de verdad. Revertir solo haría
+   * que la tarjeta volviera a "no leída" delante del usuario.
+   */
   markAsRead(id: string): Observable<Notification | null> {
-    const notifications = this.notifications$.value;
-    const target = notifications.find((notification) => notification.id === id) ?? null;
+    const target = this.notifications$.value.find((notification) => notification.id === id) ?? null;
 
     if (!target || target.read) {
       return of(target);
     }
 
-    // TODO(backend): falta el endpoint que persista el cambio de estado. Hasta
-    // entonces lo leído vive en `locallyRead` y se pierde al recargar la página.
-    this.locallyRead.add(id);
     const updated: Notification = { ...target, read: true };
-    this.notifications$.next(notifications.map((notification) => (notification.id === id ? updated : notification)));
+    this.setRead(id);
 
-    return of(updated);
+    // Los avisos del Hub y los que llegaron sin id llevan uno inventado por el
+    // mapper, que el backend no reconoce: se marcan solo en la copia local.
+    if (!isBackendId(id)) {
+      return of(updated);
+    }
+
+    return this.getIdentity().pipe(
+      switchMap((identity) =>
+        this.http.patch<void>(`${this.readNotificationUrl}/${encodeURIComponent(identity.document ?? '')}/${id}`, null),
+      ),
+      catchError(() => EMPTY),
+      map(() => updated),
+      defaultIfEmpty(updated),
+    );
+  }
+
+  private setRead(id: string): void {
+    this.locallyRead.add(id);
+
+    this.notifications$.next(
+      this.notifications$.value.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
+    );
   }
 
   /**
@@ -119,4 +148,12 @@ export class ApiNotificationsService implements NotificationDataSource {
       take(1),
     );
   }
+}
+
+/**
+ * `idNotification` es un entero en el backend. Cualquier otro formato viene de
+ * un id inventado por el mapper (`realtime-1`, `notification-2`).
+ */
+function isBackendId(id: string): boolean {
+  return /^\d+$/.test(id);
 }
