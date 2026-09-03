@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
+import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { MainLayout } from './main-layout';
 
@@ -36,6 +37,15 @@ describe('MainLayout', () => {
           },
         },
         { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(0) } },
+        {
+          provide: ApiSettingsUsersService,
+          useValue: jasmine.createSpyObj<ApiSettingsUsersService>('ApiSettingsUsersService', [
+            'list',
+            'getById',
+            'update',
+            'delete',
+          ]),
+        },
       ],
     }).compileComponents();
 

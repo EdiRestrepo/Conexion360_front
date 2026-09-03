@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
+import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
 import { MobileNavigation } from './mobile-navigation';
 
 describe('MobileNavigation', () => {
@@ -13,7 +14,19 @@ describe('MobileNavigation', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, MobileNavigation],
-      providers: [provideRouter([]), { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(0) } }],
+      providers: [
+        provideRouter([]),
+        { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(0) } },
+        {
+          provide: ApiSettingsUsersService,
+          useValue: jasmine.createSpyObj<ApiSettingsUsersService>('ApiSettingsUsersService', [
+            'list',
+            'getById',
+            'update',
+            'delete',
+          ]),
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MobileNavigation);

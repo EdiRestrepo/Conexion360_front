@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
+import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
 import { Sidebar } from './sidebar';
 
 describe('Sidebar', () => {
@@ -16,6 +17,15 @@ describe('Sidebar', () => {
       providers: [
         provideRouter([]),
         { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(4) } },
+        {
+          provide: ApiSettingsUsersService,
+          useValue: jasmine.createSpyObj<ApiSettingsUsersService>('ApiSettingsUsersService', [
+            'list',
+            'getById',
+            'update',
+            'delete',
+          ]),
+        },
       ],
     }).compileComponents();
 
