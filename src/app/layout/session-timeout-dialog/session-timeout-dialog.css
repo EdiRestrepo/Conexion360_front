@@ -1,0 +1,31 @@
+.session-dialog__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.session-dialog__title mat-icon {
+  color: var(--color-warning);
+}
+
+.session-dialog__content {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.session-dialog__content p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* Tabular para que la cuenta atrás no baile de ancho al cambiar de dígito. */
+.session-dialog__countdown {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-dialog__actions {
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

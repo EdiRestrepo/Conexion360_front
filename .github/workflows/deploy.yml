@@ -56,6 +56,10 @@ jobs:
             api: {
               baseUrl: '__API_BASE_URL__',
             },
+            session: {
+              idleTimeoutMinutes: 2,
+              warningSeconds: 20,
+            },
             appUrl: '__APP_URL__',
             appName: 'Conexion360',
           };
@@ -98,6 +102,10 @@ jobs:
             },
             api: {
               baseUrl: '__NGINX_API_BASE_URL__',
+            },
+            session: {
+              idleTimeoutMinutes: 2,
+              warningSeconds: 20,
             },
             appUrl: '${{ vars.NGINX_APP_URL }}',
             appName: 'Conexion360',

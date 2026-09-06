@@ -1,0 +1,18 @@
+<h2 mat-dialog-title class="session-dialog__title">
+  <mat-icon aria-hidden="true">schedule</mat-icon>
+  Tu sesión está por expirar
+</h2>
+
+<mat-dialog-content class="session-dialog__content">
+  <p>
+    Por seguridad cerraremos tu sesión en
+    <strong class="session-dialog__countdown" aria-live="polite">{{ countdown() }}</strong>
+    por inactividad.
+  </p>
+  <p>Pulsa «Seguir conectado» si quieres continuar trabajando.</p>
+</mat-dialog-content>
+
+<mat-dialog-actions class="session-dialog__actions">
+  <button mat-button type="button" (click)="logout()">Cerrar sesión</button>
+  <button mat-flat-button type="button" cdkFocusInitial (click)="stay()">Seguir conectado</button>
+</mat-dialog-actions>

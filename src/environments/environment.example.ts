@@ -9,6 +9,15 @@ export const environment = {
   api: {
     baseUrl: '/api/v1',
   },
+  /**
+   * Cierre de sesión por inactividad (ver `IdleSessionService`).
+   * `warningSeconds` es la antesala del cierre, no tiempo extra: el aviso sale
+   * en `idleTimeoutMinutes - warningSeconds`.
+   */
+  session: {
+    idleTimeoutMinutes: 2,
+    warningSeconds: 20,
+  },
   appUrl: '',
   appName: 'Conexion360',
 };

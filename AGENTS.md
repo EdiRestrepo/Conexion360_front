@@ -959,3 +959,63 @@ Peticiones abiertas al compañero de backend:
   `user.userId` con `identity.auth0UserId`): quedaría fuera de la pantalla que
   lo desbloquearía.
 - El DELETE exige teclear el correo del usuario para habilitar el botón.
+
+## 22. Cierre de sesión por inactividad
+
+Tras 15 minutos sin interacción del usuario aparece un aviso modal con cuenta
+atrás de 60 segundos; si nadie responde, se cierra la sesión de verdad
+(`AuthSessionService.logout()`). Configurable en `environment.session`
+(`idleTimeoutMinutes`, `warningSeconds`).
+
+### Por qué no se resuelve desde Auth0
+
+Auth0 no puede ver si alguien mueve el ratón dentro del SPA: sus temporizadores
+viven en el proveedor de identidad. El *idle session lifetime* del tenant solo
+caduca la cookie SSO de `login.conexion360.space`, así que mientras el access
+token cacheado siga vigente el usuario sigue trabajando sin enterarse; y la
+*inactivity expiration* del refresh token tampoco sirve de disparador, porque
+con `useRefreshTokens: true` un usuario inactivo ni siquiera intenta renovar.
+La detección tiene que vivir en Angular. El refuerzo del lado Auth0 queda
+pendiente y es opcional: `login()` ya envía `prompt: 'login'`, de modo que
+tras el cierre Auth0 vuelve a pedir credenciales aunque su cookie siga viva.
+
+El aviso previo no es cosmético: `/login` no es una pantalla propia sino una
+redirección inmediata a Auth0 (`AuthRedirect`), así que el diálogo es el único
+lugar donde el usuario puede enterarse de por qué se cierra su sesión.
+
+### Archivos
+
+| Archivo | Rol |
+|---|---|
+| `core/utils/idle-activity.ts` | Marca `c360.last-activity` en `localStorage`, con `try/catch` y respaldo en memoria |
+| `core/services/idle-session.service.ts` | Ticker de 1 s, listeners de actividad y fases `active`/`warning`/`expired` |
+| `layout/session-timeout-dialog/` | El aviso con la cuenta atrás |
+| `layout/main-layout/main-layout.ts` | Arranca el servicio y orquesta el diálogo; único componente bajo `authGuard` |
+
+### Decisiones que no se deben deshacer
+
+- **Reloj de pared, no `setTimeout(15min)`.** El ticker compara
+  `Date.now() - lastActivity`. Es lo único que aguanta el throttling de las
+  pestañas en segundo plano (~1 tick/minuto) y la suspensión del equipo.
+- **`localStorage`, al revés que `browser-session.ts`.** Allí se usa
+  `sessionStorage` *para que la marca NO se comparta*; aquí `localStorage`
+  *para que SÍ se comparta*: la actividad en una pestaña mantiene viva la sesión
+  de todas y el «Seguir conectado» se propaga solo, sin `BroadcastChannel`.
+- **La actividad se congela mientras el aviso está abierto.** El diálogo es
+  modal, pero un `mousemove` sobre el fondo seguiría llegando a `document`:
+  si renovara la sesión, el cierre no ocurriría nunca. Solo `keepAlive()` renueva.
+- **La marca nace en el callback de Auth0 (`main.ts`), no en `start()`.**
+  `start()` corre en cada F5; sembrar allí permitiría revivir con una recarga
+  una sesión ya vencida.
+- **`visibilitychange` no cuenta como actividad**, pero sí fuerza una
+  reevaluación inmediata: volver tras veinte minutos debe encontrar la sesión
+  cerrada, no renovarla.
+- **Falta de marca no expulsa.** Si el dato desaparece o es ilegible se
+  reescribe en vez de cerrar sesión: sería un falso positivo. Una sesión zombi
+  muere igual en el primer 401.
+- **Fuera de la zona de Angular.** Listeners y ticker en
+  `NgZone.runOutsideAngular`; solo se reentra al cambiar de fase y, durante el
+  aviso, una vez por segundo para refrescar la cuenta atrás.
+- **En las pruebas de `MainLayout` el servicio va sustituido por un doble.** El
+  real deja listeners sobre `document` y un intervalo que sobrevivirían a toda
+  la suite de Karma.
