@@ -15,7 +15,7 @@ export const environment = {
    * en `idleTimeoutMinutes - warningSeconds`.
    */
   session: {
-    idleTimeoutMinutes: 2,
+    idleTimeoutMinutes: 15,
     warningSeconds: 20,
   },
   appUrl: '',

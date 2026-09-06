@@ -57,7 +57,7 @@ jobs:
               baseUrl: '__API_BASE_URL__',
             },
             session: {
-              idleTimeoutMinutes: 2,
+              idleTimeoutMinutes: 15,
               warningSeconds: 20,
             },
             appUrl: '__APP_URL__',
@@ -104,7 +104,7 @@ jobs:
               baseUrl: '__NGINX_API_BASE_URL__',
             },
             session: {
-              idleTimeoutMinutes: 2,
+              idleTimeoutMinutes: 15,
               warningSeconds: 20,
             },
             appUrl: '${{ vars.NGINX_APP_URL }}',
