@@ -7,30 +7,30 @@ import { Observable, catchError, map, of, startWith } from 'rxjs';
 
 import { MasterSettings } from '../../../core/models/settings.model';
 import { ApiSettingsService } from '../../../core/services/api-settings.service';
-import type { MasterSettingsViewModel } from '../models/settings-view.model';
+import { CatalogOption, LocaleCatalogService } from '../../../core/services/locale-catalog.service';
+import { CatalogSelect } from '../components/catalog-select/catalog-select';
+import type { MasterSettingsField, MasterSettingsViewModel } from '../models/settings-view.model';
 
-/** Opciones que ofrece la pantalla; el valor que mande el backend se agrega si no está. */
-const currencyOptions = ['USD - Dólar', 'COP - Peso colombiano'];
-const languageOptions = ['Español'];
-const timeZoneOptions = ['America/Bogota (UTC-5)'];
+const emptyField: MasterSettingsField = { options: [], selected: '' };
 
 const loadingViewModel: MasterSettingsViewModel = {
   state: 'loading',
   settings: null,
-  currencies: currencyOptions,
-  languages: languageOptions,
-  timeZones: timeZoneOptions,
+  currency: emptyField,
+  language: emptyField,
+  timeZone: emptyField,
 };
 
 @Component({
   selector: 'app-settings-master-data',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, RouterLink],
+  imports: [AsyncPipe, CatalogSelect, MatButtonModule, MatIconModule, RouterLink],
   templateUrl: './settings-master-data.html',
   styleUrl: './settings-master-data.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsMasterData {
   private readonly settingsService = inject(ApiSettingsService);
+  private readonly catalog = inject(LocaleCatalogService);
 
   protected readonly saveMessage = signal<string | null>(null);
 
@@ -56,18 +56,30 @@ export class SettingsMasterData {
     return {
       state: 'success',
       settings,
-      currencies: withCurrentValue(currencyOptions, settings.currency),
-      languages: withCurrentValue(languageOptions, settings.language),
-      timeZones: withCurrentValue(timeZoneOptions, settings.timeZone),
+      currency: this.resolveField(this.catalog.currencies(), settings.currency),
+      language: this.resolveField(this.catalog.languages(), settings.language),
+      timeZone: this.resolveField(this.catalog.timeZones(), settings.timeZone),
     };
   }
-}
 
-/**
- * El backend escribe algunos valores distinto a la lista fija (`America/Bogota(UTC-5)`
- * sin espacio, por ejemplo). Antes que normalizarlos y arriesgar mostrar algo
- * que no es lo configurado, se agrega el valor tal cual como una opción más.
- */
-function withCurrentValue(options: string[], value: string): string[] {
-  return !value || options.includes(value) ? options : [value, ...options];
+  /**
+   * Empareja lo que guardó el backend con el catálogo. Mientras `viewmaster`
+   * devuelva etiquetas (`America/Bogota(UTC-5)`), el emparejado lo resuelve
+   * `match()`; cuando devuelva códigos, esto sigue valiendo sin cambios.
+   *
+   * Un valor que no se reconoce entra tal cual como opción propia: es preferible
+   * enseñar algo raro pero cierto a enseñar la opción más parecida y hacer creer
+   * que la configuración es otra.
+   */
+  private resolveField(options: CatalogOption[], rawValue: string): MasterSettingsField {
+    if (!rawValue) {
+      return { options, selected: '' };
+    }
+
+    const match = this.catalog.match(options, rawValue);
+
+    return match
+      ? { options, selected: match.value }
+      : { options: [{ value: rawValue, label: rawValue }, ...options], selected: rawValue };
+  }
 }

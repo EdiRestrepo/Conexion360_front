@@ -48,14 +48,26 @@ describe('SettingsMasterData', () => {
     expect(retention.value).toBe('365');
   });
 
-  it('should offer the backend value as an option when it is not in the fixed list', () => {
+  it('empareja las etiquetas del backend con el catálogo', async () => {
     fixture.detectChanges();
+    // El autocompletar escribe en el cuadro en un microtask, no en la pasada de
+    // detección de cambios.
+    await fixture.whenStable();
 
-    const timeZoneSelect = fixture.nativeElement.querySelector('select[aria-label="Zona horaria"]') as HTMLSelectElement;
+    // El backend escribe `America/Bogota(UTC-5)` y `USD - Dólar`; se muestran la
+    // zona IANA y la moneda ISO que les corresponden, con su etiqueta canónica.
+    expect(getField('Zona horaria').value).toBe('America/Bogota (UTC-5)');
+    expect(getField('Moneda predeterminada').value).toBe('USD - Dólar estadounidense');
+    expect(getField('Idioma').value).toBe('Español');
+  });
 
-    // El backend escribe `America/Bogota(UTC-5)` sin espacio: se agrega tal cual.
-    expect(timeZoneSelect.value).toBe('America/Bogota(UTC-5)');
-    expect(Array.from(timeZoneSelect.options).map((option) => option.value)).toContain('America/Bogota (UTC-5)');
+  it('conserva un valor irreconocible en vez de sustituirlo por el más parecido', async () => {
+    getMasterSettingsSpy.and.returnValue(of({ ...createSettings(), timeZone: 'Bogotá, hora local' }));
+    fixture = TestBed.createComponent(SettingsMasterData);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(getField('Zona horaria').value).toBe('Bogotá, hora local');
   });
 
   it('should render the error state when the backend fails', () => {
@@ -84,6 +96,10 @@ describe('SettingsMasterData', () => {
       timeZone: 'America/Bogota(UTC-5)',
       dataRetentionDays: 365,
     };
+  }
+
+  function getField(label: string): HTMLInputElement {
+    return fixture.nativeElement.querySelector(`input[aria-label="${label}"]`) as HTMLInputElement;
   }
 
   function getText(): string {

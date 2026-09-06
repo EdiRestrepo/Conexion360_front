@@ -63,34 +63,25 @@
       <section class="master-config-grid" aria-label="Configuración local y del sistema">
         <article class="surface-card master-section">
           <h3><mat-icon aria-hidden="true">language</mat-icon> Localización</h3>
-          <label>
-            Moneda predeterminada
-            <select aria-label="Moneda predeterminada">
-              @for (currency of viewModel.currencies; track currency) {
-                <option [value]="currency" [selected]="currency === settings.currency">{{ currency }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Idioma
-            <select aria-label="Idioma">
-              @for (language of viewModel.languages; track language) {
-                <option [value]="language" [selected]="language === settings.language">{{ language }}</option>
-              }
-            </select>
-          </label>
+          <app-catalog-select
+            fieldLabel="Moneda predeterminada"
+            [options]="viewModel.currency.options"
+            [selected]="viewModel.currency.selected"
+          />
+          <app-catalog-select
+            fieldLabel="Idioma"
+            [options]="viewModel.language.options"
+            [selected]="viewModel.language.selected"
+          />
         </article>
 
         <article class="surface-card master-section">
           <h3><mat-icon aria-hidden="true">schedule</mat-icon> Sistema</h3>
-          <label>
-            Zona horaria
-            <select aria-label="Zona horaria">
-              @for (timeZone of viewModel.timeZones; track timeZone) {
-                <option [value]="timeZone" [selected]="timeZone === settings.timeZone">{{ timeZone }}</option>
-              }
-            </select>
-          </label>
+          <app-catalog-select
+            fieldLabel="Zona horaria"
+            [options]="viewModel.timeZone.options"
+            [selected]="viewModel.timeZone.selected"
+          />
           <label>
             Retención de datos (días)
             <input type="number" [value]="settings.dataRetentionDays" min="30" aria-label="Retención de datos en días" />

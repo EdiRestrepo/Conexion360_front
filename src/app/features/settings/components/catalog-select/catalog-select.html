@@ -1,0 +1,23 @@
+<label class="catalog-select">
+  {{ fieldLabel() }}
+  <input
+    #field
+    type="text"
+    autocomplete="off"
+    [formControl]="search"
+    [matAutocomplete]="panel"
+    [attr.aria-label]="fieldLabel()"
+    (focus)="onFocus(field)"
+    (input)="onInput()"
+  />
+  <mat-autocomplete
+    #panel="matAutocomplete"
+    [displayWith]="displayLabel"
+    (optionSelected)="onSelected($event)"
+    (closed)="onPanelClosed()"
+  >
+    @for (option of visibleOptions(); track option.value) {
+      <mat-option [value]="option">{{ option.label }}</mat-option>
+    }
+  </mat-autocomplete>
+</label>

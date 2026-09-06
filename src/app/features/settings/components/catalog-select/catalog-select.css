@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+/* Replica el aspecto de los campos de `settings-master-data`: el encapsulado de
+   Angular deja fuera de alcance las reglas del padre. */
+.catalog-select {
+  display: grid;
+  gap: 8px;
+  color: var(--color-primary);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.catalog-select input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.catalog-select input:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 1px;
+}

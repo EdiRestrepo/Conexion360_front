@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
@@ -213,6 +213,30 @@ describe('UserMenu', () => {
     expect(dialogTitle).toContain('Iván Valencia');
   });
 
+  it('ignora el segundo clic mientras la primera apertura sigue en vuelo', () => {
+    // Nunca emite: deja la apertura a medias, que es cuando el usuario impaciente
+    // vuelve a pulsar y antes se llevaba dos diálogos apilados.
+    usersService.getById.and.returnValue(new Subject<SettingsUser>());
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+    clickMenuItem('Actualizar datos personales');
+    openMenu(fixture);
+    clickMenuItem('Actualizar datos personales');
+    fixture.detectChanges();
+
+    expect(usersService.getById).toHaveBeenCalledTimes(1);
+
+    // El menú ya se cerró: el anillo del avatar es la única señal de que la
+    // apertura sigue en curso.
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('.user-menu__loader')).not.toBeNull();
+    expect(host.querySelector('.user-menu__trigger')?.getAttribute('aria-busy')).toBe('true');
+  });
+
   it('shows an error message when loading the signed-in user fails', async () => {
     usersService.getById.and.returnValue(throwError(() => new Error('boom')));
     fixture = TestBed.createComponent(UserMenu);
@@ -225,6 +249,9 @@ describe('UserMenu', () => {
 
     const snackMessage = document.querySelector('.mat-mdc-snack-bar-label')?.textContent ?? '';
     expect(snackMessage).toContain('No fue posible cargar tus datos.');
+
+    // Un fallo no puede dejar el avatar girando para siempre.
+    expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__loader')).toBeNull();
   });
 });
 

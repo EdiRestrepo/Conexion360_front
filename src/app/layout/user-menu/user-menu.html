@@ -15,6 +15,8 @@
     class="user-menu__trigger"
     type="button"
     [matMenuTriggerFor]="userMenuPanel"
+    (menuOpened)="prefetchProfileDialog()"
+    [attr.aria-busy]="profilePending()"
     [attr.aria-label]="'Cuenta de ' + displayName()"
   >
     @if (showPicture()) {
@@ -31,6 +33,10 @@
       />
     } @else {
       <span class="user-menu__avatar" aria-hidden="true">{{ initials() }}</span>
+    }
+
+    @if (profilePending()) {
+      <span class="user-menu__loader" role="status" aria-label="Cargando tus datos"></span>
     }
   </button>
 

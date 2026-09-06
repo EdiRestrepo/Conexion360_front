@@ -6,8 +6,35 @@
 }
 
 .user-menu__trigger {
+  position: relative;
   flex: 0 0 auto;
   padding: 0 !important;
+}
+
+/* Anillo sobre el avatar mientras se prepara «Actualizar datos personales». Se
+   superpone en vez de sustituirlo para no alterar el tamaño del botón, y usa el
+   `spin` global que ya anima el buscador del dashboard. */
+.user-menu__loader {
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-top-color: var(--color-secondary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  pointer-events: none;
+}
+
+.user-menu__trigger[aria-busy='true'] .user-menu__avatar {
+  opacity: 0.55;
+}
+
+/* Sin animación, el anillo estático seguiría marcando el estado ocupado. */
+@media (prefers-reduced-motion: reduce) {
+  .user-menu__loader {
+    animation: none;
+    border-color: var(--color-secondary);
+    opacity: 0.6;
+  }
 }
 
 /* `min-width: 0` en la rejilla y en los hijos es lo que permite que el recorte

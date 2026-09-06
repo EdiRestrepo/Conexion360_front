@@ -55,12 +55,13 @@
       <p id="email-error" class="user-dialog__error" role="alert">El correo debe tener un formato válido.</p>
     }
 
-    <label class="user-dialog__toggle">
-      <input type="checkbox" formControlName="isBlocked" />
-      <span>Bloquear el acceso de este usuario</span>
-    </label>
-    @if (isSelf) {
-      <p class="user-dialog__note">No puedes bloquear tu propia cuenta.</p>
+    <!-- Nadie puede bloquearse a sí mismo, así que en el propio perfil el
+         control no se muestra: deshabilitado solo añadía ruido. -->
+    @if (!isSelf) {
+      <label class="user-dialog__toggle">
+        <input type="checkbox" formControlName="isBlocked" />
+        <span>Bloquear el acceso de este usuario</span>
+      </label>
     }
   </form>
 </mat-dialog-content>

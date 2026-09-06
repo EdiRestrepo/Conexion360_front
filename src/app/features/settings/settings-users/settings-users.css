@@ -65,9 +65,18 @@
  * `width: 100%` en vez de `max-content`: con columnas `minmax(…, 1fr)` la tabla
  * ocupa todo el ancho de la tarjeta y solo desborda —activando el scroll del
  * contenedor— cuando no caben los mínimos.
+ *
+ * El `min-width` es lo que hace que la caja del elemento acompañe a ese
+ * desbordamiento. Con solo `width: 100%` la caja se quedaba en el ancho visible
+ * mientras la rejilla seguía creciendo por fuera, así que el fondo de la
+ * cabecera —y el borde inferior de cada fila— se cortaban justo en la parte que
+ * había que desplazar. Es la suma de los mínimos de las siete columnas, los
+ * seis huecos y el padding lateral de la fila: si cambia
+ * `grid-template-columns`, hay que cambiarlo aquí.
  */
 .users-table {
   width: 100%;
+  min-width: calc(120px + 140px + 220px + 130px + 140px + 200px + 148px + 6 * 12px + 2 * 18px);
 }
 
 .users-table__row {
