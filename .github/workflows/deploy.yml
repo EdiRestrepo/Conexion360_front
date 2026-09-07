@@ -70,8 +70,12 @@ jobs:
       - name: Run unit tests
         run: npx ng test --watch=false --browsers=ChromeHeadless
 
+      # `/` y no `/<repo>/`: el sitio se sirve desde la raíz del dominio propio
+      # (`public/CNAME`). Con la ruta del repositorio, el HTML buscaría el JS y
+      # el CSS en `conexion360.space/Conexion360_front/` y la página saldría en
+      # blanco: Angular los referencia relativos al `<base href>`.
       - name: Build production bundle
-        run: npx ng build --configuration production --base-href "/${{ github.event.repository.name }}/"
+        run: npx ng build --configuration production --base-href "/"
 
       - name: Prepare SPA fallback
         run: cp dist/seguimiento-envios/browser/index.html dist/seguimiento-envios/browser/404.html
