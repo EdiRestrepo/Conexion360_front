@@ -1,4 +1,4 @@
-.user-dialog__title {
+﻿.user-dialog__title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -79,10 +79,18 @@
   box-shadow: 0 0 0 3px var(--color-secondary-soft);
 }
 
-.user-dialog__toggle {
+.user-dialog__toggle-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* `.user-dialog__form label` (display:grid) le gana por especificidad y apilaba
+   la casilla sobre su texto: hay que calificar el selector para alinearlos. */
+.user-dialog__form .user-dialog__toggle {
   display: flex;
   gap: 0.625rem;
   align-items: center;
+  cursor: pointer;
 }
 
 .user-dialog__toggle input {
@@ -91,10 +99,25 @@
   accent-color: var(--color-secondary);
 }
 
-.user-dialog__toggle > span {
+/* Misma razon de especificidad que arriba: si no, hereda el gris de los
+   rotulos de campo y el texto del checkbox se ve apagado. */
+.user-dialog__form .user-dialog__toggle > span {
   color: var(--color-text);
   font-size: var(--font-size-label);
   font-weight: 600;
+}
+
+.user-dialog__toggle input {
+  flex: none;
+  margin: 0;
+  cursor: pointer;
+}
+
+.user-dialog__hint {
+  margin: 0;
+  padding-left: calc(18px + 0.625rem);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
 }
 
 .user-dialog__error {

@@ -1,4 +1,4 @@
-import { FormControl } from '@angular/forms';
+﻿import { FormControl } from '@angular/forms';
 
 import { SettingsUser } from '../../../../core/models/settings-user.model';
 
@@ -26,5 +26,6 @@ export interface SettingsUsersViewModel {
 export interface SettingsUserForm {
   phoneNumber: FormControl<string>;
   email: FormControl<string>;
-  isBlocked: FormControl<boolean>;
+  /** En positivo a proposito: el checkbox marcado significa "puede entrar". */
+  isActive: FormControl<boolean>;
 }

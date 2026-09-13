@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -38,7 +39,12 @@ export class UserDetailDialog {
       nonNullable: true,
       validators: [Validators.required, Validators.email],
     }),
-    isBlocked: new FormControl({ value: this.user.isBlocked, disabled: this.isSelf }, { nonNullable: true }),
+    isActive: new FormControl({ value: !this.user.isBlocked, disabled: this.isSelf }, { nonNullable: true }),
+  });
+
+  /** Alimenta el texto de apoyo del checkbox sin romper OnPush. */
+  protected readonly isActive = toSignal(this.form.controls.isActive.valueChanges, {
+    initialValue: !this.user.isBlocked,
   });
 
   protected get phoneNumberHasError(): boolean {
@@ -59,7 +65,7 @@ export class UserDetailDialog {
       return;
     }
 
-    const { phoneNumber, email, isBlocked } = this.form.getRawValue();
+    const { phoneNumber, email, isActive } = this.form.getRawValue();
 
     this.dialogRef.close({
       userId: this.user.userId,
@@ -69,7 +75,7 @@ export class UserDetailDialog {
       nickname: this.user.nickname,
       email: email.trim(),
       phoneNumber: phoneNumber.trim(),
-      isBlocked,
+      isBlocked: !isActive,
     });
   }
 

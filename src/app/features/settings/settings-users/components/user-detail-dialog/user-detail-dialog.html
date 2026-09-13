@@ -1,4 +1,4 @@
-<h2 mat-dialog-title class="user-dialog__title">
+﻿<h2 mat-dialog-title class="user-dialog__title">
   <mat-icon aria-hidden="true">manage_accounts</mat-icon>
   {{ user.fullName || '—' }}
 </h2>
@@ -58,10 +58,21 @@
     <!-- Nadie puede bloquearse a sí mismo, así que en el propio perfil el
          control no se muestra: deshabilitado solo añadía ruido. -->
     @if (!isSelf) {
-      <label class="user-dialog__toggle">
-        <input type="checkbox" formControlName="isBlocked" />
-        <span>Bloquear el acceso de este usuario</span>
-      </label>
+      <div class="user-dialog__toggle-field">
+        <label class="user-dialog__toggle">
+          <input type="checkbox" formControlName="isActive" aria-describedby="active-hint" />
+          <span>Usuario activo</span>
+        </label>
+        <!-- La etiqueta se queda fija y en positivo; el estado va aquí, para que
+             el lector de pantalla no anuncie "sin marcar, usuario inactivo". -->
+        <p id="active-hint" class="user-dialog__hint">
+          @if (isActive()) {
+            Puede iniciar sesión en la plataforma.
+          } @else {
+            Inactivo: no podrá iniciar sesión hasta que se reactive.
+          }
+        </p>
+      </div>
     }
   </form>
 </mat-dialog-content>
