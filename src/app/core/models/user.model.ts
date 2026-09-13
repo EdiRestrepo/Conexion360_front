@@ -1,4 +1,4 @@
-export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALISTAOPE' | 'ANALISTASAC';
+﻿export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALISTAOPE' | 'ANALISTASAC';
 
 export interface Auth0Identity {
   auth0UserId: string;
@@ -9,6 +9,8 @@ export interface Auth0Identity {
   document?: string;
   company?: string;
   picture?: string;
+  /** Sale de `user_metadata.phone`; en la raiz de Auth0 solo existe para conexiones SMS. */
+  phoneNumber?: string;
   roles: UserRole[];
 }
 
@@ -20,4 +22,6 @@ export interface User {
   document?: string;
   company?: string;
   picture?: string | null;
+  phoneNumber?: string;
+  nickname?: string;
 }

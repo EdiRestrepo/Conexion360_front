@@ -34,6 +34,8 @@ export class AuthSessionService {
             document: identity.document,
             company: identity.company,
             picture: identity.picture ?? null,
+            phoneNumber: identity.phoneNumber,
+            nickname: identity.nickname,
           },
           accessToken: '',
           expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 8).toISOString(),

@@ -12,7 +12,7 @@ import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data
 import { AuthSession } from '../../core/models/auth-session.model';
 import type { SettingsUser, SettingsUserUpdate } from '../../core/models/settings-user.model';
 import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
-import { getApiErrorMessage } from '../../core/utils/api-error';
+import { getApiErrorMessage, isForbiddenError } from '../../core/utils/api-error';
 import { getUserRoleLabel } from '../../core/utils/display-labels';
 import type { UserDetailDialogData } from '../../features/settings/settings-users/components/user-detail-dialog/user-detail-dialog';
 
@@ -101,35 +101,48 @@ export class UserMenu {
 
   /**
    * Reutiliza el diálogo de `Gestión de usuarios` para que cualquier usuario
-   * edite su propio celular y correo. Los endpoints de `/settings` los expone
-   * hoy el backend solo para ADMIN (ver AGENTS.md §21): para otros roles esta
-   * acción devolverá 403 hasta que el backend habilite el autoservicio.
+   * edite su propio celular y correo.
+   *
+   * No se consulta `/settings/getuser`: es un endpoint de administración, y
+   * además devuelve menos de lo que ya trae el token (sin `user_metadata` ni
+   * roles), que es justo de donde salían los `—` del formulario. Con la sesión
+   * el diálogo abre sin red y sirve para cualquier rol.
    */
   protected openProfileDialog(): void {
-    const userId = this.session()?.user.id;
+    const user = this.session()?.user;
 
-    if (!userId || this.profilePending()) {
+    if (!user || this.profilePending()) {
       return;
     }
 
-    // Chunk y datos van en paralelo: encadenarlos sumaba las dos esperas, y
-    // ninguna de las dos depende de la otra.
-    const dialogModule = this.loadDialogModule();
-
     this.profilePending.set(true);
+    void this.showProfileDialog(this.loadDialogModule(), this.toSettingsUser(user));
+  }
 
-    this.usersService
-      .getById(userId)
-      .pipe(take(1))
-      .subscribe({
-        next: (user) => void this.showProfileDialog(dialogModule, user),
-        error: (error: unknown) => {
-          this.profilePending.set(false);
-          this.snackBar.open(getApiErrorMessage(error, 'No fue posible cargar tus datos.'), 'Cerrar', {
-            duration: 6000,
-          });
-        },
-      });
+  /**
+   * El `Auth0UserDto` del PATCH exige `userName` y `nickname`, que el token no
+   * siempre trae: se caen al correo, que es el identificador de la conexión de
+   * base de datos, en vez de mandar vacíos y que el backend los borre.
+   */
+  private toSettingsUser(user: AuthSession['user']): SettingsUser {
+    return {
+      userId: user.id,
+      email: user.email,
+      userName: user.nickname || user.email,
+      nickname: user.nickname || user.email,
+      phoneNumber: user.phoneNumber ?? '',
+      isBlocked: false,
+      createdDate: null,
+      updatedDate: null,
+      fullName: user.name,
+      document: user.document ?? '',
+      company: user.company ?? '',
+      picture: user.picture ?? null,
+      role: user.role,
+      lastLogin: null,
+      emailVerified: null,
+      acceptedDataPolicy: null,
+    };
   }
 
   private loadDialogModule(): Promise<UserDetailDialogModule> {
@@ -179,8 +192,22 @@ export class UserMenu {
       .subscribe({
         next: () => this.snackBar.open('Datos actualizados.', 'Cerrar', { duration: 4000 }),
         error: (error: unknown) =>
-          this.snackBar.open(getApiErrorMessage(error, 'No fue posible guardar los cambios.'), 'Cerrar', { duration: 6000 }),
+          this.snackBar.open(this.getProfileErrorMessage(error), 'Cerrar', { duration: 8000 }),
       });
+  }
+
+  /**
+   * `updateuser` vive bajo `/settings`, que el backend reserva a ADMIN. Hasta
+   * que exista un endpoint de autoservicio, un 403 aquí no es un fallo del
+   * usuario ni algo que reintentar: se dice qué pasó en vez de volcar el
+   * `ProblemDetails` crudo.
+   */
+  private getProfileErrorMessage(error: unknown): string {
+    if (isForbiddenError(error)) {
+      return 'Tu cuenta todavía no tiene permiso para editar estos datos. Comunícate a través de la línea telefónica.';
+    }
+
+    return getApiErrorMessage(error, 'No fue posible guardar los cambios.');
   }
 
   private getInitials(value: string): string {

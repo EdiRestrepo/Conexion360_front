@@ -1,11 +1,11 @@
+﻿import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
-import { Observable, Subject, of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
-import { SettingsUser } from '../../core/models/settings-user.model';
 import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
 import { UserMenu } from './user-menu';
 
@@ -192,8 +192,7 @@ describe('UserMenu', () => {
     expect(bell?.getAttribute('href')).toContain('/notifications');
   });
 
-  it('fetches the signed-in user and opens the shared detail dialog to edit phone and email', async () => {
-    usersService.getById.and.returnValue(of(createSettingsUser()));
+  it('opens the shared detail dialog from the session, without the admin endpoint', async () => {
     fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('CLIENT'));
     fixture.detectChanges();
@@ -201,7 +200,9 @@ describe('UserMenu', () => {
     openMenu(fixture);
     clickMenuItem('Actualizar datos personales');
 
-    expect(usersService.getById).toHaveBeenCalledWith('auth0|123');
+    // `/settings/getuser` es admin-only: si se volviera a llamar, la opción
+    // dejaría de servir para CLIENT, ANALISTAOPE y ANALISTASAC.
+    expect(usersService.getById).not.toHaveBeenCalled();
 
     // El diálogo se importa de forma dinámica (chunk lazy real, servido por
     // Karma): se espera con temporizador real en vez de `whenStable()`, que no
@@ -213,44 +214,59 @@ describe('UserMenu', () => {
     expect(dialogTitle).toContain('Iván Valencia');
   });
 
-  it('ignora el segundo clic mientras la primera apertura sigue en vuelo', () => {
-    // Nunca emite: deja la apertura a medias, que es cuando el usuario impaciente
-    // vuelve a pulsar y antes se llevaba dos diálogos apilados.
-    usersService.getById.and.returnValue(new Subject<SettingsUser>());
+  it('prefills phone and email from the session', async () => {
     fixture = TestBed.createComponent(UserMenu);
-    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.componentRef.setInput('session', createSession('ANALISTASAC'));
     fixture.detectChanges();
 
     openMenu(fixture);
     clickMenuItem('Actualizar datos personales');
-    openMenu(fixture);
-    clickMenuItem('Actualizar datos personales');
+    await waitFor(() => !!document.querySelector('.mat-mdc-dialog-title'));
     fixture.detectChanges();
 
-    expect(usersService.getById).toHaveBeenCalledTimes(1);
+    const phone = document.querySelector<HTMLInputElement>('input[type="tel"]');
+    const email = document.querySelector<HTMLInputElement>('input[type="email"]');
 
-    // El menú ya se cerró: el anillo del avatar es la única señal de que la
-    // apertura sigue en curso.
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect(host.querySelector('.user-menu__loader')).not.toBeNull();
-    expect(host.querySelector('.user-menu__trigger')?.getAttribute('aria-busy')).toBe('true');
+    expect(phone?.value).toBe('+573001112233');
+    expect(email?.value).toBe('ivan.valencia@conexion360.com');
   });
 
-  it('shows an error message when loading the signed-in user fails', async () => {
-    usersService.getById.and.returnValue(throwError(() => new Error('boom')));
+  it('opens a single dialog when the option is clicked twice', async () => {
     fixture = TestBed.createComponent(UserMenu);
     fixture.componentRef.setInput('session', createSession('CLIENT'));
     fixture.detectChanges();
 
     openMenu(fixture);
     clickMenuItem('Actualizar datos personales');
+    openMenu(fixture);
+    clickMenuItem('Actualizar datos personales');
+
+    await waitFor(() => !!document.querySelector('.mat-mdc-dialog-title'));
     fixture.detectChanges();
 
-    const snackMessage = document.querySelector('.mat-mdc-snack-bar-label')?.textContent ?? '';
-    expect(snackMessage).toContain('No fue posible cargar tus datos.');
+    expect(document.querySelectorAll('.mat-mdc-dialog-container').length).toBe(1);
+  });
 
-    // Un fallo no puede dejar el avatar girando para siempre.
+  it('explains a 403 on save instead of dumping the raw error', async () => {
+    usersService.update.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+    clickMenuItem('Actualizar datos personales');
+    await waitFor(() => !!document.querySelector('.mat-mdc-dialog-title'));
+    fixture.detectChanges();
+
+    const save = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-dialog-actions button')).find(
+      (button) => button.textContent?.includes('Guardar cambios'),
+    );
+    save?.click();
+    await waitFor(() => !!document.querySelector('.mat-mdc-snack-bar-label'));
+
+    const snackMessage = document.querySelector('.mat-mdc-snack-bar-label')?.textContent ?? '';
+
+    expect(snackMessage).toContain('todavía no tiene permiso');
     expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__loader')).toBeNull();
   });
 });
@@ -281,28 +297,6 @@ function clickMenuItem(label: string): void {
   item?.click();
 }
 
-function createSettingsUser(overrides: Partial<SettingsUser> = {}): SettingsUser {
-  return {
-    userId: 'auth0|123',
-    email: 'ivan.valencia@conexion360.com',
-    userName: 'ivanvalencia',
-    nickname: 'ivanvalencia',
-    phoneNumber: '+573001112233',
-    isBlocked: false,
-    createdDate: null,
-    updatedDate: null,
-    fullName: 'Iván Valencia',
-    document: '123456789',
-    company: 'Conexion360',
-    picture: null,
-    role: 'CLIENT',
-    lastLogin: null,
-    emailVerified: true,
-    acceptedDataPolicy: true,
-    ...overrides,
-  };
-}
-
 function createSession(role: AuthSession['user']['role'], picture: string | null = null): AuthSession {
   return {
     user: {
@@ -312,6 +306,8 @@ function createSession(role: AuthSession['user']['role'], picture: string | null
       role,
       company: 'Conexion360',
       picture,
+      phoneNumber: '+573001112233',
+      nickname: 'ivanvalencia',
     },
     accessToken: '',
     expiresAt: '2026-07-22T00:00:00.000Z',

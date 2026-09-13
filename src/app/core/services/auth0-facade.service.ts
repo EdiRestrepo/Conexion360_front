@@ -143,8 +143,29 @@ export class Auth0FacadeService {
       document: document || undefined,
       company: company || undefined,
       picture: picture || undefined,
+      phoneNumber: this.readPhoneNumber(auth0Record, userMetadata) || undefined,
       roles: this.mapRoles(auth0Record),
     };
+  }
+
+  /**
+   * El `user_metadata` guarda 13 variantes del mismo numero; se toma una sola,
+   * en el mismo orden que `settings-users.mapper.ts` para no divergir.
+   */
+  private readPhoneNumber(auth0Record: Auth0Record, userMetadata: Auth0Record): string {
+    const direct = this.readString(auth0Record, 'phone_number') || this.readString(auth0Record, 'phoneNumber');
+
+    if (direct) {
+      return direct;
+    }
+
+    const phone = this.asRecord(userMetadata['phone']);
+
+    return (
+      this.readString(phone, 'number') ||
+      this.readString(phone, 'internationalNumber') ||
+      this.readString(phone, 'international_number')
+    );
   }
 
   private mapRoles(auth0Record: Auth0Record): UserRole[] {

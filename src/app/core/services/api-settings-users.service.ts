@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+﻿import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
@@ -34,11 +34,12 @@ export class ApiSettingsUsersService {
   }
 
   /**
-   * La pantalla no lo usa: se comprobó contra el backend que `getuser` devuelve
+   * Hoy no lo usa nadie. Se comprobó contra el backend que `getuser` devuelve
    * exactamente los mismos ocho campos que ya trae cada elemento de `listusers`
    * (sin `user_metadata` ni roles), así que reconsultar al abrir el detalle solo
-   * añadiría un spinner. Se mantiene porque el endpoint existe y será útil si el
-   * backend lo enriquece.
+   * añadiría un spinner; y el menú de usuario tampoco puede llamarlo, porque
+   * `/settings` es admin-only y el autoservicio debe servir a cualquier rol.
+   * Se mantiene porque el endpoint existe y será útil si el backend lo enriquece.
    */
   getById(userId: string): Observable<SettingsUser> {
     const params = new HttpParams().set('userId', userId);
