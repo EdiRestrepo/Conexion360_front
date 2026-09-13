@@ -1,4 +1,5 @@
-﻿import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+﻿import { HttpErrorResponse } from '@angular/common/http';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Params, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -217,7 +218,30 @@ describe('ShipmentList', () => {
     render();
     setQueryParams({ query: 'NO-EXISTE' });
 
-    expect(getText()).toContain('No hay envíos que coincidan con los filtros.');
+    expect(getText()).toContain('Ningún envío coincide con la búsqueda o los filtros seleccionados.');
+    expect(getText()).toContain('Limpiar filtros');
+  }));
+
+  it('should render a no-data empty state when the client has no shipments at all', fakeAsync(() => {
+    searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
+    fixture = TestBed.createComponent(ShipmentList);
+    component = fixture.componentInstance as unknown as ShipmentListTestComponent;
+    render();
+
+    expect(getText()).toContain('Aún no tienes envíos asociados');
+    expect(getText()).not.toContain('Limpiar filtros');
+    expect(getText()).not.toContain('Reintentar');
+  }));
+
+  it('should render a forbidden state without retry when the API answers 403', fakeAsync(() => {
+    searchSpy.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+    fixture = TestBed.createComponent(ShipmentList);
+    component = fixture.componentInstance as unknown as ShipmentListTestComponent;
+    render();
+
+    expect(getText()).toContain('Tu usuario no tiene un rol asignado');
+    expect(getText()).not.toContain('No se pudo cargar la información');
+    expect(getText()).not.toContain('Reintentar');
   }));
 
   it('should render controlled error state', fakeAsync(() => {

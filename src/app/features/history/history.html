@@ -36,6 +36,7 @@
   </section>
 
   @if (viewModel$ | async; as viewModel) {
+    @if (viewModel.emptyReason !== 'no-data' && viewModel.state !== 'forbidden') {
     <section class="history-summary" aria-label="Resumen de envíos completados">
       <span class="summary-pill">
         <mat-icon aria-hidden="true">inventory_2</mat-icon>
@@ -63,6 +64,7 @@
         marítimos
       </span>
     </section>
+    }
 
     <div class="surface-card history-card">
       @if (viewModel.state === 'loading') {
@@ -75,6 +77,22 @@
           <strong>No se pudo cargar el historial</strong>
           <p>{{ viewModel.message }}</p>
           <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (viewModel.state === 'forbidden') {
+        <div class="empty-state empty-state--no-data">
+          <span class="empty-state__icon empty-state__icon--locked" aria-hidden="true">
+            <mat-icon>lock</mat-icon>
+          </span>
+          <strong>Tu usuario no tiene un rol asignado</strong>
+          <small class="empty-state__hint">Sin un rol asignado no podemos mostrar tu historial de envíos. Comunícate a través de la línea telefónica para que activen tu acceso.</small>
+        </div>
+      } @else if (viewModel.state === 'empty' && viewModel.emptyReason === 'no-data') {
+        <div class="empty-state empty-state--no-data">
+          <span class="empty-state__icon" aria-hidden="true">
+            <mat-icon>history</mat-icon>
+          </span>
+          <strong>Aún no tienes envíos completados</strong>
+          <a class="empty-state__link" routerLink="/shipments">Ver mis envíos en curso</a>
         </div>
       } @else if (viewModel.state === 'empty') {
         <div class="empty-state">

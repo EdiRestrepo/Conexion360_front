@@ -18,8 +18,9 @@ import {
   getTransportModeLabel,
 } from '../../../core/utils/display-labels';
 import { ApiMyShipmentsService, MyShipmentsPage } from '../../../core/services/api-my-shipments.service';
+import { isForbiddenError } from '../../../core/utils/api-error';
 import { copyToClipboard } from '../../../core/utils/clipboard';
-import type { ShipmentListFilters, ShipmentListViewModel } from './models/shipment-list-view.model';
+import type { ShipmentListEmptyReason, ShipmentListFilters, ShipmentListViewModel } from './models/shipment-list-view.model';
 
 const defaultFilters: ShipmentListFilters = {
   query: '',
@@ -96,13 +97,17 @@ export class ShipmentList {
         }).pipe(
           map((result) => this.createViewModel(result, filters)),
           startWith({ ...initialViewModel, filters } satisfies ShipmentListViewModel),
-          catchError(() =>
-            of({
-              ...initialViewModel,
-              state: 'error',
-              filters,
-              message: 'No fue posible cargar los envíos. Intenta nuevamente.',
-            } satisfies ShipmentListViewModel),
+          catchError((error: unknown) =>
+            of(
+              isForbiddenError(error)
+                ? ({ ...initialViewModel, state: 'forbidden', filters } satisfies ShipmentListViewModel)
+                : ({
+                    ...initialViewModel,
+                    state: 'error',
+                    filters,
+                    message: 'No fue posible cargar los envíos. Intenta nuevamente.',
+                  } satisfies ShipmentListViewModel),
+            ),
           ),
         ),
       ),
@@ -200,7 +205,11 @@ export class ShipmentList {
     const totalPages = Math.max(result.totalPages, 1);
     const page = Math.min(Math.max(result.page, 1), totalPages);
     const start = (page - 1) * result.pageSize;
-    const state = result.items.length === 0 ? 'empty' : 'success';
+    const isEmpty = result.items.length === 0;
+    const state = isEmpty ? 'empty' : 'success';
+    const emptyReason: ShipmentListEmptyReason | undefined = isEmpty
+      ? (this.hasActiveFilters(filters) ? 'no-matches' : 'no-data')
+      : undefined;
 
     return {
       state,
@@ -218,8 +227,22 @@ export class ShipmentList {
       rangeStart: totalItems === 0 ? 0 : start + 1,
       rangeEnd: totalItems === 0 ? 0 : Math.min(start + result.items.length, totalItems),
       queryParams: { ...this.buildQueryParams({ ...filters, page }), from: 'shipments' },
-      message: result.items.length === 0 ? 'No hay envíos que coincidan con los filtros.' : undefined,
+      emptyReason,
+      message: this.getEmptyMessage(emptyReason),
     };
+  }
+
+  /** Solo cuentan los filtros del usuario: la pagina no cambia el universo de resultados. */
+  private hasActiveFilters(filters: ShipmentListFilters): boolean {
+    return Boolean(filters.query || filters.operation || filters.mode || filters.status);
+  }
+
+  private getEmptyMessage(emptyReason: ShipmentListEmptyReason | undefined): string | undefined {
+    if (emptyReason === 'no-matches') {
+      return 'Ningún envío coincide con la búsqueda o los filtros seleccionados.';
+    }
+
+    return undefined;
   }
 
   protected getDetailQueryParams(queryParams: Params, documentNumber: string): Params {

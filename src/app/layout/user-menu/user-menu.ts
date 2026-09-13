@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+﻿import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -52,7 +52,7 @@ export class UserMenu {
   protected readonly email = computed(() => this.session()?.user.email ?? 'Completa tu perfil');
   protected readonly roleLabel = computed(() => {
     const user = this.session()?.user;
-    return user?.role ? getUserRoleLabel(user.role) : 'Rol no asignado en Auth0';
+    return user?.role ? getUserRoleLabel(user.role) : 'Rol no asignado';
   });
   protected readonly picture = computed(() => this.session()?.user.picture ?? null);
   protected readonly initials = computed(() => this.getInitials(this.displayName()));

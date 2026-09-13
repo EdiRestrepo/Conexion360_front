@@ -1,3 +1,4 @@
+﻿import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -197,7 +198,30 @@ describe('History', () => {
     render();
     setQueryParams({ query: 'Sin coincidencias' });
 
-    expect(getText()).toContain('No hay envíos completados que coincidan con los filtros.');
+    expect(getText()).toContain('Ningún envío completado coincide con la búsqueda o los filtros seleccionados.');
+    expect(getText()).toContain('Limpiar filtros');
+  }));
+
+  it('should render a no-data empty state when the client has no completed shipments at all', fakeAsync(() => {
+    searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
+    fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
+    render();
+
+    expect(getText()).toContain('Aún no tienes envíos completados');
+    expect(getText()).not.toContain('Limpiar filtros');
+    expect(getText()).not.toContain('Reintentar');
+  }));
+
+  it('should render a forbidden state without retry when the API answers 403', fakeAsync(() => {
+    searchSpy.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+    fixture = TestBed.createComponent(History);
+    component = fixture.componentInstance as unknown as HistoryTestComponent;
+    render();
+
+    expect(getText()).toContain('Tu usuario no tiene un rol asignado');
+    expect(getText()).not.toContain('No se pudo cargar el historial');
+    expect(getText()).not.toContain('Reintentar');
   }));
 
   it('should render controlled error state and retry', fakeAsync(() => {

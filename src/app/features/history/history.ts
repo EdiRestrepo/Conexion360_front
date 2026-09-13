@@ -19,8 +19,9 @@ import {
 } from '../../core/utils/display-labels';
 import { ApiHistoryService } from '../../core/services/api-history.service';
 import { MyShipmentsPage } from '../../core/mappers/shipments-page.mapper';
+import { isForbiddenError } from '../../core/utils/api-error';
 import { copyToClipboard } from '../../core/utils/clipboard';
-import type { HistoryFilters, HistoryViewModel } from './models/history-view.model';
+import type { HistoryEmptyReason, HistoryFilters, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {
   query: '',
@@ -86,13 +87,17 @@ export class History {
           .pipe(
             map((result) => this.createViewModel(result, filters)),
             startWith({ ...initialViewModel, filters } satisfies HistoryViewModel),
-            catchError(() =>
-              of({
-                ...initialViewModel,
-                state: 'error',
-                filters,
-                message: 'No fue posible cargar el historial de envíos. Intenta nuevamente.',
-              } satisfies HistoryViewModel),
+            catchError((error: unknown) =>
+              of(
+                isForbiddenError(error)
+                  ? ({ ...initialViewModel, state: 'forbidden', filters } satisfies HistoryViewModel)
+                  : ({
+                      ...initialViewModel,
+                      state: 'error',
+                      filters,
+                      message: 'No fue posible cargar el historial de envíos. Intenta nuevamente.',
+                    } satisfies HistoryViewModel),
+              ),
             ),
           ),
       ),
@@ -192,7 +197,11 @@ export class History {
     const totalPages = Math.max(result.totalPages, 1);
     const page = Math.min(Math.max(result.page, 1), totalPages);
     const start = (page - 1) * result.pageSize;
-    const state = result.items.length === 0 ? 'empty' : 'success';
+    const isEmpty = result.items.length === 0;
+    const state = isEmpty ? 'empty' : 'success';
+    const emptyReason: HistoryEmptyReason | undefined = isEmpty
+      ? (this.hasActiveFilters(filters) ? 'no-matches' : 'no-data')
+      : undefined;
 
     return {
       state,
@@ -210,8 +219,22 @@ export class History {
       rangeStart: totalItems === 0 ? 0 : start + 1,
       rangeEnd: totalItems === 0 ? 0 : Math.min(start + result.items.length, totalItems),
       queryParams: { ...this.buildQueryParams({ ...filters, page }), from: 'history' },
-      message: result.items.length === 0 ? 'No hay envíos completados que coincidan con los filtros.' : undefined,
+      emptyReason,
+      message: this.getEmptyMessage(emptyReason),
     };
+  }
+
+  /** Solo cuentan los filtros del usuario: la pagina no cambia el universo de resultados. */
+  private hasActiveFilters(filters: HistoryFilters): boolean {
+    return Boolean(filters.query || filters.operation || filters.mode);
+  }
+
+  private getEmptyMessage(emptyReason: HistoryEmptyReason | undefined): string | undefined {
+    if (emptyReason === 'no-matches') {
+      return 'Ningún envío completado coincide con la búsqueda o los filtros seleccionados.';
+    }
+
+    return undefined;
   }
 
   private getFiltersFromParams(params: ParamMap): HistoryFilters {

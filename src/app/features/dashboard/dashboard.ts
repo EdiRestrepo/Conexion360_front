@@ -10,6 +10,7 @@ import { DashboardMetrics } from '../../core/models/shipment.model';
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import type { DashboardDistributionItem, DashboardMetricCard, DashboardSearchState, DashboardViewModel } from './models/dashboard-view.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
+import { isForbiddenError } from '../../core/utils/api-error';
 import { copyToClipboard } from '../../core/utils/clipboard';
 import {
   getOperationTypeLabel,
@@ -135,7 +136,6 @@ export class Dashboard {
             ...initialViewModel,
             state: 'empty',
             metrics,
-            message: 'No hay envíos disponibles para construir el dashboard.',
           } satisfies DashboardViewModel;
         }
 
@@ -149,12 +149,16 @@ export class Dashboard {
         } satisfies DashboardViewModel;
       }),
       startWith(initialViewModel),
-      catchError(() =>
-        of({
-          ...initialViewModel,
-          state: 'error',
-          message: 'No fue posible cargar el resumen de envíos internacionales.',
-        } satisfies DashboardViewModel),
+      catchError((error: unknown) =>
+        of(
+          isForbiddenError(error)
+            ? ({ ...initialViewModel, state: 'forbidden' } satisfies DashboardViewModel)
+            : ({
+                ...initialViewModel,
+                state: 'error',
+                message: 'No fue posible cargar el resumen de envíos internacionales.',
+              } satisfies DashboardViewModel),
+        ),
       ),
     );
   }

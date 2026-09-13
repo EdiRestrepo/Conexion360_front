@@ -1,6 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
+﻿import { HttpErrorResponse } from '@angular/common/http';
 
-import { getApiErrorMessage } from './api-error';
+import { getApiErrorMessage, isForbiddenError } from './api-error';
 
 describe('getApiErrorMessage', () => {
   const fallback = 'No fue posible eliminar el usuario.';
@@ -36,5 +36,11 @@ describe('getApiErrorMessage', () => {
 
   it('returns the plain fallback for non-HTTP errors', () => {
     expect(getApiErrorMessage(new Error('boom'), fallback)).toBe(fallback);
+  });
+
+  it('flags only a 403 as a forbidden error', () => {
+    expect(isForbiddenError(new HttpErrorResponse({ status: 403 }))).toBeTrue();
+    expect(isForbiddenError(new HttpErrorResponse({ status: 500 }))).toBeFalse();
+    expect(isForbiddenError(new Error('boom'))).toBeFalse();
   });
 });

@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+﻿import { HttpErrorResponse } from '@angular/common/http';
 
 /**
  * Mensaje de error accionable a partir de una respuesta fallida.
@@ -8,6 +8,15 @@ import { HttpErrorResponse } from '@angular/common/http';
  * 403 (permisos del M2M en Auth0) y un 500 (fallo del backend) piden acciones
  * distintas, y un texto genérico obliga a abrir DevTools para distinguirlos.
  */
+/**
+ * Un 403 no es un fallo del servicio: el backend respondio bien y nego el
+ * acceso porque el usuario todavia no tiene un rol asignado. Reintentar no
+ * cambia nada, asi que las vistas lo muestran como un estado propio.
+ */
+export function isForbiddenError(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === 403;
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof HttpErrorResponse)) {
     return fallback;

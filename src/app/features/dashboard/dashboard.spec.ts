@@ -1,4 +1,5 @@
 ﻿import { signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -212,6 +213,23 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     expect(getText()).toContain('Total de envíos');
+  }));
+
+  it('should render a forbidden state without retry when the API answers 403', fakeAsync(() => {
+    const service = TestBed.inject(ApiHomeService) as unknown as {
+      getDashboardMetrics: jasmine.Spy<() => Observable<DashboardMetrics>>;
+      getRecent: jasmine.Spy<() => Observable<HomeShipmentSummary[]>>;
+    };
+    service.getDashboardMetrics.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+    fixture = TestBed.createComponent(Dashboard);
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('Tu usuario no tiene un rol asignado');
+    expect(getText()).not.toContain('No se pudo cargar el dashboard');
+    expect(getText()).not.toContain('Reintentar');
   }));
 
   function getText(): string {
