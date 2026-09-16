@@ -85,7 +85,7 @@ export class ApiHomeService {
   }
 
   private createHomeParams(identity: Auth0Identity): HttpParams {
-    return new HttpParams().set('idClient', identity.document ?? '');
+    return new HttpParams().set('idClient', identity.document ?? '').set('idQueryClient', '');
   }
 
   private toHomeDashboardData(response: unknown): HomeDashboardData {

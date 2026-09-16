@@ -43,6 +43,7 @@ export class ApiHistoryService {
 
     const params = new HttpParams()
       .set('idClient', identity.document ?? '')
+      .set('idQueryClient', '')
       .set('page', String(page))
       .set('size', String(pageSize));
 

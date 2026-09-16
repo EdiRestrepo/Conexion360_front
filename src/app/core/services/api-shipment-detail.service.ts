@@ -26,7 +26,10 @@ export class ApiShipmentDetailService {
     return this.getIdentity().pipe(
       switchMap((identity) =>
         this.http.get<unknown>(this.detailUrl, {
-          params: new HttpParams().set('idClient', identity.document ?? '').set('documentNumber', document),
+          params: new HttpParams()
+            .set('idClient', identity.document ?? '')
+            .set('idQueryClient', '')
+            .set('documentNumber', document),
         }),
       ),
       map((response) => mapShipmentDetailResponse(response, shipmentId)),

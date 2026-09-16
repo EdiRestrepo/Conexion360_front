@@ -53,6 +53,7 @@ describe('ApiHomeService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8110357412');
+    expect(request.request.params.get('idQueryClient')).toBe('');
     expect(request.request.params.has('role')).toBe(false);
 
     request.flush({
@@ -198,6 +199,7 @@ describe('ApiHomeService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8110357412');
+    expect(request.request.params.get('idQueryClient')).toBe('');
     expect(request.request.params.has('role')).toBe(false);
     expect(request.request.params.get('filterValue')).toBe('9YJB1QX6');
 

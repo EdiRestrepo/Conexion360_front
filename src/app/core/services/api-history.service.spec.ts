@@ -58,6 +58,7 @@ describe('ApiHistoryService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8909006089');
+    expect(request.request.params.get('idQueryClient')).toBe('');
     expect(request.request.params.has('role')).toBe(false);
     expect(request.request.params.get('page')).toBe('1');
     expect(request.request.params.get('size')).toBe('10');
@@ -109,6 +110,7 @@ describe('ApiHistoryService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('8909006089');
+    expect(request.request.params.get('idQueryClient')).toBe('');
     expect(request.request.params.has('role')).toBe(false);
     expect(request.request.params.get('page')).toBe('1');
     expect(request.request.params.get('size')).toBe('10');

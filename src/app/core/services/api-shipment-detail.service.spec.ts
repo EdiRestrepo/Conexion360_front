@@ -38,6 +38,7 @@ describe('ApiShipmentDetailService', () => {
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/myshipments/detailsshipments`);
 
     expect(request.request.params.get('idClient')).toBe('8110357412');
+    expect(request.request.params.get('idQueryClient')).toBe('');
     expect(request.request.params.get('documentNumber')).toBe('HBL-XA5S00I8');
 
     request.flush({
