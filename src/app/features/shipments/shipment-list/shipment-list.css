@@ -127,7 +127,6 @@
 .shipments-table-wrap {
   max-width: 100%;
   overflow-x: auto;
-  scrollbar-gutter: stable;
 }
 
 .shipments-table {
@@ -159,6 +158,21 @@
   font-size: var(--font-size-label);
 }
 
+.shipments-table--no-client .shipments-table__row {
+  grid-template-columns:
+    66px
+    178px
+    170px
+    108px
+    100px
+    210px
+    110px
+    110px
+    110px
+    110px
+    72px;
+}
+
 .shipments-table__row > * {
   min-width: 0;
 }
@@ -168,10 +182,7 @@
   text-align: center;
 }
 
-.shipments-table__row > :nth-child(8),
-.shipments-table__row > :nth-child(9),
-.shipments-table__row > :nth-child(10),
-.shipments-table__row > :nth-child(11) {
+.shipments-table__row > .date-cell {
   white-space: nowrap;
 }
 

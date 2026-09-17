@@ -97,11 +97,19 @@
       </div>
     } @else if (viewModel.state === 'empty') {
       <div class="surface-card empty-state empty-state--no-data">
-        <span class="empty-state__icon" aria-hidden="true">
-          <mat-icon>inventory_2</mat-icon>
-        </span>
-        <strong>Aún no tienes envíos asociados</strong>
-        <small class="empty-state__hint">¿Esperabas ver información aquí? Comunícate a través de la línea telefónica.</small>
+        @if (hasNoAssignedClients()) {
+          <span class="empty-state__icon" aria-hidden="true">
+            <mat-icon>group_off</mat-icon>
+          </span>
+          <strong>Aún no tienes clientes asociados</strong>
+          <small class="empty-state__hint">¿Esperabas ver información aquí? Comunícate con un administrador para que te asigne clientes.</small>
+        } @else {
+          <span class="empty-state__icon" aria-hidden="true">
+            <mat-icon>inventory_2</mat-icon>
+          </span>
+          <strong>Aún no tienes envíos asociados</strong>
+          <small class="empty-state__hint">¿Esperabas ver información aquí? Comunícate a través de la línea telefónica.</small>
+        }
       </div>
     } @else {
       <section class="dashboard-cards" aria-label="Indicadores principales">

@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, forkJoin, map, of, startWith, take } from 'rxjs';
 
 import { DashboardMetrics } from '../../core/models/shipment.model';
+import { isAnalystRole } from '../../core/models/user.model';
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import type { DashboardDistributionItem, DashboardMetricCard, DashboardSearchState, DashboardViewModel } from './models/dashboard-view.model';
 import { AuthSessionService } from '../../core/services/auth-session.service';
@@ -46,6 +47,8 @@ export class Dashboard {
     const name = this.session()?.user.name.trim();
     return name ? `¡Hola, ${name}!` : '¡Hola!';
   });
+  /** Para analistas, sin datos significa sin clientes asignados (ver `isAnalystRole`). */
+  protected readonly hasNoAssignedClients = computed(() => isAnalystRole(this.session()?.user.role));
   protected viewModel$ = this.loadDashboard();
   protected readonly searchMessage = signal('');
   protected readonly searchResults = signal<HomeShipmentSummary[]>([]);

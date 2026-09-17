@@ -1,4 +1,4 @@
-﻿import { signal } from '@angular/core';
+﻿import { WritableSignal, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
@@ -8,6 +8,7 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AuthSession } from '../../core/models/auth-session.model';
 import { DashboardMetrics } from '../../core/models/shipment.model';
+import { UserRole } from '../../core/models/user.model';
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { Dashboard } from './dashboard';
@@ -16,10 +17,14 @@ describe('Dashboard', () => {
   let fixture: ComponentFixture<Dashboard>;
   let component: DashboardTestComponent;
   let searchSpy: jasmine.Spy;
+  let currentSession: WritableSignal<AuthSession | null>;
+  let getDashboardMetricsSpy: jasmine.Spy;
 
   beforeEach(async () => {
     searchSpy = jasmine.createSpy('search').and.returnValue(of({ items: [], page: 1, pageSize: 30, totalItems: 0, totalPages: 0 }));
     const recentShipments = createShipments(10);
+    currentSession = signal(createSession('Iván Valencia'));
+    getDashboardMetricsSpy = jasmine.createSpy('getDashboardMetrics').and.returnValue(of(createDashboardMetrics()));
 
     await TestBed.configureTestingModule({
       imports: [Dashboard, NoopAnimationsModule],
@@ -28,13 +33,13 @@ describe('Dashboard', () => {
         {
           provide: AuthSessionService,
           useValue: {
-            currentSession: signal(createSession('Iván Valencia')),
+            currentSession,
           },
         },
         {
           provide: ApiHomeService,
           useValue: {
-            getDashboardMetrics: jasmine.createSpy('getDashboardMetrics').and.returnValue(of(createDashboardMetrics())),
+            getDashboardMetrics: getDashboardMetricsSpy,
             getRecent: jasmine.createSpy('getRecent').and.returnValue(of(recentShipments)),
             search: searchSpy,
           },
@@ -182,6 +187,31 @@ describe('Dashboard', () => {
     expect(getText()).toContain('No encontramos envíos con ese documento.');
   }));
 
+  for (const role of ['ANALISTAOPE', 'ANALISTASAC'] as UserRole[]) {
+    it(`should tell the ${role} role it has no assigned clients when there is no data`, fakeAsync(() => {
+      currentSession.set(createSession('Iván Valencia', role));
+      getDashboardMetricsSpy.and.returnValue(of({ ...createDashboardMetrics(), totalShipments: 0 }));
+      fixture = TestBed.createComponent(Dashboard);
+      fixture.detectChanges();
+      tick();
+      fixture.detectChanges();
+
+      expect(getText()).toContain('Aún no tienes clientes asociados');
+      expect(getText()).not.toContain('Aún no tienes envíos asociados');
+    }));
+  }
+
+  it('should keep the shipments message for the CLIENT role when there is no data', fakeAsync(() => {
+    getDashboardMetricsSpy.and.returnValue(of({ ...createDashboardMetrics(), totalShipments: 0 }));
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('Aún no tienes envíos asociados');
+    expect(getText()).not.toContain('clientes asociados');
+  }));
+
   it('should not execute search when field is empty', fakeAsync(() => {
     fixture.detectChanges();
     tick();
@@ -242,13 +272,13 @@ interface DashboardTestComponent {
   searchShipment: (event?: Event) => boolean;
 }
 
-function createSession(name: string): AuthSession {
+function createSession(name: string, role: UserRole = 'CLIENT'): AuthSession {
   return {
     user: {
       id: 'auth0|123',
       name,
       email: 'ivan.valencia@conexion360.com',
-      role: 'CLIENT',
+      role,
     },
     accessToken: '',
     expiresAt: '2026-07-22T00:00:00.000Z',

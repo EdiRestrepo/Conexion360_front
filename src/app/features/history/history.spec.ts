@@ -1,13 +1,17 @@
 ﻿import { HttpErrorResponse } from '@angular/common/http';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Params, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
+import { AuthSession } from '../../core/models/auth-session.model';
 import { SearchFilters } from '../../core/models/common.model';
 import { LogisticDates, OperationType, Shipment, TransportMode } from '../../core/models/shipment.model';
+import { UserRole } from '../../core/models/user.model';
 import { ApiHistoryService } from '../../core/services/api-history.service';
+import { AuthSessionService } from '../../core/services/auth-session.service';
 import { MyShipmentsPage } from '../../core/mappers/shipments-page.mapper';
 import { History } from './history';
 
@@ -18,9 +22,11 @@ describe('History', () => {
   let searchSpy: jasmine.Spy<(filters: SearchFilters) => Observable<MyShipmentsPage>>;
   let queryParamSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let currentParams: Record<string, string>;
+  let currentSession: WritableSignal<AuthSession | null>;
 
   beforeEach(async () => {
     currentParams = {};
+    currentSession = signal(createSession('ADMIN'));
     queryParamSubject = new BehaviorSubject(convertToParamMap(currentParams));
     searchSpy = jasmine.createSpy('search').and.returnValue(of(createApiPage(createApiShipments())));
 
@@ -39,6 +45,7 @@ describe('History', () => {
           provide: ApiHistoryService,
           useValue: { search: searchSpy },
         },
+        { provide: AuthSessionService, useValue: { currentSession } },
       ],
     }).compileComponents();
 
@@ -202,6 +209,26 @@ describe('History', () => {
     expect(getText()).toContain('Limpiar filtros');
   }));
 
+  for (const role of ['ANALISTAOPE', 'ANALISTASAC'] as UserRole[]) {
+    it(`should tell the ${role} role it has no assigned clients when there is no data`, fakeAsync(() => {
+      currentSession.set(createSession(role));
+      searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
+      render();
+
+      expect(getText()).toContain('Aún no tienes clientes asociados');
+      expect(getText()).not.toContain('Aún no tienes envíos completados');
+    }));
+  }
+
+  it('should keep the shipments message for the CLIENT role when there is no data', fakeAsync(() => {
+    currentSession.set(createSession('CLIENT'));
+    searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
+    render();
+
+    expect(getText()).toContain('Aún no tienes envíos completados');
+    expect(getText()).not.toContain('clientes asociados');
+  }));
+
   it('should render a no-data empty state when the client has no completed shipments at all', fakeAsync(() => {
     searchSpy.and.returnValue(of(createApiPage([], 0, 1, 10)));
     fixture = TestBed.createComponent(History);
@@ -238,6 +265,34 @@ describe('History', () => {
     }));
   }));
 
+  for (const role of ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'] as UserRole[]) {
+    it(`should show the client column for the ${role} role`, fakeAsync(() => {
+      currentSession.set(createSession(role));
+      render();
+
+      expect(getColumnHeaders()).toContain('Cliente');
+      expect(getTableRows()[0].textContent).toContain('Enka');
+      expect(fixture.nativeElement.querySelector('.history-table--no-client')).toBeNull();
+    }));
+  }
+
+  it('should hide the client column for the CLIENT role', fakeAsync(() => {
+    currentSession.set(createSession('CLIENT'));
+    render();
+
+    expect(getColumnHeaders()).not.toContain('Cliente');
+    expect(getColumnHeaders().length).toBe(getTableRows()[0].querySelectorAll('[role="cell"]').length);
+    expect(getText()).not.toContain('Enka');
+    expect(fixture.nativeElement.querySelector('.history-table--no-client')).not.toBeNull();
+  }));
+
+  it('should hide the client column when the session has no role', fakeAsync(() => {
+    currentSession.set(createSession(null));
+    render();
+
+    expect(getColumnHeaders()).not.toContain('Cliente');
+  }));
+
   function render(): void {
     fixture.detectChanges();
     tick();
@@ -268,6 +323,12 @@ describe('History', () => {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
+  function getColumnHeaders(): string[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('[role="columnheader"]') as NodeListOf<HTMLElement>).map(
+      (header) => header.textContent?.trim() ?? '',
+    );
+  }
+
   function getTableRows(): HTMLElement[] {
     return Array.from(
       fixture.nativeElement.querySelectorAll('.history-table__row:not(.history-table__row--head)') as NodeListOf<HTMLElement>,
@@ -290,6 +351,20 @@ interface HistoryTestComponent {
   operationControl: FormControl<OperationType | ''>;
   modeControl: FormControl<TransportMode | ''>;
   pageSizeControl: FormControl<number>;
+}
+
+function createSession(role: UserRole | null): AuthSession {
+  return {
+    user: {
+      id: 'auth0|123',
+      name: 'Edison Restrepo',
+      email: 'edison@example.com',
+      role,
+      picture: null,
+    },
+    accessToken: '',
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+  };
 }
 
 interface ShipmentInput extends Partial<Omit<Shipment, 'logisticDates'>> {

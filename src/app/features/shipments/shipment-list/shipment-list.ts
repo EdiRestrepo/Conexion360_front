@@ -1,5 +1,5 @@
 ﻿import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
@@ -8,6 +8,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { OperationType, Shipment, ShipmentStatus, TransportMode } from '../../../core/models/shipment.model';
+import { isAnalystRole, isInternalRole } from '../../../core/models/user.model';
+import { AuthSessionService } from '../../../core/services/auth-session.service';
 import {
   ShipmentChipType,
   getOperationTypeLabel,
@@ -65,6 +67,7 @@ export class ShipmentList {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly shipmentService = inject(ApiMyShipmentsService);
+  private readonly authSession = inject(AuthSessionService);
 
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly operationControl = new FormControl<OperationType | ''>('', { nonNullable: true });
@@ -81,6 +84,11 @@ export class ShipmentList {
   protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
   protected readonly copiedDocument = signal<string | null>(null);
+
+  /** Un cliente solo ve sus propios envíos: la columna repetiría su nombre en cada fila. */
+  protected readonly showClientColumn = computed(() => isInternalRole(this.authSession.currentSession()?.user.role));
+  /** Para analistas, sin datos significa sin clientes asignados (ver `isAnalystRole`). */
+  protected readonly hasNoAssignedClients = computed(() => isAnalystRole(this.authSession.currentSession()?.user.role));
 
   constructor() {
     this.viewModel$ = this.route.queryParamMap.pipe(
