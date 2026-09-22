@@ -4,7 +4,6 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { MasterSettings } from '../models/settings.model';
 import {
   NotificationSettings,
   UserNotificationPreferences,
@@ -166,33 +165,6 @@ describe('ApiSettingsService', () => {
     expect(request.request.body.notificationEvents.notificationEventId).toBe(9);
 
     request.flush(null);
-  });
-
-  it('should flatten the master settings groups', () => {
-    let settings: MasterSettings | undefined;
-
-    service.getMasterSettings().subscribe((value) => (settings = value));
-
-    const request = httpMock.expectOne(`${environment.api.baseUrl}/settings/viewmaster?idClient=8110357412`);
-
-    expect(request.request.method).toBe('GET');
-    request.flush({
-      dataResponse: {
-        generalParameters: { automaticTrackingUpdate: true, requireDocumentUpload: false, publicMonitoring: true },
-        location: { currencyType: 'USD - Dólar', language: 'Español' },
-        system: { timeZone: 'America/Bogota(UTC-5)', dataRetentionDays: 365 },
-      },
-    });
-
-    expect(settings).toEqual({
-      automaticTrackingUpdate: true,
-      requireDocumentUpload: false,
-      publicMonitoring: true,
-      currency: 'USD - Dólar',
-      language: 'Español',
-      timeZone: 'America/Bogota(UTC-5)',
-      dataRetentionDays: 365,
-    });
   });
 });
 

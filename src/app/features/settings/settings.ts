@@ -23,10 +23,10 @@ const settingsCards: SettingsCard[] = [
     roles: ['ADMIN'],
   },
   {
-    title: 'Ajustes maestros',
-    description: 'Parametriza catálogos y configuraciones globales del sistema.',
+    title: 'Maestro clientes colaborador',
+    description: 'Administra el maestro de clientes colaboradores.',
     icon: 'tune',
-    route: '/settings/master-data',
+    route: '/settings/clients-collaborators',
     roles: ['ADMIN'],
   },
 ];

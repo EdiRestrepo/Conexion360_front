@@ -1,0 +1,48 @@
+.settings-subpage {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-subpage__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-subpage__header h2,
+.settings-subpage__header p {
+  margin: 0;
+}
+
+.settings-subpage__header h2 {
+  color: var(--color-primary);
+  font-size: var(--font-size-h3);
+}
+
+.settings-subpage__header p {
+  color: var(--color-text-muted);
+}
+
+.settings-back {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: var(--radius-control);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.settings-back:hover,
+.settings-back:focus-visible {
+  background: var(--color-secondary-soft);
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.state-box {
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-muted);
+}

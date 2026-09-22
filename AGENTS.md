@@ -230,7 +230,7 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Preferencias de notificación
 - Gestión de usuarios
 - Gestión de roles
-- Parámetros maestros
+- Maestro clientes colaborador (pendiente de definir su contenido)
 
 ## 5. Arquitectura del frontend
 
@@ -636,7 +636,7 @@ Configurar lazy loading:
 - /settings
 - /settings/notifications
 - /settings/users
-- /settings/master-data
+- /settings/clients-collaborators
 
 Agregar ruta 404 o redirección segura.
 

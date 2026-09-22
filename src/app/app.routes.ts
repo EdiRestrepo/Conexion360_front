@@ -79,12 +79,12 @@ export const routes: Routes = [
               import('./features/settings/settings-users/settings-users').then((m) => m.SettingsUsers),
           },
           {
-            path: 'master-data',
+            path: 'clients-collaborators',
             canActivate: [roleGuard],
             data: { roles: ['ADMIN'] },
             loadComponent: () =>
-              import('./features/settings/settings-master-data/settings-master-data').then(
-                (m) => m.SettingsMasterData,
+              import('./features/settings/settings-clients-collaborators/settings-clients-collaborators').then(
+                (m) => m.SettingsClientsCollaborators,
               ),
           },
         ],

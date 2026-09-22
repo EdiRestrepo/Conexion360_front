@@ -38,7 +38,7 @@ describe('Settings', () => {
 
     expect(getText()).toContain('Ajuste de notificaciones');
     expect(getText()).toContain('Gestión de usuarios');
-    expect(getText()).toContain('Ajustes maestros');
+    expect(getText()).toContain('Maestro clientes colaborador');
     expect(getText()).toContain('Solo administradores');
   });
 
@@ -47,7 +47,7 @@ describe('Settings', () => {
     fixture.detectChanges();
 
     expect(getText()).toContain('Gestión de usuarios');
-    expect(getText()).toContain('Ajustes maestros');
+    expect(getText()).toContain('Maestro clientes colaborador');
     expect(getText()).not.toContain('Solo administradores');
   });
 

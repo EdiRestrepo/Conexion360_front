@@ -3,17 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, filter, map, of, switchMap, take, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import {
-  mapMasterSettingsResponse,
-  mapNotificationSettingsRequest,
-  mapNotificationSettingsResponse,
-} from '../mappers/settings.mapper';
+import { mapNotificationSettingsRequest, mapNotificationSettingsResponse } from '../mappers/settings.mapper';
 import {
   NotificationSettings,
   UserNotificationPreferences,
   defaultNotificationPreferences,
 } from '../models/notification.model';
-import { MasterSettings } from '../models/settings.model';
 import { Auth0Identity } from '../models/user.model';
 import { Auth0FacadeService } from './auth0-facade.service';
 
@@ -22,8 +17,7 @@ import { Auth0FacadeService } from './auth0-facade.service';
  *
  * Los endpoints de lectura piden `idClient` y los de escritura lo llevan en el
  * cuerpo, así que el servicio lo resuelve del documento de la identidad de
- * Auth0 y las pantallas no tienen que plumbearlo. `viewmaster` además exige rol
- * ADMIN, igual que la tarjeta que lleva a él.
+ * Auth0 y las pantallas no tienen que plumbearlo.
  */
 @Injectable({
   providedIn: 'root',
@@ -34,7 +28,12 @@ export class ApiSettingsService {
   private readonly baseUrl = `${environment.api.baseUrl}/settings`;
 
   getNotificationSettings(): Observable<NotificationSettings> {
-    return this.fetch('viewnotifications').pipe(
+    return this.getIdentity().pipe(
+      switchMap((identity) =>
+        this.http.get<unknown>(`${this.baseUrl}/viewnotifications`, {
+          params: new HttpParams().set('idClient', identity.document ?? ''),
+        }),
+      ),
       map((response) => mapNotificationSettingsResponse(response)),
       // Un 404 es "este cliente todavía no guardó nada", que es justo el caso
       // para el que existe `createnotifications`: se responde con los valores
@@ -72,20 +71,6 @@ export class ApiSettingsService {
           ? this.http.patch<void>(`${this.baseUrl}/updatenotifications`, body)
           : this.http.post<void>(`${this.baseUrl}/createnotifications`, body);
       }),
-    );
-  }
-
-  getMasterSettings(): Observable<MasterSettings> {
-    return this.fetch('viewmaster').pipe(map((response) => mapMasterSettingsResponse(response)));
-  }
-
-  private fetch(path: string): Observable<unknown> {
-    return this.getIdentity().pipe(
-      switchMap((identity) =>
-        this.http.get<unknown>(`${this.baseUrl}/${path}`, {
-          params: new HttpParams().set('idClient', identity.document ?? ''),
-        }),
-      ),
     );
   }
 

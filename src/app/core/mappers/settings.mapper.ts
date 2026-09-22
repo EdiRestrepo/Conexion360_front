@@ -3,8 +3,7 @@ import {
   UserNotificationPreferences,
   defaultNotificationPreferences,
 } from '../models/notification.model';
-import { MasterSettings } from '../models/settings.model';
-import { JsonRecord, asRecord, getValue, readNumber, readOptionalBoolean, readString } from './json-record.util';
+import { JsonRecord, asRecord, getValue, readNumber, readOptionalBoolean } from './json-record.util';
 
 /**
  * Traduce `GET /settings/viewnotifications`.
@@ -75,25 +74,7 @@ export function mapNotificationSettingsRequest(
   };
 }
 
-/** Traduce `GET /settings/viewmaster` aplanando los tres grupos del backend. */
-export function mapMasterSettingsResponse(response: unknown): MasterSettings {
-  const payload = readPayload(response);
-  const general = asRecord(getValue(payload, ['generalParameters']));
-  const location = asRecord(getValue(payload, ['location']));
-  const system = asRecord(getValue(payload, ['system']));
-
-  return {
-    automaticTrackingUpdate: readOptionalBoolean(general, ['automaticTrackingUpdate']) ?? false,
-    requireDocumentUpload: readOptionalBoolean(general, ['requireDocumentUpload']) ?? false,
-    publicMonitoring: readOptionalBoolean(general, ['publicMonitoring']) ?? false,
-    currency: readString(location, ['currencyType', 'currency']),
-    language: readString(location, ['language']),
-    timeZone: readString(system, ['timeZone']),
-    dataRetentionDays: readNumber(system, ['dataRetentionDays'], 0),
-  };
-}
-
-/** Ambos endpoints responden con la envoltura estándar `{ dataResponse: {...} }`. */
+/** El backend responde con la envoltura estándar `{ dataResponse: {...} }`. */
 function readPayload(response: unknown): JsonRecord {
   const root = asRecord(response);
   const payload = getValue(root, ['dataResponse', 'DataResponse']) ?? root;
