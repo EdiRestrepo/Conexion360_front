@@ -4,13 +4,12 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { Observable, catchError, combineLatest, map, of, startWith, switchMap, take } from 'rxjs';
+import { Observable, catchError, map, of, startWith, switchMap, take } from 'rxjs';
 
-import { defaultNotificationPreferences } from '../../../core/models/notification.model';
+import { NotificationSettings, defaultNotificationPreferences } from '../../../core/models/notification.model';
 import { ApiSettingsService } from '../../../core/services/api-settings.service';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
-import { NotificationPreferencesService } from '../../../core/services/notification-preferences.service';
-import type { NotificationPreferenceForm, PreferencesState, PreferencesViewModel } from '../models/settings-view.model';
+import type { NotificationPreferenceForm, PreferencesViewModel } from '../models/settings-view.model';
 
 @Component({
   selector: 'app-settings-notifications',
@@ -21,11 +20,16 @@ import type { NotificationPreferenceForm, PreferencesState, PreferencesViewModel
 })
 export class SettingsNotifications {
   private readonly auth0Facade = inject(Auth0FacadeService);
-  private readonly preferencesService = inject(NotificationPreferencesService);
   private readonly settingsService = inject(ApiSettingsService);
-  private readonly currentAuth0UserId = signal<string | null>(null);
+  /**
+   * Los ajustes tal como los devolvió el backend. Guardan los ids con los que
+   * el servicio decide entre crear y actualizar, y se refrescan después de cada
+   * guardado para que el segundo ya edite en vez de volver a crear.
+   */
+  private readonly currentSettings = signal<NotificationSettings | null>(null);
 
   protected readonly saveMessage = signal<string | null>(null);
+  protected readonly saving = signal(false);
   protected readonly form = new FormGroup<NotificationPreferenceForm>({
     email: new FormControl(defaultNotificationPreferences.email, { nonNullable: true }),
     inApp: new FormControl(defaultNotificationPreferences.inApp, { nonNullable: true }),
@@ -40,45 +44,64 @@ export class SettingsNotifications {
   protected readonly viewModel$: Observable<PreferencesViewModel> = this.auth0Facade.user$.pipe(
     switchMap((identity) => {
       if (!identity) {
-        return of({ state: 'empty', preferences: null, message: 'No hay identidad autenticada para cargar preferencias.' } satisfies PreferencesViewModel);
+        return of({
+          state: 'empty',
+          preferences: null,
+          message: 'No hay identidad autenticada para cargar preferencias.',
+        } satisfies PreferencesViewModel);
       }
 
-      this.currentAuth0UserId.set(identity.auth0UserId);
+      return this.settingsService.getNotificationSettings().pipe(
+        map((settings) => {
+          this.currentSettings.set(settings);
+          this.form.patchValue(settings.preferences, { emitEvent: false });
 
-      // El backend manda la configuración del cliente y el navegador lo que el
-      // usuario guardó aquí; lo local gana porque es lo único que conserva sus
-      // cambios mientras no exista un endpoint para persistirlos.
-      return combineLatest([
-        this.settingsService.getNotificationSettings(),
-        this.preferencesService.getPreferences(identity.auth0UserId),
-      ]).pipe(
-        map(([clientPreferences, storedPreferences]) => {
-          const preferences = { ...clientPreferences, ...(storedPreferences ?? {}) };
-          this.form.patchValue(preferences, { emitEvent: false });
-
-          return { state: 'success', preferences } satisfies PreferencesViewModel;
+          return { state: 'success', preferences: settings.preferences } satisfies PreferencesViewModel;
         }),
         startWith({ state: 'loading', preferences: null } satisfies PreferencesViewModel),
-        catchError(() => of({ state: 'error', preferences: null, message: 'No fue posible cargar las preferencias.' } satisfies PreferencesViewModel)),
+        catchError(() =>
+          of({
+            state: 'error',
+            preferences: null,
+            message: 'No fue posible cargar las preferencias.',
+          } satisfies PreferencesViewModel),
+        ),
       );
     }),
   );
 
   protected savePreferences(): void {
-    const auth0UserId = this.currentAuth0UserId();
+    const settings = this.currentSettings();
 
-    if (!auth0UserId) {
-      this.saveMessage.set('No hay identidad de Auth0 disponible para guardar preferencias.');
+    if (!settings) {
+      this.saveMessage.set('No fue posible guardar las preferencias.');
       return;
     }
 
     this.saveMessage.set(null);
-    this.preferencesService
-      .savePreferences(auth0UserId, this.form.getRawValue())
-      .pipe(take(1))
+    this.saving.set(true);
+    this.settingsService
+      .saveNotificationSettings(this.form.getRawValue(), settings)
+      // Releer deja en memoria los ids que el backend acaba de asignar en el
+      // alta; sin ellos, guardar dos veces seguidas crearía dos veces. Si esa
+      // relectura falla, el guardado ya se hizo y no debe reportarse como error.
+      .pipe(
+        switchMap(() => this.settingsService.getNotificationSettings().pipe(catchError(() => of(null)))),
+        take(1),
+      )
       .subscribe({
-        next: () => this.saveMessage.set('Preferencias guardadas.'),
-        error: () => this.saveMessage.set('No fue posible guardar las preferencias.'),
+        next: (refreshedSettings) => {
+          if (refreshedSettings) {
+            this.currentSettings.set(refreshedSettings);
+          }
+
+          this.saving.set(false);
+          this.saveMessage.set('Preferencias guardadas.');
+        },
+        error: () => {
+          this.saving.set(false);
+          this.saveMessage.set('No fue posible guardar las preferencias.');
+        },
       });
   }
 }

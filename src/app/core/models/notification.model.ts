@@ -30,6 +30,22 @@ export interface UserNotificationPreferences {
 }
 
 /**
+ * Lo que devuelve `GET /settings/viewnotifications`: las preferencias y los dos
+ * identificadores de las filas que las guardan.
+ *
+ * Los ids son lo que distingue un cliente que ya tiene configuración de uno que
+ * nunca la guardó, y por eso deciden si al guardar se llama a
+ * `createnotifications` o a `updatenotifications`.
+ */
+export interface NotificationSettings {
+  preferences: UserNotificationPreferences;
+  /** `notificationChannelId`; 0 cuando el cliente todavía no tiene fila. */
+  channelId: number;
+  /** `notificationEventId`; 0 cuando el cliente todavía no tiene fila. */
+  eventId: number;
+}
+
+/**
  * Valores con los que se pinta el formulario mientras llega
  * `GET /settings/viewnotifications`, y con los que se completa un campo que esa
  * respuesta no traiga.

@@ -101,7 +101,7 @@
           </label>
         </article>
 
-        <button mat-flat-button type="submit" class="settings-save-button">
+        <button mat-flat-button type="submit" class="settings-save-button" [disabled]="saving()">
           <mat-icon aria-hidden="true">save</mat-icon>
           Guardar cambios
         </button>

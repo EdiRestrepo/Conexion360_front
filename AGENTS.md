@@ -207,7 +207,8 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Leídas y no leídas
 - Dos tipos, los que expone el backend: cambio de estado y comentario
 - Modal de detalle al abrir una notificación, que además la marca como leída
-- Preferencias (en Ajustes, sobre `localStorage`; sin endpoint todavía)
+- Preferencias (en Ajustes, contra `settings/viewnotifications`,
+  `settings/createnotifications` y `settings/updatenotifications`)
 
 ### Reportes
 
