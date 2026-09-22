@@ -230,7 +230,8 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Preferencias de notificación
 - Gestión de usuarios
 - Gestión de roles
-- Maestro clientes colaborador (pendiente de definir su contenido)
+- Maestro clientes colaborador (alta de clientes, de colaboradores y
+  asociación entre ambos)
 
 ## 5. Arquitectura del frontend
 
@@ -1020,3 +1021,40 @@ lugar donde el usuario puede enterarse de por qué se cierra su sesión.
 - **En las pruebas de `MainLayout` el servicio va sustituido por un doble.** El
   real deja listeners sobre `document` y un intervalo que sobrevivirían a toda
   la suite de Karma.
+
+## 23. Maestro de clientes colaboradores
+
+`Ajustes → Maestro clientes colaborador` (`/settings/clients-collaborators`,
+solo ADMIN) reemplaza a la antigua pantalla de ajustes maestros, que únicamente
+leía `GET /settings/viewmaster` y no tenía forma de guardar nada.
+
+### Endpoints reales (controlador `Settings`)
+
+```
+GET /api/v1/settings/createcustomerdb?clientId
+GET /api/v1/settings/createcollaboratordb?clientId
+GET /api/v1/settings/createcustomercollaboratordb?clientId&collaborator
+```
+
+Tres avisos sobre ese contrato:
+
+- **Son `GET` aunque escriban en la base.** Así los expone el backend y el SPA
+  los respeta, pero por eso no se disparan nunca solos: siempre tras un clic, y
+  sin cachear. Si alguna vez se pasan a `POST`, el cambio es de una línea por
+  método en el servicio.
+- **El alta de colaborador también llama `clientId` a su parámetro**, no
+  `collaboratorId`. El servicio renombra el argumento hacia adentro para que la
+  pantalla no herede la confusión.
+- **No hay endpoint de listado.** La pantalla no puede mostrar lo que ya existe
+  ni verificar el resultado: lo único que se le enseña al administrador es el
+  `message` que devuelve el backend (y el de la respuesta de error, que suele
+  explicar el rechazo mejor que cualquier texto propio).
+
+### Archivos
+
+| Archivo | Rol |
+|---|---|
+| `core/services/api-clients-collaborators.service.ts` | Consumo de los tres endpoints |
+| `core/mappers/clients-collaborators.mapper.ts` | Lee el `message` de la envoltura |
+| `core/models/clients-collaborators.model.ts` | `MasterOperationResult` |
+| `features/settings/settings-clients-collaborators/` | Pantalla con los tres formularios |

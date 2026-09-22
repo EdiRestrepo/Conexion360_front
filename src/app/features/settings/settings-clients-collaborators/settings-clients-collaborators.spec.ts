@@ -1,27 +1,138 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { Observable, of, throwError } from 'rxjs';
 
+import { MasterOperationResult } from '../../../core/models/clients-collaborators.model';
+import { ApiClientsCollaboratorsService } from '../../../core/services/api-clients-collaborators.service';
 import { SettingsClientsCollaborators } from './settings-clients-collaborators';
 
 describe('SettingsClientsCollaborators', () => {
   let fixture: ComponentFixture<SettingsClientsCollaborators>;
+  let createCustomerSpy: jasmine.Spy<(clientId: string) => Observable<MasterOperationResult>>;
+  let createCollaboratorSpy: jasmine.Spy<(collaboratorId: string) => Observable<MasterOperationResult>>;
+  let linkSpy: jasmine.Spy<(clientId: string, collaboratorId: string) => Observable<MasterOperationResult>>;
 
   beforeEach(async () => {
+    createCustomerSpy = jasmine.createSpy('createCustomer').and.returnValue(of({ message: '' }));
+    createCollaboratorSpy = jasmine.createSpy('createCollaborator').and.returnValue(of({ message: '' }));
+    linkSpy = jasmine.createSpy('linkCustomerToCollaborator').and.returnValue(of({ message: '' }));
+
     await TestBed.configureTestingModule({
       imports: [SettingsClientsCollaborators, NoopAnimationsModule],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ApiClientsCollaboratorsService,
+          useValue: {
+            createCustomer: createCustomerSpy,
+            createCollaborator: createCollaboratorSpy,
+            linkCustomerToCollaborator: linkSpy,
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsClientsCollaborators);
-  });
-
-  it('should render the header and the pending content notice', () => {
     fixture.detectChanges();
-
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-
-    expect(text).toContain('Maestro clientes colaborador');
-    expect(text).toContain('Esta sección aún no tiene contenido.');
   });
+
+  it('should render the three master actions', () => {
+    expect(getText()).toContain('Crear cliente');
+    expect(getText()).toContain('Crear colaborador');
+    expect(getText()).toContain('Asociar cliente a colaborador');
+  });
+
+  it('should create a customer and clear the form', fakeAsync(() => {
+    typeInto(0, '  123456789  ');
+    submit(0);
+
+    // Se envia sin los espacios que haya pegado el administrador.
+    expect(createCustomerSpy).toHaveBeenCalledWith('123456789');
+    expect(getText()).toContain('Cliente creado.');
+    expect(getInput(0).value).toBe('');
+  }));
+
+  it('should create a collaborator', fakeAsync(() => {
+    typeInto(1, '1234567890');
+    submit(1);
+
+    expect(createCollaboratorSpy).toHaveBeenCalledWith('1234567890');
+    expect(getText()).toContain('Colaborador creado.');
+  }));
+
+  it('should link a customer to a collaborator', fakeAsync(() => {
+    typeInto(2, '123456789');
+    typeInto(3, '1234567890');
+    submit(2);
+
+    expect(linkSpy).toHaveBeenCalledWith('123456789', '1234567890');
+    expect(getText()).toContain('Cliente asociado al colaborador.');
+  }));
+
+  it('should show the message returned by the backend instead of the default one', fakeAsync(() => {
+    createCustomerSpy.and.returnValue(of({ message: 'Cliente ya registrado previamente' }));
+    typeInto(0, '123456789');
+    submit(0);
+
+    expect(getText()).toContain('Cliente ya registrado previamente');
+  }));
+
+  it('should not call the backend when the document is empty', fakeAsync(() => {
+    typeInto(0, '   ');
+    submit(0);
+
+    expect(createCustomerSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('Escribe el documento para continuar.');
+  }));
+
+  it('should require both documents before linking', fakeAsync(() => {
+    typeInto(2, '123456789');
+    submit(2);
+
+    expect(linkSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('Escribe el documento para continuar.');
+  }));
+
+  it('should surface the backend message when the request fails and keep what was typed', fakeAsync(() => {
+    createCustomerSpy.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'El cliente ya existe' } })),
+    );
+    typeInto(0, '123456789');
+    submit(0);
+
+    expect(getText()).toContain('El cliente ya existe');
+    expect(getInput(0).value).toBe('123456789');
+  }));
+
+  it('should fall back to a generic message when the failure has no body', fakeAsync(() => {
+    createCustomerSpy.and.returnValue(throwError(() => new Error('sin red')));
+    typeInto(0, '123456789');
+    submit(0);
+
+    expect(getText()).toContain('No fue posible completar la operación.');
+  }));
+
+  function getInput(index: number): HTMLInputElement {
+    return (fixture.nativeElement as HTMLElement).querySelectorAll('input')[index] as HTMLInputElement;
+  }
+
+  function typeInto(index: number, value: string): void {
+    const input = getInput(index);
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function submit(formIndex: number): void {
+    const form = (fixture.nativeElement as HTMLElement).querySelectorAll('form')[formIndex] as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    tick();
+    fixture.detectChanges();
+  }
+
+  function getText(): string {
+    return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  }
 });

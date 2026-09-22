@@ -10,7 +10,9 @@
 }
 
 .settings-subpage__header h2,
-.settings-subpage__header p {
+.settings-subpage__header p,
+.master-card h3,
+.master-card header p {
   margin: 0;
 }
 
@@ -40,9 +42,114 @@
   outline-offset: 2px;
 }
 
-.state-box {
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
+.master-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.master-card {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 22px;
+}
+
+.master-card--wide {
+  grid-column: 1 / -1;
+}
+
+.master-card header {
+  display: grid;
+  gap: 6px;
+}
+
+.master-card h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.master-card h3 mat-icon {
+  color: var(--color-secondary);
+}
+
+.master-card header p {
   color: var(--color-text-muted);
+  font-size: var(--font-size-label);
+}
+
+.master-card form {
+  display: grid;
+  gap: 16px;
+}
+
+.master-card__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.master-card label {
+  display: grid;
+  gap: 8px;
+  color: var(--color-primary);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.master-card input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.master-card input:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 1px;
+}
+
+.master-card input.ng-touched.ng-invalid {
+  border-color: var(--color-warning);
+}
+
+.master-card button {
+  justify-self: end;
+}
+
+.master-message {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius-card);
+  background: var(--color-secondary-soft);
+  color: var(--color-primary);
+  font-size: var(--font-size-label);
+  font-weight: 900;
+}
+
+.master-message--error {
+  border-color: var(--color-warning);
+  background: transparent;
+  color: var(--color-warning);
+}
+
+@media (max-width: 900px) {
+  .master-grid,
+  .master-card__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .master-card button {
+    justify-self: stretch;
+  }
 }

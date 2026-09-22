@@ -5,9 +5,96 @@
     </a>
     <div>
       <h2>Maestro clientes colaborador</h2>
-      <p>Administra el maestro de clientes colaboradores.</p>
+      <p>Da de alta clientes y colaboradores, y asócialos entre sí.</p>
     </div>
   </header>
 
-  <div class="state-box"><strong>Esta sección aún no tiene contenido.</strong></div>
+  <div class="master-grid">
+    <article class="surface-card master-card" aria-labelledby="create-customer-title">
+      <header>
+        <h3 id="create-customer-title"><mat-icon aria-hidden="true">badge</mat-icon> Crear cliente</h3>
+        <p>Registra un cliente en el maestro a partir de su documento.</p>
+      </header>
+
+      <form [formGroup]="customerForm" (ngSubmit)="createCustomer()">
+        <label>
+          Documento del cliente
+          <input type="text" formControlName="clientId" inputmode="numeric" autocomplete="off" />
+        </label>
+
+        @if (customerStatus(); as status) {
+          @if (status.message) {
+            <p class="master-message" [class.master-message--error]="status.state === 'error'" role="status">
+              {{ status.message }}
+            </p>
+          }
+
+          <button mat-flat-button type="submit" [disabled]="status.state === 'pending'">
+            <mat-icon aria-hidden="true">person_add</mat-icon>
+            Crear cliente
+          </button>
+        }
+      </form>
+    </article>
+
+    <article class="surface-card master-card" aria-labelledby="create-collaborator-title">
+      <header>
+        <h3 id="create-collaborator-title"><mat-icon aria-hidden="true">engineering</mat-icon> Crear colaborador</h3>
+        <p>Registra un colaborador en el maestro a partir de su documento.</p>
+      </header>
+
+      <form [formGroup]="collaboratorForm" (ngSubmit)="createCollaborator()">
+        <label>
+          Documento del colaborador
+          <input type="text" formControlName="clientId" inputmode="numeric" autocomplete="off" />
+        </label>
+
+        @if (collaboratorStatus(); as status) {
+          @if (status.message) {
+            <p class="master-message" [class.master-message--error]="status.state === 'error'" role="status">
+              {{ status.message }}
+            </p>
+          }
+
+          <button mat-flat-button type="submit" [disabled]="status.state === 'pending'">
+            <mat-icon aria-hidden="true">person_add</mat-icon>
+            Crear colaborador
+          </button>
+        }
+      </form>
+    </article>
+
+    <article class="surface-card master-card master-card--wide" aria-labelledby="link-title">
+      <header>
+        <h3 id="link-title"><mat-icon aria-hidden="true">link</mat-icon> Asociar cliente a colaborador</h3>
+        <p>Vincula un cliente ya creado con el colaborador que lo atiende.</p>
+      </header>
+
+      <form [formGroup]="linkForm" (ngSubmit)="linkCustomerToCollaborator()">
+        <div class="master-card__fields">
+          <label>
+            Documento del cliente
+            <input type="text" formControlName="clientId" inputmode="numeric" autocomplete="off" />
+          </label>
+          <label>
+            Documento del colaborador
+            <input type="text" formControlName="collaborator" inputmode="numeric" autocomplete="off" />
+          </label>
+        </div>
+
+        @if (linkStatus(); as status) {
+          @if (status.message) {
+            <p class="master-message" [class.master-message--error]="status.state === 'error'" role="status">
+              {{ status.message }}
+            </p>
+          }
+
+          <button mat-flat-button type="submit" [disabled]="status.state === 'pending'">
+            <mat-icon aria-hidden="true">link</mat-icon>
+            Asociar
+          </button>
+        }
+      </form>
+    </article>
+  </div>
 </section>
