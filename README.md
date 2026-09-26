@@ -57,7 +57,7 @@ assets\
 
 Estos son los archivos que Nginx debe servir.
 
-Nota: no es necesario que dentro del ZIP exista una ruta como `dist\seguimiento-envios\browser`. Esa ruta es usada durante la compilacion dentro del proyecto Angular. Para entregar el proyecto a otra persona, el artefacto contiene directamente el contenido final de `browser`, porque eso es lo que Nginx necesita publicar.
+Nota: no es necesario que dentro del ZIP exista una ruta como `dist\conexion360-front\browser`. Esa ruta es usada durante la compilacion dentro del proyecto Angular. Para entregar el proyecto a otra persona, el artefacto contiene directamente el contenido final de `browser`, porque eso es lo que Nginx necesita publicar.
 
 ## Instalar Nginx en Windows
 
@@ -416,7 +416,7 @@ npm run build
 El resultado local queda en:
 
 ```text
-dist\seguimiento-envios\browser
+dist\conexion360-front\browser
 ```
 
 ## Variables usadas por GitHub Actions

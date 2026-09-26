@@ -66,7 +66,7 @@ docker images
 docker run -e "NOMBRE=Juan" -e "APELLIDO=Perez"
 
 ### levantar la aplicacion con docker y variables de entorno con archivo .env
-docker run -d -p 8080:80 --env-file .env --name seguimiento-envios-app 
+docker run -d -p 8080:80 --env-file .env --name conexion360-front-app 
 
 ### ver uso de espacio
 docker system df
@@ -91,7 +91,7 @@ docker tag <imagen_vieja> <imagen_nueva>
 ### publicar una imagen
 docker push <nombre_usuario>/<nombre_imagen>:<tag>
 ejemplo:
-docker push juanperez/seguimiento-envios:1.0
+docker push juanperez/conexion360-front:1.0
 
 ### loguear la terminal con dockerhub
 docker login
@@ -140,19 +140,19 @@ docker ai
 ## levantar la aplicacion con docker
 
 - crear la imagen
-docker build -f DockerFile -t seguimiento-envios:1.0 .
+docker build -f DockerFile -t conexion360-front:1.0 .
 
 - Levantar el contenedor
-docker run --name seguimiento-envios-app -p 8080:80 seguimiento-envios:1.0
+docker run --name conexion360-front-app -p 8080:80 conexion360-front:1.0
 
 - Si quieres que el contenedor quede corriendo en segundo plano:
-docker run -d --name seguimiento-envios-app -p 8080:80 seguimiento-envios:1.0
+docker run -d --name conexion360-front-app -p 8080:80 conexion360-front:1.0
 
 - Subir la imagen a Docker Hub o a un registry:
-docker tag seguimiento-envios:1.0 tuusuario/seguimiento-envios:1.0
-docker push tuusuario/seguimiento-envios:1.0
+docker tag conexion360-front:1.0 tuusuario/conexion360-front:1.0
+docker push tuusuario/conexion360-front:1.0
 
 - En el otro equipo:
-docker pull tuusuario/seguimiento-envios:1.0
-docker run -d --name seguimiento-envios-app -p 8080:80 tuusuario/seguimiento-envios:1.0
+docker pull tuusuario/conexion360-front:1.0
+docker run -d --name conexion360-front-app -p 8080:80 tuusuario/conexion360-front:1.0
 

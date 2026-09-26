@@ -33,7 +33,7 @@ server {
 }
 EOF
 
-COPY --from=build /app/dist/seguimiento-envios/browser /usr/share/nginx/html
+COPY --from=build /app/dist/conexion360-front/browser /usr/share/nginx/html
 
 EXPOSE 80
 

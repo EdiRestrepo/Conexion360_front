@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "seguimiento-envios": {
+    "conexion360-front": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -64,10 +64,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "seguimiento-envios:build:production"
+              "buildTarget": "conexion360-front:build:production"
             },
             "development": {
-              "buildTarget": "seguimiento-envios:build:development"
+              "buildTarget": "conexion360-front:build:development"
             }
           },
           "defaultConfiguration": "development"
