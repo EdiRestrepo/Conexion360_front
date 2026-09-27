@@ -721,6 +721,13 @@ Requisitos:
 - `aria-label` donde corresponda
 - Mensajes de validación claros
 
+Reglas, puntos de quiebre y auditoría automática en móvil, tablet y escritorio:
+skill `.claude/skills/responsive-design/`. Utilidades globales en
+`src/styles.css`: `table-sticky-action` (la acción de una tabla queda fija a la
+derecha cuando la tabla desplaza) y `scroll-hint-x` (sombra que indica más
+contenido en zonas con desplazamiento horizontal). Las correcciones responsive
+cambian la presentación, nunca ocultan datos.
+
 ## 14. Calidad
 
 Aplicar:

@@ -123,7 +123,7 @@
           <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
         </div>
       } @else {
-        <div class="shipments-table-wrap">
+        <div class="shipments-table-wrap table-sticky-action">
           <div class="shipments-table" [class.shipments-table--no-client]="!showClientColumn()" role="table" aria-label="Listado de envíos activos">
             <div class="shipments-table__row shipments-table__row--head" role="row">
               <span role="columnheader" aria-label="Modalidad"></span>

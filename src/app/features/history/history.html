@@ -115,7 +115,7 @@
           <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
         </div>
       } @else {
-        <div class="history-table-wrap">
+        <div class="history-table-wrap table-sticky-action">
           <div class="history-table" [class.history-table--no-client]="!showClientColumn()" role="table" aria-label="Historial de envíos completados">
             <div class="history-table__row history-table__row--head" role="row">
               <span role="columnheader" aria-label="Modalidad"></span>
