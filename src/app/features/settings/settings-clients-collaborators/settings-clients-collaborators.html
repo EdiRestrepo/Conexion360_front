@@ -19,7 +19,18 @@
       <form [formGroup]="customerForm" (ngSubmit)="createCustomer()">
         <label>
           Documento del cliente
-          <input type="text" formControlName="clientId" inputmode="numeric" autocomplete="off" />
+          <input
+            type="text"
+            formControlName="clientId"
+            inputmode="numeric"
+            autocomplete="off"
+            [attr.maxlength]="documentRule.maxLength"
+            [attr.aria-invalid]="!!fieldError(customerForm.controls.clientId)"
+            [attr.aria-describedby]="fieldError(customerForm.controls.clientId) ? 'customer-document-error' : null"
+          />
+          @if (fieldError(customerForm.controls.clientId); as error) {
+            <span id="customer-document-error" class="field-error" role="alert">{{ error }}</span>
+          }
         </label>
 
         @if (customerStatus(); as status) {
@@ -46,7 +57,18 @@
       <form [formGroup]="collaboratorForm" (ngSubmit)="createCollaborator()">
         <label>
           Documento del colaborador
-          <input type="text" formControlName="clientId" inputmode="numeric" autocomplete="off" />
+          <input
+            type="text"
+            formControlName="clientId"
+            inputmode="numeric"
+            autocomplete="off"
+            [attr.maxlength]="documentRule.maxLength"
+            [attr.aria-invalid]="!!fieldError(collaboratorForm.controls.clientId)"
+            [attr.aria-describedby]="fieldError(collaboratorForm.controls.clientId) ? 'collaborator-document-error' : null"
+          />
+          @if (fieldError(collaboratorForm.controls.clientId); as error) {
+            <span id="collaborator-document-error" class="field-error" role="alert">{{ error }}</span>
+          }
         </label>
 
         @if (collaboratorStatus(); as status) {
@@ -74,11 +96,33 @@
         <div class="master-card__fields">
           <label>
             Documento del cliente
-            <input type="text" formControlName="clientId" inputmode="numeric" autocomplete="off" />
+            <input
+              type="text"
+              formControlName="clientId"
+              inputmode="numeric"
+              autocomplete="off"
+              [attr.maxlength]="documentRule.maxLength"
+              [attr.aria-invalid]="!!fieldError(linkForm.controls.clientId)"
+              [attr.aria-describedby]="fieldError(linkForm.controls.clientId) ? 'link-client-error' : null"
+            />
+            @if (fieldError(linkForm.controls.clientId); as error) {
+              <span id="link-client-error" class="field-error" role="alert">{{ error }}</span>
+            }
           </label>
           <label>
             Documento del colaborador
-            <input type="text" formControlName="collaborator" inputmode="numeric" autocomplete="off" />
+            <input
+              type="text"
+              formControlName="collaborator"
+              inputmode="numeric"
+              autocomplete="off"
+              [attr.maxlength]="documentRule.maxLength"
+              [attr.aria-invalid]="!!fieldError(linkForm.controls.collaborator)"
+              [attr.aria-describedby]="fieldError(linkForm.controls.collaborator) ? 'link-collaborator-error' : null"
+            />
+            @if (fieldError(linkForm.controls.collaborator); as error) {
+              <span id="link-collaborator-error" class="field-error" role="alert">{{ error }}</span>
+            }
           </label>
         </div>
 

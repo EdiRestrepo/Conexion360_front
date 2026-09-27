@@ -213,6 +213,16 @@ textarea {
   font-weight: 700 !important;
 }
 
+/* Mensaje de validación bajo un campo (HU1 – CA02/CA03). */
+.field-error {
+  display: block;
+  margin: 6px 0 0;
+  color: var(--color-warning);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+}
+
 .empty-state,
 .error-state,
 .loading-state {

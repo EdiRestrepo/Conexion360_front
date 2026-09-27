@@ -11,10 +11,16 @@
         <input
           type="search"
           [formControl]="searchControl"
+          [attr.maxlength]="searchRule.maxLength"
           placeholder="Buscar por N° de guía, cliente, origen..."
           aria-label="Buscar envíos completados"
+          [attr.aria-invalid]="!!searchError"
+          [attr.aria-describedby]="searchError ? 'history-search-error' : null"
         />
       </span>
+      @if (searchError) {
+        <span id="history-search-error" class="field-error" role="alert">{{ searchError }}</span>
+      }
     </label>
 
     <label>

@@ -14,10 +14,16 @@
     <input
       type="email"
       [formControl]="confirmControl"
+      [attr.maxlength]="confirmRule.maxLength"
       autocomplete="off"
       spellcheck="false"
       aria-label="Confirmar correo del usuario a eliminar"
+      [attr.aria-invalid]="!!confirmError"
+      [attr.aria-describedby]="confirmError ? 'confirm-delete-error' : null"
     />
+    @if (confirmError) {
+      <span id="confirm-delete-error" class="field-error" role="alert">{{ confirmError }}</span>
+    }
   </label>
 </mat-dialog-content>
 

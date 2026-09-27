@@ -84,7 +84,8 @@ describe('SettingsClientsCollaborators', () => {
     submit(0);
 
     expect(createCustomerSpy).not.toHaveBeenCalled();
-    expect(getText()).toContain('Escribe el documento para continuar.');
+    expect(getText()).toContain('Corrige los campos marcados para continuar.');
+    expect(getText()).toContain('Este campo es obligatorio.');
   }));
 
   it('should require both documents before linking', fakeAsync(() => {
@@ -92,7 +93,37 @@ describe('SettingsClientsCollaborators', () => {
     submit(2);
 
     expect(linkSpy).not.toHaveBeenCalled();
-    expect(getText()).toContain('Escribe el documento para continuar.');
+    expect(getText()).toContain('Corrige los campos marcados para continuar.');
+  }));
+
+  it('should reject scripts in the document and not call the backend', fakeAsync(() => {
+    typeInto(0, '<script>alert(1)</script>');
+    submit(0);
+
+    expect(createCustomerSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('La información ingresada no es válida.');
+  }));
+
+  it('should reject documents with letters or separators', fakeAsync(() => {
+    typeInto(1, '900.123.456-7');
+    submit(1);
+
+    expect(createCollaboratorSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('Solo se permiten números, sin puntos, guiones ni espacios.');
+  }));
+
+  it('should enforce the document length limits', fakeAsync(() => {
+    typeInto(0, '1234');
+    submit(0);
+
+    expect(getText()).toContain('Mínimo 5 caracteres.');
+
+    typeInto(0, '1'.repeat(16));
+    submit(0);
+
+    expect(createCustomerSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('Máximo 15 caracteres.');
+    expect(getInput(0).getAttribute('maxlength')).toBe('15');
   }));
 
   it('should surface the backend message when the request fails and keep what was typed', fakeAsync(() => {

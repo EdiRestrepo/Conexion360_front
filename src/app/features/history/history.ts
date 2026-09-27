@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap, tap } from 'rxjs';
+import { Observable, catchError, debounceTime, distinctUntilChanged, filter, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { OperationType, Shipment, ShipmentStatus, TransportMode } from '../../core/models/shipment.model';
 import { isAnalystRole, isInternalRole } from '../../core/models/user.model';
@@ -23,6 +23,9 @@ import { ApiHistoryService } from '../../core/services/api-history.service';
 import { MyShipmentsPage } from '../../core/mappers/shipments-page.mapper';
 import { isForbiddenError } from '../../core/utils/api-error';
 import { copyToClipboard } from '../../core/utils/clipboard';
+import { getVisibleErrorMessage } from '../../core/utils/input-error-message';
+import { inputRules } from '../../core/utils/input-rules';
+import { sanitizeQueryValue, validatorsFor } from '../../core/utils/input-validators';
 import type { HistoryEmptyReason, HistoryFilters, HistoryViewModel } from './models/history-view.model';
 
 const defaultFilters: HistoryFilters = {
@@ -60,7 +63,8 @@ export class History {
   private readonly historyService = inject(ApiHistoryService);
   private readonly authSession = inject(AuthSessionService);
 
-  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly searchControl = new FormControl('', { nonNullable: true, validators: validatorsFor(inputRules.searchQuery) });
+  protected readonly searchRule = inputRules.searchQuery;
   protected readonly operationControl = new FormControl<OperationType | ''>('', { nonNullable: true });
   protected readonly modeControl = new FormControl<TransportMode | ''>('', { nonNullable: true });
   protected readonly pageSizeControl = new FormControl<number>(defaultFilters.pageSize, { nonNullable: true });
@@ -73,6 +77,10 @@ export class History {
   protected readonly getShipmentStatusLabel = getShipmentStatusLabel;
   protected readonly getShipmentStatusIcon = getShipmentStatusIcon;
   protected readonly copiedDocument = signal<string | null>(null);
+
+  protected get searchError(): string | null {
+    return getVisibleErrorMessage(this.searchControl, this.searchRule);
+  }
 
   /** Un cliente solo ve sus propios envíos: la columna repetiría su nombre en cada fila. */
   protected readonly showClientColumn = computed(() => isInternalRole(this.authSession.currentSession()?.user.role));
@@ -181,7 +189,13 @@ export class History {
 
   private bindQueryControl(): void {
     this.searchControl.valueChanges
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        debounceTime(250),
+        // Un término inválido no llega ni a la URL ni al backend (HU1 – CA02/CA03).
+        filter(() => this.searchControl.valid),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((query) => void this.updateQueryParams({ query: query.trim(), page: 1 }));
   }
 
@@ -249,7 +263,7 @@ export class History {
     const pageSize = this.toPageSize(params.get('pageSize'));
 
     return {
-      query: params.get('query') ?? params.get('q') ?? '',
+      query: sanitizeQueryValue(params.get('query') ?? params.get('q'), inputRules.searchQuery),
       operation: this.toOperationType(params.get('operation')),
       mode: this.toTransportMode(params.get('mode')),
       page: this.toPositiveNumber(params.get('page'), 1),

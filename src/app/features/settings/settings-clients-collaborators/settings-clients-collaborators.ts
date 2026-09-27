@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, WritableSignal, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
@@ -9,13 +9,16 @@ import { Observable, take } from 'rxjs';
 import { mapMasterOperationResponse } from '../../../core/mappers/clients-collaborators.mapper';
 import { MasterOperationResult } from '../../../core/models/clients-collaborators.model';
 import { ApiClientsCollaboratorsService } from '../../../core/services/api-clients-collaborators.service';
+import { getVisibleErrorMessage } from '../../../core/utils/input-error-message';
+import { inputRules } from '../../../core/utils/input-rules';
+import { validatorsFor } from '../../../core/utils/input-validators';
 import type { DocumentForm, LinkForm, MasterActionStatus } from '../models/settings-view.model';
 
 const idleStatus: MasterActionStatus = { state: 'idle', message: null };
-const invalidStatus: MasterActionStatus = { state: 'error', message: 'Escribe el documento para continuar.' };
+const invalidStatus: MasterActionStatus = { state: 'error', message: 'Corrige los campos marcados para continuar.' };
 
 function documentControl(): FormControl<string> {
-  return new FormControl('', { nonNullable: true, validators: [Validators.required] });
+  return new FormControl('', { nonNullable: true, validators: validatorsFor(inputRules.document) });
 }
 
 /**
@@ -46,25 +49,28 @@ export class SettingsClientsCollaborators {
   protected readonly customerStatus = signal<MasterActionStatus>(idleStatus);
   protected readonly collaboratorStatus = signal<MasterActionStatus>(idleStatus);
   protected readonly linkStatus = signal<MasterActionStatus>(idleStatus);
+  protected readonly documentRule = inputRules.document;
+
+  protected fieldError(control: FormControl<string>): string | null {
+    return getVisibleErrorMessage(control, this.documentRule);
+  }
 
   protected createCustomer(): void {
-    const clientId = this.readDocument(this.customerForm);
-
-    if (!clientId) {
-      this.customerStatus.set(invalidStatus);
+    if (!this.canSubmit(this.customerForm, this.customerStatus)) {
       return;
     }
+
+    const clientId = this.customerForm.getRawValue().clientId.trim();
 
     this.execute(this.customerStatus, this.masterService.createCustomer(clientId), 'Cliente creado.', this.customerForm);
   }
 
   protected createCollaborator(): void {
-    const collaboratorId = this.readDocument(this.collaboratorForm);
-
-    if (!collaboratorId) {
-      this.collaboratorStatus.set(invalidStatus);
+    if (!this.canSubmit(this.collaboratorForm, this.collaboratorStatus)) {
       return;
     }
+
+    const collaboratorId = this.collaboratorForm.getRawValue().clientId.trim();
 
     this.execute(
       this.collaboratorStatus,
@@ -75,15 +81,13 @@ export class SettingsClientsCollaborators {
   }
 
   protected linkCustomerToCollaborator(): void {
+    if (!this.canSubmit(this.linkForm, this.linkStatus)) {
+      return;
+    }
+
     const { clientId, collaborator } = this.linkForm.getRawValue();
     const documentId = clientId.trim();
     const collaboratorId = collaborator.trim();
-
-    if (!documentId || !collaboratorId) {
-      this.linkForm.markAllAsTouched();
-      this.linkStatus.set(invalidStatus);
-      return;
-    }
 
     this.execute(
       this.linkStatus,
@@ -93,14 +97,18 @@ export class SettingsClientsCollaborators {
     );
   }
 
-  private readDocument(form: FormGroup<DocumentForm>): string {
-    const value = form.getRawValue().clientId.trim();
-
-    if (!value) {
-      form.markAllAsTouched();
+  /**
+   * Con un campo inválido no se llama al backend (HU1 – CA02/CA03): cada campo
+   * muestra su propio error y el aviso general apunta a ellos.
+   */
+  private canSubmit(form: FormGroup, status: WritableSignal<MasterActionStatus>): boolean {
+    if (form.valid) {
+      return true;
     }
 
-    return value;
+    form.markAllAsTouched();
+    status.set(invalidStatus);
+    return false;
   }
 
   /**

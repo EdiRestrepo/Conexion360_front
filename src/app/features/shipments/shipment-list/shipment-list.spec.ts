@@ -309,6 +309,38 @@ describe('ShipmentList', () => {
     expect(getColumnHeaders()).not.toContain('Cliente');
   }));
 
+  it('should reject malicious search terms without navigating', fakeAsync(() => {
+    render();
+
+    component.searchControl.setValue('<script>alert(1)</script>');
+    component.searchControl.markAsDirty();
+    tick(250);
+    fixture.detectChanges();
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(getText()).toContain('La información ingresada no es válida.');
+  }));
+
+  it('should not search with a term over the max length', fakeAsync(() => {
+    render();
+
+    component.searchControl.setValue('a'.repeat(51));
+    component.searchControl.markAsDirty();
+    tick(250);
+    fixture.detectChanges();
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(getText()).toContain('Máximo 50 caracteres.');
+  }));
+
+  it('should ignore an invalid query coming from the URL', fakeAsync(() => {
+    render();
+    setQueryParams({ query: '<img src=x onerror=alert(1)>' });
+
+    expect(searchSpy).toHaveBeenCalledWith(jasmine.objectContaining({ query: '' }));
+    expect(searchSpy).not.toHaveBeenCalledWith(jasmine.objectContaining({ query: '<img src=x onerror=alert(1)>' }));
+  }));
+
   function render(): void {
     fixture.detectChanges();
     tick();

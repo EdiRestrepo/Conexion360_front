@@ -31,14 +31,13 @@
         formControlName="phoneNumber"
         placeholder="+573175766335"
         autocomplete="off"
-        [attr.aria-invalid]="phoneNumberHasError"
-        [attr.aria-describedby]="phoneNumberHasError ? 'phone-error' : null"
+        [attr.maxlength]="rules.phone.maxLength"
+        [attr.aria-invalid]="!!phoneNumberError"
+        [attr.aria-describedby]="phoneNumberError ? 'phone-error' : null"
       />
     </label>
-    @if (phoneNumberHasError) {
-      <p id="phone-error" class="user-dialog__error" role="alert">
-        El teléfono debe ir en formato internacional, empezando por «+» (ej. +573175766335).
-      </p>
+    @if (phoneNumberError) {
+      <p id="phone-error" class="user-dialog__error" role="alert">{{ phoneNumberError }}</p>
     }
 
     <label>
@@ -47,12 +46,13 @@
         type="email"
         formControlName="email"
         autocomplete="off"
-        [attr.aria-invalid]="emailHasError"
-        [attr.aria-describedby]="emailHasError ? 'email-error' : null"
+        [attr.maxlength]="rules.email.maxLength"
+        [attr.aria-invalid]="!!emailError"
+        [attr.aria-describedby]="emailError ? 'email-error' : null"
       />
     </label>
-    @if (emailHasError) {
-      <p id="email-error" class="user-dialog__error" role="alert">El correo debe tener un formato válido.</p>
+    @if (emailError) {
+      <p id="email-error" class="user-dialog__error" role="alert">{{ emailError }}</p>
     }
 
     <!-- Nadie puede bloquearse a sí mismo, así que en el propio perfil el

@@ -77,6 +77,44 @@ describe('UserDetailDialog', () => {
 
     expect(fixture.nativeElement.querySelector('.user-dialog__toggle')).toBeNull();
   });
+
+  it('rejects scripts in the email and does not close the dialog', async () => {
+    await render();
+
+    typeInto('input[type="email"]', '<script>alert(1)</script>@tcc.com');
+    getSaveButton().click();
+
+    expect(getText()).toContain('La información ingresada no es válida.');
+    expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('rejects a phone that is not in E.164 format', async () => {
+    await render();
+
+    typeInto('input[type="tel"]', '3175766335');
+
+    expect(getText()).toContain('El teléfono debe ir en formato internacional');
+    expect(getSaveButton().disabled).toBeTrue();
+  });
+
+  it('caps the length of the phone and the email', async () => {
+    await render();
+
+    expect(fixture.nativeElement.querySelector('input[type="tel"]').getAttribute('maxlength')).toBe('16');
+    expect(fixture.nativeElement.querySelector('input[type="email"]').getAttribute('maxlength')).toBe('254');
+  });
+
+  function typeInto(selector: string, value: string): void {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+  }
+
+  function getSaveButton(): HTMLButtonElement {
+    return fixture.nativeElement.querySelectorAll('.user-dialog__actions button')[1] as HTMLButtonElement;
+  }
 });
 
 function createUser(overrides: Partial<SettingsUser> = {}): SettingsUser {

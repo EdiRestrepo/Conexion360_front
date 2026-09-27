@@ -13,6 +13,9 @@ import type { DashboardDistributionItem, DashboardMetricCard, DashboardSearchSta
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { isForbiddenError } from '../../core/utils/api-error';
 import { copyToClipboard } from '../../core/utils/clipboard';
+import { getVisibleErrorMessage } from '../../core/utils/input-error-message';
+import { inputRules } from '../../core/utils/input-rules';
+import { validatorsFor } from '../../core/utils/input-validators';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
@@ -41,7 +44,8 @@ export class Dashboard {
   private readonly authSession = inject(AuthSessionService);
   private readonly shipmentService = inject(ApiHomeService);
 
-  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly searchControl = new FormControl('', { nonNullable: true, validators: validatorsFor(inputRules.searchQuery) });
+  protected readonly searchRule = inputRules.searchQuery;
   protected readonly session = this.authSession.currentSession;
   protected readonly greeting = computed(() => {
     const name = this.session()?.user.name.trim();
@@ -76,6 +80,13 @@ export class Dashboard {
     this.searchMessage.set('');
     this.searchResults.set([]);
 
+    // Un término inválido se queda en el input con su mensaje; no se consulta (HU1 – CA02/CA03).
+    if (this.searchControl.invalid) {
+      this.searchControl.markAsTouched();
+      this.searchState.set('idle');
+      return false;
+    }
+
     if (!query) {
       this.searchState.set('idle');
       return false;
@@ -105,6 +116,10 @@ export class Dashboard {
     });
 
     return false;
+  }
+
+  protected get searchError(): string | null {
+    return getVisibleErrorMessage(this.searchControl, this.searchRule);
   }
 
   protected getRouteLabel(shipment: HomeShipmentSummary): string {

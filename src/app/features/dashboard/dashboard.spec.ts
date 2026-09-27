@@ -262,6 +262,30 @@ describe('Dashboard', () => {
     expect(getText()).not.toContain('Reintentar');
   }));
 
+  it('should reject malicious search terms without calling the backend', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+    component.searchControl.setValue('javascript:alert(1)');
+    component.searchShipment();
+    tick();
+    fixture.detectChanges();
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('La información ingresada no es válida.');
+  }));
+
+  it('should not search with a term over the max length', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+    component.searchControl.setValue('A'.repeat(51));
+    component.searchShipment();
+    tick();
+    fixture.detectChanges();
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(getText()).toContain('Máximo 50 caracteres.');
+  }));
+
   function getText(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }

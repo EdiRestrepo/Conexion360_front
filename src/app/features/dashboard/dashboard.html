@@ -11,11 +11,16 @@
         <input
           type="search"
           [formControl]="searchControl"
+          [attr.maxlength]="searchRule.maxLength"
           placeholder="Ingrese HBL, AWB, MBL o documento"
           aria-label="Documento de transporte"
-          aria-describedby="dashboard-search-message"
+          [attr.aria-invalid]="!!searchError"
+          [attr.aria-describedby]="searchError ? 'dashboard-search-error' : 'dashboard-search-message'"
           (keydown.enter)="searchShipment($event)"
         />
+        @if (searchError) {
+          <span id="dashboard-search-error" class="field-error" role="alert">{{ searchError }}</span>
+        }
       </label>
     </form>
   </header>

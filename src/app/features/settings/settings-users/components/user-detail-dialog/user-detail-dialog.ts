@@ -1,12 +1,15 @@
 ﻿import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
-import { SettingsUser, SettingsUserUpdate, phoneNumberPattern } from '../../../../../core/models/settings-user.model';
+import { SettingsUser, SettingsUserUpdate } from '../../../../../core/models/settings-user.model';
 import { getUserRoleLabel } from '../../../../../core/utils/display-labels';
+import { getVisibleErrorMessage } from '../../../../../core/utils/input-error-message';
+import { inputRules } from '../../../../../core/utils/input-rules';
+import { validatorsFor } from '../../../../../core/utils/input-validators';
 import type { SettingsUserForm } from '../../models/settings-users-view.model';
 
 export interface UserDetailDialogData {
@@ -29,15 +32,16 @@ export class UserDetailDialog {
   protected readonly user = this.data.user;
   protected readonly isSelf = this.data.isSelf;
   protected readonly roleLabel = this.user.role ? getUserRoleLabel(this.user.role) : null;
+  protected readonly rules = inputRules;
 
   protected readonly form = new FormGroup<SettingsUserForm>({
     phoneNumber: new FormControl(this.user.phoneNumber, {
       nonNullable: true,
-      validators: [Validators.pattern(phoneNumberPattern)],
+      validators: validatorsFor(inputRules.phone),
     }),
     email: new FormControl(this.user.email, {
       nonNullable: true,
-      validators: [Validators.required, Validators.email],
+      validators: validatorsFor(inputRules.email),
     }),
     isActive: new FormControl({ value: !this.user.isBlocked, disabled: this.isSelf }, { nonNullable: true }),
   });
@@ -47,16 +51,12 @@ export class UserDetailDialog {
     initialValue: !this.user.isBlocked,
   });
 
-  protected get phoneNumberHasError(): boolean {
-    const control = this.form.controls.phoneNumber;
-
-    return control.invalid && (control.dirty || control.touched);
+  protected get phoneNumberError(): string | null {
+    return getVisibleErrorMessage(this.form.controls.phoneNumber, inputRules.phone);
   }
 
-  protected get emailHasError(): boolean {
-    const control = this.form.controls.email;
-
-    return control.invalid && (control.dirty || control.touched);
+  protected get emailError(): string | null {
+    return getVisibleErrorMessage(this.form.controls.email, inputRules.email);
   }
 
   protected save(): void {

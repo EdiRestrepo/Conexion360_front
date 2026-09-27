@@ -11,10 +11,16 @@
         <input
           type="search"
           [formControl]="searchControl"
+          [attr.maxlength]="searchRule.maxLength"
           placeholder="Buscar por HBL, AWB, cliente, origen..."
           aria-label="Buscar envíos"
+          [attr.aria-invalid]="!!searchError"
+          [attr.aria-describedby]="searchError ? 'shipments-search-error' : null"
         />
       </span>
+      @if (searchError) {
+        <span id="shipments-search-error" class="field-error" role="alert">{{ searchError }}</span>
+      }
     </label>
 
     <label>

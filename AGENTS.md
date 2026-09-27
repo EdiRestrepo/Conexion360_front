@@ -1058,3 +1058,40 @@ Tres avisos sobre ese contrato:
 | `core/mappers/clients-collaborators.mapper.ts` | Lee el `message` de la envoltura |
 | `core/models/clients-collaborators.model.ts` | `MasterOperationResult` |
 | `features/settings/settings-clients-collaborators/` | Pantalla con los tres formularios |
+
+## 24. Validación de entradas y bloqueo de contenido malicioso (HU1)
+
+La HU1 "Proteger la aplicación contra ataques" tiene cuatro criterios; el
+frontend solo puede cubrir dos:
+
+| CA | Dónde se resuelve |
+|---|---|
+| CA01 – Ataques masivos (DoS, bots) | **Backend / infraestructura** (rate limiting en .NET, WAF). Angular no lo cubre. |
+| CA02 – Validación de datos de entrada | Frontend (este apartado) **y** backend. |
+| CA03 – Bloqueo de scripts | Frontend (este apartado) **y** backend. |
+| CA05 – Validación en servidor | **Backend**, por definición. |
+
+Lo del frontend es la primera línea y la experiencia de usuario, no la
+protección: una petición enviada directo a la API se salta todo esto.
+
+### Archivos
+
+| Archivo | Rol |
+|---|---|
+| `core/utils/input-rules.ts` | `inputRules`: obligatoriedad, longitud y patrón por tipo de campo. Única fuente de esos números. |
+| `core/utils/input-validators.ts` | `containsMaliciousContent`, `validateText`, `validatorsFor`, `sanitizeQueryValue` |
+| `core/utils/input-error-message.ts` | Mensajes en español; el de CA03 es «La información ingresada no es válida.» |
+| `.claude/skills/form-input-security/` | Checklist obligatorio al crear o modificar un formulario |
+
+### Decisiones
+
+- **Se rechaza, no se limpia.** Un valor con `<`, `>`, `javascript:`,
+  `vbscript:`, `data:text/html`, `on…=`, entidades `&#…` o `expression(` marca
+  el campo inválido y la petición no sale.
+- **Longitud y formato se miden sobre el valor recortado**, que es el que se
+  envía: un documento pegado con espacios alrededor no es error.
+- **`?query=` de la URL también se valida** (`sanitizeQueryValue`): era la vía
+  para saltarse el input. Si no cumple, se trata como vacío.
+- Límites vigentes: documento 5–15 dígitos (sin NIT con dígito de
+  verificación), buscadores 50 caracteres (letras con tilde, dígitos, espacio y
+  `- . / ,`), correo 254, teléfono E.164 de 16.

@@ -6,6 +6,9 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 
 import { SettingsUser, getSettingsUserDisplayName } from '../../../../../core/models/settings-user.model';
+import { getVisibleErrorMessage } from '../../../../../core/utils/input-error-message';
+import { inputRules } from '../../../../../core/utils/input-rules';
+import { validatorsFor } from '../../../../../core/utils/input-validators';
 
 /**
  * El DELETE elimina la cuenta del tenant de Auth0 y no tiene vuelta atrás, así
@@ -23,11 +26,16 @@ export class ConfirmDeleteDialog {
   private readonly dialogRef = inject(MatDialogRef<ConfirmDeleteDialog, boolean>);
 
   protected readonly displayName = getSettingsUserDisplayName(this.user);
-  protected readonly confirmControl = new FormControl('', { nonNullable: true });
+  protected readonly confirmRule = inputRules.emailConfirmation;
+  protected readonly confirmControl = new FormControl('', { nonNullable: true, validators: validatorsFor(this.confirmRule) });
   private readonly confirmValue = toSignal(this.confirmControl.valueChanges, { initialValue: '' });
 
+  protected get confirmError(): string | null {
+    return getVisibleErrorMessage(this.confirmControl, this.confirmRule);
+  }
+
   protected get canDelete(): boolean {
-    return this.confirmValue().trim().toLowerCase() === this.user.email.trim().toLowerCase();
+    return this.confirmControl.valid && this.confirmValue().trim().toLowerCase() === this.user.email.trim().toLowerCase();
   }
 
   protected confirm(): void {
