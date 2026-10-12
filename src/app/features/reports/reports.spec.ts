@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -13,7 +14,7 @@ import { Reports } from './reports';
 
 describe('Reports', () => {
   let fixture: ComponentFixture<Reports>;
-  let getReportMetricsSpy: jasmine.Spy<() => Observable<ReportMetrics>>;
+  let getReportMetricsSpy: jasmine.Spy<(idQueryClient?: string) => Observable<ReportMetrics>>;
   let currentSession: WritableSignal<AuthSession | null>;
   let exportElementSpy: jasmine.Spy<(element: HTMLElement, fileName: string) => Promise<void>>;
 
@@ -228,6 +229,137 @@ describe('Reports', () => {
 
     expect(getText()).toContain('No fue posible generar el PDF. Intenta nuevamente.');
   }));
+
+  describe('client filter', () => {
+    it('should be available to internal roles', fakeAsync(() => {
+      for (const role of ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'] as const) {
+        currentSession.set(createSession(role));
+        fixture = TestBed.createComponent(Reports);
+        render();
+
+        expect(getClientInput()).withContext(role).not.toBeNull();
+      }
+    }));
+
+    it('should not be offered to the CLIENT role', fakeAsync(() => {
+      currentSession.set(createSession('CLIENT'));
+      fixture = TestBed.createComponent(Reports);
+      render();
+
+      expect(getClientInput()).toBeNull();
+    }));
+
+    it('should request the report of the searched client', fakeAsync(() => {
+      getReportMetricsSpy.and.callFake((idQueryClient) =>
+        of({ ...createReportMetrics(), client: idQueryClient ? { nit: idQueryClient, name: 'Enka de Colombia' } : null }),
+      );
+      render();
+
+      searchClient(' 900123456 ');
+
+      expect(getReportMetricsSpy).toHaveBeenCalledWith('900123456');
+      expect(getText()).toContain('Reporte del cliente Enka de Colombia');
+      expect(getText()).toContain('NIT 900123456');
+    }));
+
+    it('should hide the client ranking while a client is selected', fakeAsync(() => {
+      render();
+
+      searchClient('900123456');
+
+      expect(getText()).not.toContain('Top clientes por cantidad de envíos');
+    }));
+
+    it('should reject malicious content without calling the backend', fakeAsync(() => {
+      render();
+      getReportMetricsSpy.calls.reset();
+
+      searchClient('<script>alert(1)</script>');
+
+      expect(getReportMetricsSpy).not.toHaveBeenCalled();
+      expect(getText()).toContain('La información ingresada no es válida.');
+    }));
+
+    it('should wait for a complete document before querying', fakeAsync(() => {
+      render();
+      getReportMetricsSpy.calls.reset();
+
+      searchClient('9001');
+
+      expect(getReportMetricsSpy).not.toHaveBeenCalled();
+    }));
+
+    it('should not send a document longer than the allowed length', fakeAsync(() => {
+      render();
+      getReportMetricsSpy.calls.reset();
+
+      searchClient('1'.repeat(16));
+
+      expect(getReportMetricsSpy).not.toHaveBeenCalled();
+    }));
+
+    it('should show the backend reason when the client is not assigned', fakeAsync(() => {
+      render();
+      getReportMetricsSpy.and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, error: { error: 'No hay clientes asignados.' } })),
+      );
+
+      searchClient('900123456');
+
+      expect(getText()).toContain('No fue posible consultar el reporte del cliente 900123456.');
+      expect(getText()).toContain('No hay clientes asignados.');
+    }));
+
+    it('should go back to the full report when the search is cleared', fakeAsync(() => {
+      render();
+      searchClient('900123456');
+      getReportMetricsSpy.calls.reset();
+
+      searchClient('');
+
+      expect(getReportMetricsSpy).toHaveBeenCalledOnceWith('');
+      expect(getText()).toContain('Top clientes por cantidad de envíos');
+    }));
+
+    it('should include the selected client in the CSV export', async () => {
+      const blobs: Blob[] = [];
+      spyOn(globalThis.URL, 'createObjectURL').and.callFake((blob: Blob | MediaSource) => {
+        blobs.push(blob as Blob);
+        return 'blob:conexion360-report';
+      });
+      spyOn(globalThis.URL, 'revokeObjectURL');
+      spyOn(HTMLAnchorElement.prototype, 'click');
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      const input = getClientInput();
+      if (!input) {
+        throw new Error('No se encontró el filtro de cliente');
+      }
+      input.value = '900123456';
+      input.dispatchEvent(new Event('input'));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      fixture.detectChanges();
+      exportAs('CSV');
+
+      expect(await blobs[0].text()).toContain('"filtro","cliente","900123456"');
+    });
+
+    function getClientInput(): HTMLInputElement | null {
+      return (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#report-client');
+    }
+
+    function searchClient(value: string): void {
+      const input = getClientInput();
+      if (!input) {
+        throw new Error('No se encontró el filtro de cliente');
+      }
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      tick(250);
+      fixture.detectChanges();
+    }
+  });
 
   it('should render error state and retry', fakeAsync(() => {
     getReportMetricsSpy.and.returnValue(throwError(() => new Error('fallo')));

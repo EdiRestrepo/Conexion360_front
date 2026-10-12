@@ -143,4 +143,6 @@ export interface ReportMetrics extends DashboardMetrics {
   byStatus: Record<ShipmentStatus, number>;
   topClients: { client: string; total: number }[];
   topRoutes: { route: string; total: number }[];
+  /** Cliente al que corresponden los totales, cuando el backend lo identifica. */
+  client?: { nit: string; name: string } | null;
 }

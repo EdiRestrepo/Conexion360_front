@@ -21,6 +21,8 @@ export function mapReportsResponse(response: unknown): ReportMetrics {
   const totalExports = readNumber(payload, ['totalExports'], 0);
   const totalAir = readNumber(payload, ['totalAirShipments', 'totalAir'], 0);
   const totalSea = readNumber(payload, ['totalOceanShipments', 'totalSea'], 0);
+  const clientNit = readString(payload, ['clientNit', 'nit']);
+  const clientName = readString(payload, ['clientName', 'client']);
 
   return {
     totalShipments,
@@ -65,6 +67,7 @@ export function mapReportsResponse(response: unknown): ReportMetrics {
       .map((item) => toTopRoute(item))
       .filter((route) => Boolean(route.route))
       .sort((first, second) => second.total - first.total),
+    client: clientNit || clientName ? { nit: clientNit, name: clientName } : null,
   };
 }
 

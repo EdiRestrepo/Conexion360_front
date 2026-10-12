@@ -15,15 +15,19 @@ export interface InputRule {
   readonly email?: boolean;
 }
 
+/** Documento de cliente o colaborador: cédula o NIT sin dígito de verificación. */
+const documentRule = {
+  required: true,
+  minLength: 5,
+  maxLength: 15,
+  pattern: /^[0-9]+$/,
+  patternMessage: 'Solo se permiten números, sin puntos, guiones ni espacios.',
+} as const;
+
 export const inputRules = {
-  /** Documento de cliente o colaborador: cédula o NIT sin dígito de verificación. */
-  document: {
-    required: true,
-    minLength: 5,
-    maxLength: 15,
-    pattern: /^[0-9]+$/,
-    patternMessage: 'Solo se permiten números, sin puntos, guiones ni espacios.',
-  },
+  document: documentRule,
+  /** Buscador por documento (filtro de Reportes): mismo formato, pero vacío es «sin filtro». */
+  documentFilter: { ...documentRule, required: false },
   /** Buscadores de envíos: HBL, AWB, MBL, cliente, origen o destino. */
   searchQuery: {
     required: false,

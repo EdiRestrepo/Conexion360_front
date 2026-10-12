@@ -3,25 +3,46 @@ import {
   AfterViewChecked,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   OnDestroy,
   QueryList,
   ViewChild,
   ViewChildren,
+  computed,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
-import { Observable, Subject, catchError, map, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  map,
+  of,
+  shareReplay,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 
 import { ReportMetrics, ShipmentStatus } from '../../core/models/shipment.model';
 import { UserRole } from '../../core/models/user.model';
 import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { ViewPdfExportService } from '../../core/services/view-pdf-export.service';
+import { getApiErrorMessage } from '../../core/utils/api-error';
+import { getVisibleErrorMessage } from '../../core/utils/input-error-message';
+import { inputRules } from '../../core/utils/input-rules';
+import { validatorsFor } from '../../core/utils/input-validators';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
@@ -45,15 +66,17 @@ const chartBlueLight = '#60A5FA';
 const chartTeal = '#00B8A9';
 const chartPurple = '#8B5CF6';
 /**
- * Roles internos de TCC que pueden ver el ranking de clientes.
+ * Roles internos de TCC: ven el ranking de clientes y pueden filtrar el reporte
+ * por cliente.
  *
  * `CLIENT` queda fuera a propósito: la tarjeta lista **otros** clientes por
  * nombre, y un cliente no debe ver la operación de sus pares. Es una lista de
- * permitidos, así que un rol nuevo de Auth0 no ve el ranking hasta agregarlo
- * aquí. Ojo: esto solo oculta la interfaz; cuando el backend empiece a devolver
- * `topClients` en `GET /reports/home`, debe filtrarlo también por rol.
+ * permitidos, así que un rol nuevo de Auth0 no ve nada de esto hasta agregarlo
+ * aquí. Ojo: esto solo oculta la interfaz. Qué clientes puede consultar cada
+ * analista lo decide el backend (`ClientAccessResolver`); cuando `GET
+ * /reports/home` empiece a devolver `topClients`, debe filtrarlo también por rol.
  */
-const clientRankingRoles: UserRole[] = ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
+const internalRoles: UserRole[] = ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
 const statusRowPalette = [
   'status-row--gray',
   'status-row--blue',
@@ -67,7 +90,7 @@ Chart.register(...registerables);
 
 @Component({
   selector: 'app-reports',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatMenuModule, ReactiveFormsModule],
   templateUrl: './reports.html',
   styleUrl: './reports.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,24 +102,33 @@ export class Reports implements AfterViewChecked, OnDestroy {
   private readonly shipmentService = inject(SHIPMENT_DATA_SOURCE);
   private readonly authSession = inject(AuthSessionService);
   private readonly pdfExport = inject(ViewPdfExportService);
-  private readonly retry$ = new Subject<void>();
+  /** Documento del cliente consultado; vacío es el reporte sin filtrar. */
+  private readonly clientQuery$ = new BehaviorSubject<string>('');
   private readonly currentViewModel = signal<ReportsViewModel>(initialViewModel);
   private readonly charts = new Map<string, Chart>();
   private chartKey = '';
 
   protected readonly exportMessage = signal<string | null>(null);
   protected readonly exportingPdf = signal(false);
-  protected readonly viewModel$: Observable<ReportsViewModel> = this.retry$.pipe(
-    startWith(undefined),
-    switchMap(() =>
-      this.shipmentService.getReportMetrics().pipe(
-        map((metrics) => this.createViewModel(metrics)),
+  protected readonly documentRule = inputRules.documentFilter;
+  protected readonly clientControl = new FormControl('', { nonNullable: true, validators: validatorsFor(this.documentRule) });
+  protected readonly appliedClient = signal('');
+  protected readonly canFilterByClient = computed(() => this.isInternalRole());
+  protected readonly viewModel$: Observable<ReportsViewModel> = this.clientQuery$.pipe(
+    switchMap((clientId) =>
+      this.shipmentService.getReportMetrics(clientId).pipe(
+        map((metrics) => this.createViewModel(metrics, clientId)),
         startWith(initialViewModel),
-        catchError(() =>
+        catchError((error: unknown) =>
           of({
             ...initialViewModel,
             state: 'error',
-            message: 'No fue posible cargar los reportes. Intenta nuevamente.',
+            // El motivo del backend importa aquí: «No hay clientes asignados.» es
+            // la respuesta cuando un analista consulta un cliente que no es suyo.
+            message: getApiErrorMessage(
+              error,
+              clientId ? `No fue posible consultar el reporte del cliente ${clientId}.` : 'No fue posible cargar los reportes. Intenta nuevamente.',
+            ),
           } satisfies ReportsViewModel),
         ),
       ),
@@ -104,6 +136,21 @@ export class Reports implements AfterViewChecked, OnDestroy {
     tap((viewModel) => this.currentViewModel.set(viewModel)),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+
+  constructor() {
+    // Igual que los buscadores de Mis envíos e Historial: se consulta mientras se
+    // escribe, y un valor inválido (incompleto o malicioso) no llega al backend.
+    // Vaciar el campo vuelve al reporte sin filtrar.
+    this.clientControl.valueChanges
+      .pipe(
+        debounceTime(250),
+        filter(() => this.clientControl.valid),
+        map((value) => value.trim()),
+        distinctUntilChanged(),
+        takeUntilDestroyed(inject(DestroyRef)),
+      )
+      .subscribe((clientId) => this.applyClient(clientId));
+  }
 
   ngAfterViewChecked(): void {
     const viewModel = this.currentViewModel();
@@ -133,13 +180,18 @@ export class Reports implements AfterViewChecked, OnDestroy {
     this.destroyCharts();
   }
 
+  protected get clientError(): string | null {
+    return getVisibleErrorMessage(this.clientControl, this.documentRule);
+  }
+
   protected retry(): void {
-    this.retry$.next();
+    this.clientQuery$.next(this.clientQuery$.value);
   }
 
   protected exportCsv(metrics: ReportMetrics): void {
     const rows = [
       ['categoria', 'indicador', 'valor'],
+      ...(this.appliedClient() ? [['filtro', 'cliente', this.appliedClient()]] : []),
       ['general', 'total_envios', metrics.totalShipments.toString()],
       ['general', 'entregados', metrics.totalDelivered.toString()],
       ['general', 'con_novedad', metrics.totalWithIssue.toString()],
@@ -182,18 +234,27 @@ export class Reports implements AfterViewChecked, OnDestroy {
     }
   }
 
-  private createViewModel(metrics: ReportMetrics): ReportsViewModel {
+  private applyClient(clientId: string): void {
+    this.exportMessage.set(null);
+    this.appliedClient.set(clientId);
+    this.clientQuery$.next(clientId);
+  }
+
+  private createViewModel(metrics: ReportMetrics, clientId: string): ReportsViewModel {
     if (metrics.totalShipments === 0) {
       return {
         ...initialViewModel,
         state: 'empty',
-        message: 'Todavía no hay envíos registrados para construir reportes.',
+        message: clientId
+          ? `El cliente ${clientId} no tiene envíos registrados.`
+          : 'Todavía no hay envíos registrados para construir reportes.',
       };
     }
 
     // Se vacía `topClients` en un solo punto —y no solo al pintar el gráfico—
-    // para que el CSV exportado tampoco lleve el ranking.
-    const visibleMetrics = this.canSeeClientRanking() ? metrics : { ...metrics, topClients: [] };
+    // para que el CSV exportado tampoco lleve el ranking. Filtrado por un
+    // cliente, un ranking de clientes no tiene sentido.
+    const visibleMetrics = this.isInternalRole() && !clientId ? metrics : { ...metrics, topClients: [] };
 
     return {
       state: 'success',
@@ -229,10 +290,10 @@ export class Reports implements AfterViewChecked, OnDestroy {
    * que Auth0 emita la identidad antes de pedir los datos, así que aquí la
    * sesión siempre está disponible. Sin rol conocido, no se muestra el ranking.
    */
-  private canSeeClientRanking(): boolean {
+  private isInternalRole(): boolean {
     const role = this.authSession.currentSession()?.user.role ?? null;
 
-    return role !== null && clientRankingRoles.includes(role);
+    return role !== null && internalRoles.includes(role);
   }
 
   private createCharts(metrics: ReportMetrics): ReportChart[] {

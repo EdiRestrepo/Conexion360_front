@@ -390,11 +390,20 @@ algo sigue mockeado):
   visible. Ese respaldo es provisional y solo actúa si la respuesta no trae
   `topClients`; retirarlo en cuanto el backend lo incluya.
   El ranking **no se muestra al rol `CLIENT`** (ni a una sesión sin rol): la
-  tarjeta lista otros clientes por nombre. `Reports.canSeeClientRanking()` vacía
-  `topClients` en un único punto, así que la restricción cubre el gráfico y el
-  CSV exportado. Es solo la capa visual: cuando `GET /reports/home` empiece a
-  devolver `topClients` de verdad, el backend debe filtrarlo por el rol del
-  token (ver "No confiar únicamente en ocultar elementos visuales").
+  tarjeta lista otros clientes por nombre. `Reports.createViewModel()` vacía
+  `topClients` en un único punto (rol no interno o reporte filtrado por cliente),
+  así que la restricción cubre el gráfico y el CSV exportado. Es solo la capa
+  visual: cuando `GET /reports/home` empiece a devolver `topClients` de verdad,
+  el backend debe filtrarlo por el rol del token (ver "No confiar únicamente en
+  ocultar elementos visuales").
+  **Filtro por cliente**: ADMIN, ANALISTAOPE y ANALISTASAC (`internalRoles` en
+  `reports.ts`) pueden consultar el reporte de un cliente por documento/NIT; se
+  envía como `idQueryClient`. Qué clientes puede ver cada analista **no** lo
+  decide Angular: el backend (`ClientAccessResolver`) lo cruza con
+  `customers_of_collaborators` y rechaza los ajenos con «No hay clientes
+  asignados.», que la pantalla muestra tal cual. No existe endpoint que liste
+  los clientes asignados, por eso el filtro es un campo de texto y no un
+  desplegable; cuando exista, se cambia el input sin tocar el servicio.
 - `MockShipmentService` **ya no existe**: se eliminó al conectar Reportes al
   backend, que era su último consumidor. No recrearlo; las pantallas de envíos
   se prueban contra `HttpTestingController`, como en `api-*.service.spec.ts`.

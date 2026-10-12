@@ -76,6 +76,17 @@ describe('input validators', () => {
     it('should accept accented search terms', () => {
       expect(validateText('Almacenes Éxito', inputRules.searchQuery)).toBeNull();
     });
+
+    it('should apply the document format to the optional document filter', () => {
+      expect(validateText('', inputRules.documentFilter)).toBeNull();
+      expect(validateText('  900123456  ', inputRules.documentFilter)).toBeNull();
+      expect(validateText('1234', inputRules.documentFilter)).toEqual(jasmine.objectContaining({ minlength: jasmine.any(Object) }));
+      expect(validateText('1'.repeat(16), inputRules.documentFilter)).toEqual(jasmine.objectContaining({ maxlength: jasmine.any(Object) }));
+      expect(validateText('900123456-7', inputRules.documentFilter)).toEqual(jasmine.objectContaining({ pattern: jasmine.any(Object) }));
+      expect(validateText('<script>alert(1)</script>', inputRules.documentFilter)).toEqual({ maliciousContent: true });
+      expect(validateText('javascript:alert(1)', inputRules.documentFilter)).toEqual({ maliciousContent: true });
+      expect(validateText('1" onerror="x', inputRules.documentFilter)).toEqual({ maliciousContent: true });
+    });
   });
 
   describe('validatorsFor', () => {

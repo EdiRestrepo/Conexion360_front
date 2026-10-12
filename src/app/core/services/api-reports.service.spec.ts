@@ -56,9 +56,23 @@ describe('ApiReportsService', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('890903474');
+    expect(request.request.params.get('idQueryClient')).toBe('');
     expect(request.request.params.has('role')).toBe(false);
 
     request.flush({ dataResponse: createDataResponse() });
+  });
+
+  it('should send the queried client as idQueryClient', () => {
+    service.getReportMetrics(' 900123456 ').subscribe((metrics) => {
+      expect(metrics.client).toEqual({ nit: '900123456', name: 'Enka de Colombia' });
+    });
+
+    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`);
+
+    expect(request.request.params.get('idClient')).toBe('890903474');
+    expect(request.request.params.get('idQueryClient')).toBe('900123456');
+
+    request.flush({ dataResponse: { ...createDataResponse(), clientNit: '900123456', clientName: 'Enka de Colombia' } });
   });
 
   it('should group totals by operation, mode and status', () => {

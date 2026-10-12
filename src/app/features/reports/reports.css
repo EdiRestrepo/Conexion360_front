@@ -33,6 +33,64 @@
   font-weight: 900;
 }
 
+/* Mismo buscador que `.shipments-toolbar` (Mis envíos) y `.history-toolbar` (Historial). */
+.reports-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 560px);
+}
+
+.reports-toolbar label {
+  display: block;
+}
+
+.reports-toolbar .search-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.reports-toolbar .search-field mat-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  color: var(--color-primary);
+  font-size: 18px;
+}
+
+.reports-toolbar .search-field input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  outline: none;
+}
+
+.reports-toolbar .search-field:focus-within {
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px var(--color-secondary-soft);
+}
+
+.client-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.client-scope strong {
+  color: var(--color-primary);
+}
+
 .export-button {
   border-color: var(--color-border) !important;
   color: var(--color-text) !important;
@@ -336,6 +394,10 @@
 
   .reports-header {
     display: grid;
+  }
+
+  .reports-toolbar {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .routes-card {

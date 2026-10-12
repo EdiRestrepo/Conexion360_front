@@ -31,6 +31,31 @@
     }
   </header>
 
+  @if (canFilterByClient()) {
+    <section class="reports-toolbar" data-pdf-exclude aria-label="Filtro de reportes">
+      <label class="reports-toolbar__search">
+        <span class="search-field">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <input
+            id="report-client"
+            type="search"
+            inputmode="numeric"
+            autocomplete="off"
+            [formControl]="clientControl"
+            [attr.maxlength]="documentRule.maxLength"
+            placeholder="Buscar cliente por NIT o documento..."
+            aria-label="Buscar reporte por cliente"
+            [attr.aria-invalid]="!!clientError"
+            [attr.aria-describedby]="clientError ? 'report-client-error' : null"
+          />
+        </span>
+        @if (clientError; as error) {
+          <span id="report-client-error" class="field-error" role="alert">{{ error }}</span>
+        }
+      </label>
+    </section>
+  }
+
   @if (viewModel$ | async; as viewModel) {
     @if (exportMessage(); as message) {
       <p class="surface-card export-message" role="status" data-pdf-exclude>{{ message }}</p>
@@ -54,6 +79,15 @@
         <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
       </div>
     } @else if (viewModel.metrics; as metrics) {
+      @if (appliedClient()) {
+        <p class="client-scope" role="status">
+          <mat-icon aria-hidden="true">business</mat-icon>
+          Reporte del cliente <strong>{{ metrics.client?.name || appliedClient() }}</strong>
+          @if (metrics.client?.name) {
+            <span>· NIT {{ metrics.client?.nit || appliedClient() }}</span>
+          }
+        </p>
+      }
       <section class="reports-grid reports-grid--metrics" aria-label="Indicadores principales">
         @for (indicator of viewModel.indicators; track indicator.label) {
           <article class="surface-card report-card">

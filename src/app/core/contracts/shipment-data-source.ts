@@ -11,7 +11,11 @@ import { ReportMetrics } from '../models/shipment.model';
  * `ApiShipmentDetailService`), por lo que sus operaciones salieron de este contrato.
  */
 export interface ShipmentDataSource {
-  getReportMetrics(): Observable<ReportMetrics>;
+  /**
+   * @param idQueryClient documento del cliente a consultar. Vacío, el backend
+   * devuelve los totales de todo lo que el rol del token puede ver.
+   */
+  getReportMetrics(idQueryClient?: string): Observable<ReportMetrics>;
 }
 
 /**

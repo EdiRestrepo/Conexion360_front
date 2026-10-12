@@ -18,11 +18,17 @@ export class ApiReportsService implements ShipmentDataSource {
   private readonly auth0Facade = inject(Auth0FacadeService);
   private readonly reportsUrl = `${environment.api.baseUrl}/reports/home`;
 
-  getReportMetrics(): Observable<ReportMetrics> {
+  /**
+   * `idQueryClient` filtra el reporte por un cliente. El backend
+   * (`ClientAccessResolver`) solo lo acepta si el rol del token puede verlo:
+   * ADMIN, cualquiera; ANALISTAOPE y ANALISTASAC, solo los clientes que tienen
+   * asignados en `customers_of_collaborators`. Un cliente ajeno vuelve como error.
+   */
+  getReportMetrics(idQueryClient = ''): Observable<ReportMetrics> {
     return this.getIdentity().pipe(
       switchMap((identity) =>
         this.http.get<unknown>(this.reportsUrl, {
-          params: new HttpParams().set('idClient', identity.document ?? ''),
+          params: new HttpParams().set('idClient', identity.document ?? '').set('idQueryClient', idQueryClient.trim()),
         }),
       ),
       map((response) => this.withMockedTopClients(mapReportsResponse(response))),
