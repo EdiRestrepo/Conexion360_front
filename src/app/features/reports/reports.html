@@ -1,4 +1,4 @@
-<section class="page reports-page">
+<section #reportCapture class="page reports-page">
   <header class="page__header reports-header">
     <div>
       <h1 class="reports-title">Reportes</h1>
@@ -6,17 +6,34 @@
     </div>
     @if (viewModel$ | async; as headerViewModel) {
       @if (headerViewModel.metrics) {
-        <button mat-stroked-button type="button" class="export-button" (click)="exportCsv(headerViewModel.metrics)">
+        <button
+          mat-stroked-button
+          type="button"
+          class="export-button"
+          data-pdf-exclude
+          [matMenuTriggerFor]="exportMenu"
+          [disabled]="exportingPdf()"
+        >
           <mat-icon aria-hidden="true">download</mat-icon>
-          Exportar
+          {{ exportingPdf() ? 'Generando PDF...' : 'Exportar' }}
         </button>
+        <mat-menu #exportMenu="matMenu" xPosition="before">
+          <button mat-menu-item type="button" (click)="exportCsv(headerViewModel.metrics)">
+            <mat-icon aria-hidden="true">table_view</mat-icon>
+            <span>CSV (indicadores)</span>
+          </button>
+          <button mat-menu-item type="button" (click)="exportPdf()">
+            <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+            <span>PDF (vista actual)</span>
+          </button>
+        </mat-menu>
       }
     }
   </header>
 
   @if (viewModel$ | async; as viewModel) {
     @if (exportMessage(); as message) {
-      <p class="surface-card export-message" role="status">{{ message }}</p>
+      <p class="surface-card export-message" role="status" data-pdf-exclude>{{ message }}</p>
     }
 
     @if (viewModel.state === 'loading') {

@@ -6,12 +6,14 @@ import {
   ElementRef,
   OnDestroy,
   QueryList,
+  ViewChild,
   ViewChildren,
   inject,
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { Observable, Subject, catchError, map, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
 
@@ -19,6 +21,7 @@ import { ReportMetrics, ShipmentStatus } from '../../core/models/shipment.model'
 import { UserRole } from '../../core/models/user.model';
 import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
 import { AuthSessionService } from '../../core/services/auth-session.service';
+import { ViewPdfExportService } from '../../core/services/view-pdf-export.service';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
@@ -64,22 +67,25 @@ Chart.register(...registerables);
 
 @Component({
   selector: 'app-reports',
-  imports: [AsyncPipe, MatButtonModule, MatIconModule],
+  imports: [AsyncPipe, MatButtonModule, MatIconModule, MatMenuModule],
   templateUrl: './reports.html',
   styleUrl: './reports.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Reports implements AfterViewChecked, OnDestroy {
   @ViewChildren('chartCanvas') private readonly chartCanvases?: QueryList<ElementRef<HTMLCanvasElement>>;
+  @ViewChild('reportCapture') private readonly reportCapture?: ElementRef<HTMLElement>;
 
   private readonly shipmentService = inject(SHIPMENT_DATA_SOURCE);
   private readonly authSession = inject(AuthSessionService);
+  private readonly pdfExport = inject(ViewPdfExportService);
   private readonly retry$ = new Subject<void>();
   private readonly currentViewModel = signal<ReportsViewModel>(initialViewModel);
   private readonly charts = new Map<string, Chart>();
   private chartKey = '';
 
   protected readonly exportMessage = signal<string | null>(null);
+  protected readonly exportingPdf = signal(false);
   protected readonly viewModel$: Observable<ReportsViewModel> = this.retry$.pipe(
     startWith(undefined),
     switchMap(() =>
@@ -156,6 +162,24 @@ export class Reports implements AfterViewChecked, OnDestroy {
     link.click();
     globalThis.URL.revokeObjectURL(url);
     this.exportMessage.set('Exportación generada con los indicadores en pantalla.');
+  }
+
+  protected async exportPdf(): Promise<void> {
+    const element = this.reportCapture?.nativeElement;
+    if (!element || this.exportingPdf()) {
+      return;
+    }
+
+    this.exportingPdf.set(true);
+    this.exportMessage.set(null);
+    try {
+      await this.pdfExport.exportElement(element, 'conexion360-reportes.pdf');
+      this.exportMessage.set('PDF generado con la vista actual de reportes.');
+    } catch {
+      this.exportMessage.set('No fue posible generar el PDF. Intenta nuevamente.');
+    } finally {
+      this.exportingPdf.set(false);
+    }
   }
 
   private createViewModel(metrics: ReportMetrics): ReportsViewModel {

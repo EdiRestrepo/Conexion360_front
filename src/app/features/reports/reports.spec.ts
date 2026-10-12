@@ -8,22 +8,27 @@ import { ReportMetrics } from '../../core/models/shipment.model';
 import { UserRole } from '../../core/models/user.model';
 import { SHIPMENT_DATA_SOURCE } from '../../core/contracts/shipment-data-source';
 import { AuthSessionService } from '../../core/services/auth-session.service';
+import { ViewPdfExportService } from '../../core/services/view-pdf-export.service';
 import { Reports } from './reports';
 
 describe('Reports', () => {
   let fixture: ComponentFixture<Reports>;
   let getReportMetricsSpy: jasmine.Spy<() => Observable<ReportMetrics>>;
   let currentSession: WritableSignal<AuthSession | null>;
+  let exportElementSpy: jasmine.Spy<(element: HTMLElement, fileName: string) => Promise<void>>;
 
   beforeEach(async () => {
     getReportMetricsSpy = jasmine.createSpy('getReportMetrics').and.returnValue(of(createReportMetrics()));
     currentSession = signal(createSession('ADMIN'));
+    exportElementSpy = jasmine.createSpy('exportElement').and.resolveTo();
 
     await TestBed.configureTestingModule({
       imports: [Reports, NoopAnimationsModule],
       providers: [
         { provide: SHIPMENT_DATA_SOURCE, useValue: { getReportMetrics: getReportMetricsSpy } },
         { provide: AuthSessionService, useValue: { currentSession } },
+        // El servicio real carga html-to-image y jspdf y descarga un archivo: aquí solo importa la orquestación.
+        { provide: ViewPdfExportService, useValue: { exportElement: exportElementSpy } },
       ],
     }).compileComponents();
 
@@ -149,7 +154,7 @@ describe('Reports', () => {
     fixture.detectChanges();
     fixture.detectChanges();
 
-    clickButton('Exportar');
+    exportAs('CSV');
 
     const csv = await blobs[0].text();
 
@@ -163,12 +168,65 @@ describe('Reports', () => {
     spyOn(HTMLAnchorElement.prototype, 'click');
     render();
 
-    clickButton('Exportar');
+    exportAs('CSV');
     fixture.detectChanges();
 
     expect(createObjectUrlSpy).toHaveBeenCalled();
     expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:conexion360-report');
     expect(getText()).toContain('Exportación generada con los indicadores en pantalla.');
+  }));
+
+  it('should offer CSV and PDF formats when clicking export', fakeAsync(() => {
+    render();
+
+    clickButton('Exportar');
+    fixture.detectChanges();
+
+    const options = getMenuItems().map((item) => item.textContent ?? '');
+    expect(options.some((text) => text.includes('CSV'))).toBeTrue();
+    expect(options.some((text) => text.includes('PDF'))).toBeTrue();
+  }));
+
+  it('should export the reports view as PDF', fakeAsync(() => {
+    render();
+
+    exportAs('PDF');
+    tick();
+    fixture.detectChanges();
+
+    const [element, fileName] = exportElementSpy.calls.mostRecent().args;
+    expect(element.classList).toContain('reports-page');
+    expect(fileName).toBe('conexion360-reportes.pdf');
+    expect(getText()).toContain('PDF generado con la vista actual de reportes.');
+  }));
+
+  it('should disable export while the PDF is being generated', fakeAsync(() => {
+    let finish: () => void = () => undefined;
+    exportElementSpy.and.returnValue(new Promise<void>((resolve) => (finish = resolve)));
+    render();
+
+    exportAs('PDF');
+    fixture.detectChanges();
+
+    expect(getExportButton().disabled).toBeTrue();
+    expect(getExportButton().textContent).toContain('Generando PDF...');
+
+    finish();
+    tick();
+    fixture.detectChanges();
+
+    expect(getExportButton().disabled).toBeFalse();
+  }));
+
+  it('should show an error message when the PDF cannot be generated', fakeAsync(() => {
+    exportElementSpy.and.rejectWith(new Error('fallo'));
+    render();
+
+    exportAs('PDF');
+    tick();
+    fixture.detectChanges();
+
+    expect(getText()).toContain('No fue posible generar el PDF. Intenta nuevamente.');
   }));
 
   it('should render error state and retry', fakeAsync(() => {
@@ -204,6 +262,29 @@ describe('Reports', () => {
       throw new Error(`No se encontró el botón ${label}`);
     }
     button.click();
+  }
+
+  /** El menú de Material se pinta en un overlay fuera del componente, por eso se busca en `document`. */
+  function getMenuItems(): HTMLButtonElement[] {
+    return Array.from(globalThis.document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item'));
+  }
+
+  function exportAs(format: 'CSV' | 'PDF'): void {
+    clickButton('Exportar');
+    fixture.detectChanges();
+    const item = getMenuItems().find((option) => option.textContent?.includes(format));
+    if (!item) {
+      throw new Error(`No se encontró la opción ${format}`);
+    }
+    item.click();
+  }
+
+  function getExportButton(): HTMLButtonElement {
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.export-button');
+    if (!button) {
+      throw new Error('No se encontró el botón Exportar');
+    }
+    return button;
   }
 });
 
