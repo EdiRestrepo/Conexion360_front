@@ -37,7 +37,7 @@ describe('Sidebar', () => {
   it('should render the official identity only', () => {
     const content = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(content).toContain('Conexion360');
+    expect(content).toContain('Conexión360');
     expect(content).toContain('Visibilidad total. Decisiones inteligentes.');
     expect(content).not.toContain('WebTracker');
     expect(content).not.toContain('Track360');

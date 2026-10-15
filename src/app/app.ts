@@ -8,5 +8,5 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = 'Conexion360';
+  protected readonly title = 'Conexión360';
 }

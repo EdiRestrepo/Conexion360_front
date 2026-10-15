@@ -164,7 +164,7 @@ function toEvents(history: JsonRecord, documentNumber: string, location: Locatio
       status: newState ? toShipmentStatus(newState) : fallbackStatus,
       location,
       description: readString(record, ['message']),
-      source: 'Conexion360',
+      source: 'Conexión360',
       user: readString(record, ['changeUser']) || null,
       // Sin estado anterior (creación del envío) se omite para que la tarjeta no muestre flecha.
       previousValue: previousState || undefined,

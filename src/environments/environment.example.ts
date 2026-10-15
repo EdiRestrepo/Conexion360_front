@@ -19,5 +19,5 @@ export const environment = {
     warningSeconds: 20,
   },
   appUrl: '',
-  appName: 'Conexion360',
+  appName: 'Conexión360',
 };
