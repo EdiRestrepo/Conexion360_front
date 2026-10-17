@@ -1,6 +1,7 @@
 {
   "/api": {
     "target": "http://connection360-default-alb-840217706.us-east-1.elb.amazonaws.com",
+    
     "secure": false,
     "changeOrigin": true,
     "ws": true,
