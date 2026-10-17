@@ -6,6 +6,7 @@ export interface LayoutNavItem {
   adminOnly?: boolean;
 }
 
+
 export const layoutNavItems: readonly LayoutNavItem[] = [
   { label: 'Inicio', route: '/dashboard', icon: 'dashboard', exact: true },
   { label: 'Mis envíos', route: '/shipments', icon: 'inventory_2', exact: false },
