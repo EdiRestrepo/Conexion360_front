@@ -84,7 +84,7 @@ describe('Notifications', () => {
 
     expect(dialog?.textContent).toContain('Cambio de estado a pendiente');
     expect(dialog?.textContent).toContain('Se registra el envío en el sistema');
-    expect(dialog?.textContent).toContain('Documento de transporte');
+    expect(dialog?.textContent).toContain('Número de guía');
     expect(markAsReadSpy).toHaveBeenCalledWith('1');
 
     closeDialog('Cerrar');
