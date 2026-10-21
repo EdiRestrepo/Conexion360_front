@@ -110,17 +110,26 @@ describe('AuthRedirect', () => {
       }
     };
 
+    // Se espera la navegación en sí y no un plazo fijo: el ida y vuelta por
+    // `BroadcastChannel` tarda lo que quiera el runner, y en CI un temporizador
+    // corto fallaba de forma intermitente.
+    loginSpy.and.callFake(() => {
+      sibling.close();
+      done.fail('Se pidió login aunque la pestaña hermana respondió con sesión activa.');
+      return of(undefined);
+    });
+    navigateSpy.and.callFake((commands: unknown[]) => {
+      expect(commands).toEqual(['/dashboard']);
+      expect(loginSpy).not.toHaveBeenCalled();
+      sibling.close();
+      done();
+      return Promise.resolve(true);
+    });
+
     isAuthenticatedSubject.next(true);
 
     fixture = TestBed.createComponent(AuthRedirect);
     fixture.detectChanges();
-
-    setTimeout(() => {
-      expect(navigateSpy).toHaveBeenCalledWith(['/dashboard']);
-      expect(loginSpy).not.toHaveBeenCalled();
-      sibling.close();
-      done();
-    }, SIBLING_CHECK_TIMEOUT_MS / 2);
   });
 
   it('should stay silent when Auth0 redirection fails', () => {
