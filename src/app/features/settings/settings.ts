@@ -10,7 +10,7 @@ import type { SettingsCard, SettingsCardView } from './models/settings-view.mode
 const settingsCards: SettingsCard[] = [
   {
     title: 'Ajuste de notificaciones',
-    description: 'Configura canales y eventos para recibir alertas de tus envíos.',
+    description: 'Elige por qué canales recibir alertas de tus envíos.',
     icon: 'notifications_active',
     route: '/settings/notifications',
     roles: ['CLIENT', 'ANALISTAOPE', 'ANALISTASAC', 'ADMIN'],

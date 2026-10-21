@@ -45,8 +45,9 @@ describe('SettingsNotifications', () => {
     expect(getText()).toContain('Correo');
     expect(getText()).toContain('Notificaciones en la app');
     expect(getText()).toContain('SMS / Mensajes');
-    expect(getText()).toContain('Envío en camino');
-    expect(getText()).toContain('Recordatorios de entrega');
+    // Los eventos están ocultos para todos los roles.
+    expect(getText()).not.toContain('Eventos para notificar');
+    expect(getText()).not.toContain('Envío en camino');
   }));
 
   it('should save what the user toggled with the ids the backend returned', fakeAsync(() => {
@@ -71,7 +72,18 @@ describe('SettingsNotifications', () => {
     render();
 
     expect(getCheckbox('sms').checked).toBeTrue();
-    expect(getCheckbox('delays').checked).toBeFalse();
+  }));
+
+  // Los eventos no se pintan, pero siguen en el formulario: guardar los
+  // canales no debe pisar lo que el backend tenía para los eventos.
+  it('should keep the hidden event preferences from the backend when saving', fakeAsync(() => {
+    getNotificationSettingsSpy.and.returnValue(of(createSettings({ preferences: { delays: false } })));
+    fixture = TestBed.createComponent(SettingsNotifications);
+    render();
+
+    save();
+
+    expect(saveNotificationSettingsSpy).toHaveBeenCalledWith(jasmine.objectContaining({ delays: false }), jasmine.anything());
   }));
 
   // El alta no devuelve los ids, así que el componente relee: sin eso, el

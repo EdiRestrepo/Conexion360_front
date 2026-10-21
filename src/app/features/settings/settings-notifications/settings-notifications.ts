@@ -30,6 +30,11 @@ export class SettingsNotifications {
 
   protected readonly saveMessage = signal<string | null>(null);
   protected readonly saving = signal(false);
+  /**
+   * Los eventos (cambio de estado, entrega, novedades...) están ocultos en la
+   * pantalla para todos los roles, pero siguen en el formulario: así cada
+   * guardado reenvía al backend el valor que ya tenía y no los apaga.
+   */
   protected readonly form = new FormGroup<NotificationPreferenceForm>({
     email: new FormControl(defaultNotificationPreferences.email, { nonNullable: true }),
     inApp: new FormControl(defaultNotificationPreferences.inApp, { nonNullable: true }),

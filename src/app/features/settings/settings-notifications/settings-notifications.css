@@ -44,7 +44,6 @@
 
 .preferences-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
 }
 
@@ -61,19 +60,32 @@
   font-weight: 800;
 }
 
+/* Un canal por tarjeta; `auto-fit` decide cuántas caben por fila (3 en
+   escritorio, 1 en móvil) sin puntos de quiebre propios. */
+.channel-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
 .switch-row {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  min-height: 50px;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
   color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 160ms ease;
 }
 
-.switch-row + .switch-row {
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border);
+.switch-row:hover,
+.switch-row:has(input:checked) {
+  border-color: var(--color-secondary);
 }
 
 .switch-row__icon {
@@ -105,7 +117,7 @@
 
 .switch-row input {
   position: absolute;
-  right: 0;
+  right: 16px;
   width: 46px;
   height: 28px;
   opacity: 0;
@@ -175,10 +187,6 @@
 }
 
 @media (max-width: 900px) {
-  .preferences-layout {
-    grid-template-columns: 1fr;
-  }
-
   .settings-save-button {
     justify-self: stretch;
   }

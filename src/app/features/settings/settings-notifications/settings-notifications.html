@@ -5,7 +5,7 @@
     </a>
     <div>
       <h2>Ajuste de notificaciones</h2>
-      <p>Configura canales y eventos.</p>
+      <p>Elige por qué canales quieres recibir notificaciones.</p>
     </div>
   </header>
 
@@ -27,78 +27,34 @@
             <h3 id="notification-channels-title">Canales de notificación</h3>
           </header>
 
-          <label class="switch-row">
-            <span class="switch-row__icon"><mat-icon aria-hidden="true">notifications</mat-icon></span>
-            <span class="switch-row__content">
-              <strong>Notificaciones en la app</strong>
-            </span>
-            <input type="checkbox" formControlName="inApp" aria-label="Activar notificaciones en la app" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
+          <div class="channel-list">
+            <label class="switch-row">
+              <span class="switch-row__icon"><mat-icon aria-hidden="true">notifications</mat-icon></span>
+              <span class="switch-row__content">
+                <strong>Notificaciones en la app</strong>
+              </span>
+              <input type="checkbox" formControlName="inApp" aria-label="Activar notificaciones en la app" />
+              <span class="switch-row__control" aria-hidden="true"></span>
+            </label>
 
-          <label class="switch-row">
-            <span class="switch-row__icon"><mat-icon aria-hidden="true">mail</mat-icon></span>
-            <span class="switch-row__content">
-              <strong>Correo electrónico</strong>
-            </span>
-            <input type="checkbox" formControlName="email" aria-label="Activar notificaciones por correo" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
+            <label class="switch-row">
+              <span class="switch-row__icon"><mat-icon aria-hidden="true">mail</mat-icon></span>
+              <span class="switch-row__content">
+                <strong>Correo electrónico</strong>
+              </span>
+              <input type="checkbox" formControlName="email" aria-label="Activar notificaciones por correo" />
+              <span class="switch-row__control" aria-hidden="true"></span>
+            </label>
 
-          <label class="switch-row">
-            <span class="switch-row__icon"><mat-icon aria-hidden="true">sms</mat-icon></span>
-            <span class="switch-row__content">
-              <strong>SMS / Mensajes</strong>
-            </span>
-            <input type="checkbox" formControlName="sms" aria-label="Activar notificaciones por SMS" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
-        </article>
-
-        <article class="surface-card preferences-card" aria-labelledby="notification-events-title">
-          <header>
-            <h3 id="notification-events-title">Eventos para notificar</h3>
-          </header>
-
-          <label class="switch-row">
-            <span class="switch-row__content">
-              <strong>Cambio de estado del envío</strong>
-            </span>
-            <input type="checkbox" formControlName="shipmentStatusChanges" aria-label="Activar cambios de estado" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
-
-          <label class="switch-row">
-            <span class="switch-row__content">
-              <strong>Entrega exitosa</strong>
-            </span>
-            <input type="checkbox" formControlName="delivery" aria-label="Activar notificaciones de entrega" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
-
-          <label class="switch-row">
-            <span class="switch-row__content">
-              <strong>Novedades o incidencias</strong>
-            </span>
-            <input type="checkbox" formControlName="delays" aria-label="Activar novedades o incidencias" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
-
-          <label class="switch-row">
-            <span class="switch-row__content">
-              <strong>Envío en camino</strong>
-            </span>
-            <input type="checkbox" formControlName="shipmentEnRoute" aria-label="Activar notificaciones de envío en camino" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
-
-          <label class="switch-row">
-            <span class="switch-row__content">
-              <strong>Recordatorios de entrega</strong>
-            </span>
-            <input type="checkbox" formControlName="deliveryReminders" aria-label="Activar recordatorios de entrega" />
-            <span class="switch-row__control" aria-hidden="true"></span>
-          </label>
+            <label class="switch-row">
+              <span class="switch-row__icon"><mat-icon aria-hidden="true">sms</mat-icon></span>
+              <span class="switch-row__content">
+                <strong>SMS / Mensajes</strong>
+              </span>
+              <input type="checkbox" formControlName="sms" aria-label="Activar notificaciones por SMS" />
+              <span class="switch-row__control" aria-hidden="true"></span>
+            </label>
+          </div>
         </article>
 
         <button mat-flat-button type="submit" class="settings-save-button" [disabled]="saving()">
