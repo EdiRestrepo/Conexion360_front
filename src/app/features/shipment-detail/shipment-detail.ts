@@ -274,7 +274,7 @@ export class ShipmentDetail {
 
     return [
       this.createOptionalField('Factura proveedor', invoice?.providerInvoice, true),
-      this.createOptionalField('Factura TCC', invoice?.tccInvoice, true),
+      this.createOptionalField('Factura cliente', invoice?.tccInvoice, true),
       this.createOptionalField('Número de factura', invoice?.invoiceNumber, true),
       this.createOptionalField('Fecha de factura', this.formatOptionalDate(invoice?.invoiceDate)),
       this.createOptionalField('Descripción gasto', invoice?.expenseDescription),
