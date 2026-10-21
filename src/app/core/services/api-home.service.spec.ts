@@ -121,7 +121,9 @@ describe('ApiHomeService', () => {
     service.getRecent().subscribe((shipments) => {
       expect(shipments.length).toBe(2);
       expect(shipments[0].documentNumber).toBe('AWB-010');
+      expect(shipments[0].clientName).toBe('Postobon');
       expect(shipments[1].documentNumber).toBe('HBL-011');
+      expect(shipments[1].clientName).toBe('');
     });
 
     const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/home/totals`);
@@ -131,6 +133,8 @@ describe('ApiHomeService', () => {
         recentShipments: [
           {
             id: 10,
+            clientNit: '8909039395',
+            clientName: 'Postobon',
             documentNumber: 'AWB-010',
             operationType: 'EXPO',
             shipmentMode: 'AIR',

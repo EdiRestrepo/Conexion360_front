@@ -18,6 +18,7 @@ type JsonRecord = Record<string, unknown>;
 export interface HomeShipmentSummary {
   id: string;
   documentNumber: string;
+  clientName: string;
   operationType: OperationType;
   transportMode: TransportMode;
   status: ShipmentStatus;
@@ -184,6 +185,7 @@ export class ApiHomeService {
     return {
       id: this.readString(record, ['id', 'shipmentId', 'idShipment', 'idEnvio']) || documentNumber,
       documentNumber,
+      clientName: this.readString(record, ['clientName', 'nombreCliente', 'cliente', 'customerName']),
       operationType,
       transportMode,
       status,

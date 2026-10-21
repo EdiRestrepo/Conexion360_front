@@ -73,7 +73,7 @@
             {{ getShipmentStatusLabel(shipment.status) }}
           </span>
           <span class="dashboard-search-result__meta">
-            {{ getOperationTypeLabel(shipment.operationType) }} · {{ getTransportModeLabel(shipment.transportMode) }}
+            {{ getOperationTypeLabel(shipment.operationType) }} - {{ getTransportModeLabel(shipment.transportMode) }}
           </span>
         </a>
       }
@@ -225,7 +225,7 @@
 
         <div class="recent-list">
           @for (shipment of viewModel.recentShipments; track shipment.id) {
-            <a class="recent-item" [routerLink]="['/shipments', shipment.id]" [queryParams]="{ document: shipment.documentNumber, from: 'dashboard' }">
+            <a class="recent-item" [class.recent-item--with-client]="showClientName()" [routerLink]="['/shipments', shipment.id]" [queryParams]="{ document: shipment.documentNumber, from: 'dashboard' }">
               <span class="recent-item__icon" aria-hidden="true">
                 <mat-icon>{{ getTransportModeIcon(shipment.transportMode) }}</mat-icon>
               </span>
@@ -245,6 +245,11 @@
                 </span>
                 <small>{{ getRouteLabel(shipment) }}</small>
               </span>
+              @if (showClientName()) {
+                <span class="recent-item__client" [attr.title]="shipment.clientName || null">
+                  {{ shipment.clientName || '—' }}
+                </span>
+              }
               <span class="status-chip" [class.status-chip--issue]="shipment.status === 'WITH_ISSUE'">
                 {{ getShipmentStatusLabel(shipment.status) }}
               </span>

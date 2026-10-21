@@ -126,6 +126,29 @@ describe('Dashboard', () => {
     expect(getText()).toContain('AWB-001');
   }));
 
+  it('should hide the client name in recent shipments for the CLIENT role', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.recent-item__client')).toBeNull();
+    expect(getText()).not.toContain('Postobon');
+  }));
+
+  for (const role of ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'] as UserRole[]) {
+    it(`should show the client name in recent shipments for the ${role} role`, fakeAsync(() => {
+      currentSession.set(createSession('Iván Valencia', role));
+      fixture.detectChanges();
+      tick();
+      fixture.detectChanges();
+
+      const clients = fixture.nativeElement.querySelectorAll('.recent-item__client') as NodeListOf<HTMLElement>;
+
+      expect(clients.length).toBe(10);
+      expect(clients[0].textContent?.trim()).toBe('Postobon');
+    }));
+  }
+
   it('should render search result in dashboard when search has one result', fakeAsync(() => {
     searchSpy.and.returnValue(of({ items: [createShipments()[0]], page: 1, pageSize: 30, totalItems: 1, totalPages: 1 }));
     fixture.detectChanges();
@@ -327,6 +350,7 @@ function createShipment(overrides: Partial<HomeShipmentSummary> = {}): HomeShipm
   return {
     id: 'shipment-001',
     documentNumber: 'AWB-001',
+    clientName: 'Postobon',
     operationType: 'IMPO',
     transportMode: 'AIR',
     status: 'IN_TRANSIT',
