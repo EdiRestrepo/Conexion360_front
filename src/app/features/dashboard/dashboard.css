@@ -12,5 +12,5 @@
 
 /* Guía, cliente, estado y operación en cuatro columnas iguales: los bloques quedan
    equidistantes y alineados entre filas. En móvil manda la grilla de dos columnas. */
-@media (min-width:641px){.recent-item--with-client{grid-template-columns:auto repeat(4,minmax(0,1fr))}.recent-item__client,.recent-item--with-client .recent-item__meta{text-align:center}.recent-item--with-client .status-chip{justify-self:center}}
+@media (min-width:641px){.recent-item--with-client{grid-template-columns:auto repeat(4,minmax(0,1fr))}.recent-item__client,.recent-item__meta{text-align:center}.recent-item .status-chip{justify-self:center}}
 .recent-item__client{min-width:0;color:var(--color-text);font-size:var(--font-size-label);font-weight:600}
