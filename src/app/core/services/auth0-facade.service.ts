@@ -5,6 +5,7 @@ import { Observable, combineLatest, map } from 'rxjs';
 
 import { Auth0Identity, UserRole } from '../models/user.model';
 import { clearBrowserSession } from '../utils/browser-session';
+import { clearRecentSearches } from '../utils/recent-searches';
 import { clearLastActivity } from '../utils/idle-activity';
 import { environment } from '../../../environments/environment';
 
@@ -82,6 +83,7 @@ export class Auth0FacadeService {
   logout(): Observable<void> {
     clearBrowserSession();
     clearLastActivity();
+    clearRecentSearches();
 
     return this.auth0.logout({
       logoutParams: {

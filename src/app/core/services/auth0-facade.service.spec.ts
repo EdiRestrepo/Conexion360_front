@@ -3,6 +3,7 @@ import { AuthService } from '@auth0/auth0-angular';
 import { EMPTY, of } from 'rxjs';
 
 import { Auth0FacadeService } from './auth0-facade.service';
+import { readRecentSearches, saveRecentSearches } from '../utils/recent-searches';
 
 describe('Auth0FacadeService', () => {
   let loginWithRedirectSpy: jasmine.Spy;
@@ -50,6 +51,14 @@ describe('Auth0FacadeService', () => {
     service.logout().subscribe();
 
     expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('should forget the recent searches on logout', () => {
+    saveRecentSearches(['MBL-F3ADTPRT']);
+
+    service.logout().subscribe();
+
+    expect(readRecentSearches()).toEqual([]);
   });
 
   it('should map user roles from Auth0 custom claims', (done) => {

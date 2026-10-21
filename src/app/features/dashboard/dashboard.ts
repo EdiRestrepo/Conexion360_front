@@ -16,6 +16,7 @@ import { copyToClipboard } from '../../core/utils/clipboard';
 import { getVisibleErrorMessage } from '../../core/utils/input-error-message';
 import { inputRules } from '../../core/utils/input-rules';
 import { validatorsFor } from '../../core/utils/input-validators';
+import { MAX_RECENT_SEARCHES, readRecentSearches, saveRecentSearches } from '../../core/utils/recent-searches';
 import {
   getOperationTypeLabel,
   getShipmentStatusLabel,
@@ -59,7 +60,7 @@ export class Dashboard {
   protected readonly searchMessage = signal('');
   protected readonly searchResults = signal<HomeShipmentSummary[]>([]);
   protected readonly searchState = signal<DashboardSearchState>('idle');
-  protected readonly recentSearches = signal<string[]>([]);
+  protected readonly recentSearches = signal<string[]>(readRecentSearches());
   protected readonly copiedDocument = signal<string | null>(null);
 
   protected readonly getOperationTypeLabel = getOperationTypeLabel;
@@ -249,7 +250,20 @@ export class Dashboard {
     };
   }
 
+  protected removeRecentSearch(query: string): void {
+    this.updateRecentSearches((searches) => searches.filter((item) => item !== query));
+  }
+
+  protected clearRecentSearches(): void {
+    this.updateRecentSearches(() => []);
+  }
+
   private addRecentSearch(query: string): void {
-    this.recentSearches.update((searches) => [query, ...searches.filter((item) => item !== query)].slice(0, 5));
+    this.updateRecentSearches((searches) => [query, ...searches.filter((item) => item !== query)].slice(0, MAX_RECENT_SEARCHES));
+  }
+
+  private updateRecentSearches(change: (searches: string[]) => string[]): void {
+    this.recentSearches.update(change);
+    saveRecentSearches(this.recentSearches());
   }
 }

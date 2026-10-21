@@ -36,13 +36,29 @@
   }
 
   @if (recentSearches().length > 0) {
-    <section class="dashboard-search-recent" aria-label="Búsquedas recientes">
-      <span>Búsquedas recientes</span>
-      <div>
+    <section class="dashboard-search-recent" aria-labelledby="dashboard-search-recent-title">
+      <header>
+        <span id="dashboard-search-recent-title">Búsquedas recientes</span>
+        <button type="button" class="dashboard-search-recent__clear" (click)="clearRecentSearches()">Limpiar todo</button>
+      </header>
+      <ul>
         @for (search of recentSearches(); track search) {
-          <button mat-button type="button" (click)="searchAgain(search)">{{ search }}</button>
+          <li class="recent-search-chip">
+            <button type="button" class="recent-search-chip__label" [attr.aria-label]="'Buscar de nuevo ' + search" (click)="searchAgain(search)">
+              {{ search }}
+            </button>
+            <button
+              type="button"
+              class="recent-search-chip__remove"
+              [attr.aria-label]="'Quitar ' + search + ' de búsquedas recientes'"
+              title="Quitar"
+              (click)="removeRecentSearch(search)"
+            >
+              <mat-icon aria-hidden="true">close</mat-icon>
+            </button>
+          </li>
         }
-      </div>
+      </ul>
     </section>
   }
 

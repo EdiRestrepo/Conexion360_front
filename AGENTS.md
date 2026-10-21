@@ -1111,6 +1111,10 @@ protección: una petición enviada directo a la API se salta todo esto.
   envía: un documento pegado con espacios alrededor no es error.
 - **`?query=` de la URL también se valida** (`sanitizeQueryValue`): era la vía
   para saltarse el input. Si no cumple, se trata como vacío.
+- **Las búsquedas recientes del dashboard también** (`core/utils/recent-searches.ts`):
+  viven en `sessionStorage` (sobreviven a F5, mueren con la pestaña y se borran
+  en `logout()`), y al leerlas se revalidan con la regla del buscador porque el
+  almacén es editable desde el navegador.
 - Límites vigentes: documento 5–15 dígitos (sin NIT con dígito de
   verificación), buscadores 50 caracteres (letras con tilde, dígitos, espacio y
   `- . / ,`), correo 254, teléfono E.164 de 16.

@@ -11,6 +11,7 @@ import { DashboardMetrics } from '../../core/models/shipment.model';
 import { UserRole } from '../../core/models/user.model';
 import { ApiHomeService, HomeShipmentSummary } from '../../core/services/api-home.service';
 import { AuthSessionService } from '../../core/services/auth-session.service';
+import { clearRecentSearches, readRecentSearches, saveRecentSearches } from '../../core/utils/recent-searches';
 import { Dashboard } from './dashboard';
 
 describe('Dashboard', () => {
@@ -20,7 +21,12 @@ describe('Dashboard', () => {
   let currentSession: WritableSignal<AuthSession | null>;
   let getDashboardMetricsSpy: jasmine.Spy;
 
+  afterEach(() => {
+    clearRecentSearches();
+  });
+
   beforeEach(async () => {
+    clearRecentSearches();
     searchSpy = jasmine.createSpy('search').and.returnValue(of({ items: [], page: 1, pageSize: 30, totalItems: 0, totalPages: 0 }));
     const recentShipments = createShipments(10);
     currentSession = signal(createSession('Iván Valencia'));
@@ -160,6 +166,53 @@ describe('Dashboard', () => {
 
     expect(getText()).toContain('AWB-001');
     expect(getText()).toContain('Búsquedas recientes');
+  }));
+
+  it('should keep recent searches after the dashboard is recreated (F5 or navigation)', fakeAsync(() => {
+    searchSpy.and.returnValue(of({ items: [createShipments()[0]], page: 1, pageSize: 30, totalItems: 1, totalPages: 1 }));
+    fixture.detectChanges();
+    tick();
+    component.searchControl.setValue('AWB-001');
+    component.searchShipment();
+    tick();
+
+    expect(readRecentSearches()).toEqual(['AWB-001']);
+
+    fixture.destroy();
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(getRecentSearchLabels()).toEqual(['AWB-001']);
+  }));
+
+  it('should remove a single recent search', fakeAsync(() => {
+    saveRecentSearches(['AWB-001', 'HBL-002']);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[aria-label="Quitar AWB-001 de búsquedas recientes"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(getRecentSearchLabels()).toEqual(['HBL-002']);
+    expect(readRecentSearches()).toEqual(['HBL-002']);
+  }));
+
+  it('should clear all recent searches', fakeAsync(() => {
+    saveRecentSearches(['AWB-001', 'HBL-002']);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.dashboard-search-recent__clear') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(getText()).not.toContain('Búsquedas recientes');
+    expect(readRecentSearches()).toEqual([]);
   }));
 
   it('should show a compact loader while search is pending', fakeAsync(() => {
@@ -308,6 +361,11 @@ describe('Dashboard', () => {
     expect(searchSpy).not.toHaveBeenCalled();
     expect(getText()).toContain('Máximo 50 caracteres.');
   }));
+
+  function getRecentSearchLabels(): string[] {
+    const labels = fixture.nativeElement.querySelectorAll('.recent-search-chip__label') as NodeListOf<HTMLButtonElement>;
+    return Array.from(labels).map((label) => label.textContent?.trim() ?? '');
+  }
 
   function getText(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
