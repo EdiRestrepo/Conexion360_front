@@ -4,7 +4,6 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { mockTopClients } from '../../mocks/data/mock-top-clients';
 import { Auth0FacadeService } from './auth0-facade.service';
 import { ApiReportsService } from './api-reports.service';
 
@@ -117,16 +116,30 @@ describe('ApiReportsService', () => {
     });
   });
 
-  // Provisional: el endpoint no manda ranking de clientes todavía.
-  it('should fall back to the mocked client ranking', () => {
+  it('should build the client ranking from the clients in dataResponse when topClients is missing', () => {
     service.getReportMetrics().subscribe((metrics) => {
-      expect(metrics.topClients).toEqual(mockTopClients);
-      expect(metrics.topClients.length).toBeGreaterThan(0);
+      expect(metrics.topClients).toEqual([
+        { client: 'Enka', total: 128 },
+        { client: 'Postobon', total: 40 },
+      ]);
+    });
+
+    httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`).flush({
+      dataResponse: [
+        { ...createDataResponse(), clientName: 'Postobon', totalClientRecords: 40 },
+        { ...createDataResponse(), clientName: 'Enka', totalClientRecords: 128 },
+      ],
+    });
+  });
+
+  it('should leave the client ranking empty when no client name comes back', () => {
+    service.getReportMetrics().subscribe((metrics) => {
+      expect(metrics.topClients).toEqual([]);
     });
 
     httpMock
       .expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`)
-      .flush({ dataResponse: createDataResponse() });
+      .flush({ dataResponse: { ...createDataResponse(), clientName: '' } });
   });
 
   it('should keep the client ranking sent by the backend when it exists', () => {

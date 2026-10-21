@@ -11,7 +11,8 @@ type JsonRecord = Record<string, unknown>;
  */
 export function mapReportsResponse(response: unknown): ReportMetrics {
   const root = asRecord(response);
-  const payload = asRecord(firstPayloadItem(getValue(root, ['dataResponse', 'DataResponse']) ?? root));
+  const data = getValue(root, ['dataResponse', 'DataResponse']) ?? root;
+  const payload = asRecord(firstPayloadItem(data));
 
   const totalShipments = readNumber(payload, ['totalClientRecords', 'totalShipments'], 0);
   const totalDelivered = readNumber(payload, ['totalDeliveredStatus', 'totalDelivered'], 0);
@@ -58,11 +59,7 @@ export function mapReportsResponse(response: unknown): ReportMetrics {
       DELIVERED: totalDelivered,
       WITH_ISSUE: totalWithIssue,
     },
-    // Sin ranking de clientes en la respuesta. Reportes omite esa tarjeta
-    // mientras la lista venga vacía.
-    topClients: readArray(payload, ['topClients', 'frequentClients'])
-      .map((item) => toTopClient(item))
-      .filter((client) => Boolean(client.client)),
+    topClients: toTopClients(payload, data),
     topRoutes: readArray(payload, ['frequentRoutes', 'topRoutes'])
       .map((item) => toTopRoute(item))
       .filter((route) => Boolean(route.route))
@@ -71,12 +68,27 @@ export function mapReportsResponse(response: unknown): ReportMetrics {
   };
 }
 
+/**
+ * Prefiere el ranking explícito (`topClients`). Si no viene, lo arma con los
+ * clientes de `dataResponse`: cada elemento trae `clientName` y
+ * `totalClientRecords`. Con un solo cliente la gráfica tiene una sola barra.
+ */
+function toTopClients(payload: JsonRecord, data: unknown): { client: string; total: number }[] {
+  const explicit = readArray(payload, ['topClients', 'frequentClients']);
+  const items = explicit.length > 0 ? explicit : Array.isArray(data) ? data : [data];
+
+  return items
+    .map((item) => toTopClient(item))
+    .filter((client) => Boolean(client.client))
+    .sort((first, second) => second.total - first.total);
+}
+
 function toTopClient(value: unknown): { client: string; total: number } {
   const record = asRecord(value);
 
   return {
     client: readString(record, ['client', 'clientName', 'cliente']),
-    total: readNumber(record, ['total', 'totalClient', 'totalShipments'], 0),
+    total: readNumber(record, ['total', 'totalClient', 'totalShipments', 'totalClientRecords'], 0),
   };
 }
 

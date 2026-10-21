@@ -7,7 +7,6 @@ import { ShipmentDataSource } from '../contracts/shipment-data-source';
 import { mapReportsResponse } from '../mappers/reports.mapper';
 import { ReportMetrics } from '../models/shipment.model';
 import { Auth0Identity } from '../models/user.model';
-import { mockTopClients } from '../../mocks/data/mock-top-clients';
 import { Auth0FacadeService } from './auth0-facade.service';
 
 @Injectable({
@@ -31,22 +30,8 @@ export class ApiReportsService implements ShipmentDataSource {
           params: new HttpParams().set('idClient', identity.document ?? '').set('idQueryClient', idQueryClient.trim()),
         }),
       ),
-      map((response) => this.withMockedTopClients(mapReportsResponse(response))),
+      map((response) => mapReportsResponse(response)),
     );
-  }
-
-  /**
-   * Provisional: `GET /reports/home` no devuelve ranking de clientes, así que
-   * la tarjeta "Top clientes por cantidad de envíos" se sigue pintando con
-   * datos simulados. Quitar este respaldo —y el import de `mockTopClients`—
-   * en cuanto el backend incluya `topClients` en la respuesta.
-   */
-  private withMockedTopClients(metrics: ReportMetrics): ReportMetrics {
-    if (metrics.topClients.length > 0) {
-      return metrics;
-    }
-
-    return { ...metrics, topClients: mockTopClients };
   }
 
   private getIdentity(): Observable<Auth0Identity> {

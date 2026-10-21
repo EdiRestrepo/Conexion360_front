@@ -222,7 +222,7 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Distribución por modalidad
 - Distribución por estado
 - Rutas más frecuentes
-- Top de clientes (aún simulado; oculto para el rol CLIENT)
+- Top de clientes (desde `dataResponse`; oculto para el rol CLIENT)
 - Exportación CSV de los indicadores en pantalla
 
 ### Ajustes
@@ -271,9 +271,7 @@ src/app/
     reports/
     settings/
 
-  mocks/
-    data/          (solo `mock-top-clients.ts`; desaparece cuando el backend
-                    devuelva `topClients` en `GET /reports/home`)
+No existe carpeta `mocks/`: ya no queda ningún dato simulado en la app.
 
 No crear un único componente grande.
 
@@ -385,10 +383,16 @@ algo sigue mockeado):
   backend devuelve los totales ya agregados; `mapReportsResponse`
   (`core/mappers/reports.mapper.ts`) solo renombra claves. Ese endpoint todavía
   **no** devuelve ranking de clientes ni avance promedio: `averageProgress`
-  queda en 0 (hoy no se pinta) y `topClients` se rellena con `mockTopClients`
-  (`mocks/data/mock-top-clients.ts`) para que la tarjeta "Top clientes" siga
-  visible. Ese respaldo es provisional y solo actúa si la respuesta no trae
-  `topClients`; retirarlo en cuanto el backend lo incluya.
+  queda en 0 (hoy no se pinta). `topClients` usa el ranking explícito si la
+  respuesta lo trae; si no, se arma con los clientes de `dataResponse`
+  (`clientName` + `totalClientRecords` de cada elemento), ordenados de mayor a
+  menor. Con un solo cliente sale una sola barra. Antes se rellenaba con un
+  ranking fijo (`mockTopClients`) que en pantalla parecía real; se eliminó a
+  propósito: no volver a inventar ese ranking.
+  Los **totales** del reporte, en cambio, salen solo del primer elemento de
+  `dataResponse` (`firstPayloadItem`). Si el backend devuelve un elemento por
+  cliente (analista con varios clientes asignados), los totales de los demás se
+  descartan: pendiente confirmar el contrato con backend.
   El ranking **no se muestra al rol `CLIENT`** (ni a una sesión sin rol): la
   tarjeta lista otros clientes por nombre. `Reports.createViewModel()` vacía
   `topClients` en un único punto (rol no interno o reporte filtrado por cliente),
@@ -443,9 +447,8 @@ algo sigue mockeado):
   (`mocks/data/mock-shipments.ts`, `mocks/factories/mock-shipment.factory.ts`)
   **ya no existen**: se eliminaron al conectar Notificaciones al backend. No
   recrearlos.
-- Lo único simulado que queda en la app es `mocks/data/mock-top-clients.ts`
-  (5 nombres de cliente fijos). Cuando `GET /reports/home` devuelva `topClients`,
-  se borra ese archivo y la carpeta `mocks/` entera desaparece.
+- `mocks/data/mock-top-clients.ts`, el último dato simulado, también se
+  eliminó. La carpeta `mocks/` ya no existe; no recrearla.
 
 Las interfaces/contratos de acceso a datos (`ShipmentDataSource`,
 `NotificationDataSource`) viven en `core/contracts/`, separadas de las
