@@ -83,13 +83,14 @@ describe('ApiNotificationsService', () => {
       dataResponse: [
         { ...createBackendNotification(), idNotification: 1, notificationType: 0, notificationStatus: 0 },
         { ...createBackendNotification(), idNotification: 2, notificationType: 1, notificationStatus: 1 },
+        { ...createBackendNotification(), idNotification: 3, notificationType: 2, notificationStatus: 0 },
         // Un código fuera del enum no debe romper la lista.
-        { ...createBackendNotification(), idNotification: 3, notificationType: 99, notificationStatus: 0 },
+        { ...createBackendNotification(), idNotification: 4, notificationType: 99, notificationStatus: 0 },
       ],
     });
 
-    expect(notifications.map((item) => item.type)).toEqual(['STATUS_CHANGE', 'COMMENT', 'STATUS_CHANGE']);
-    expect(notifications.map((item) => item.read)).toEqual([false, true, false]);
+    expect(notifications.map((item) => item.type)).toEqual(['STATUS_CHANGE', 'COMMENT', 'OTHER_INFO', 'STATUS_CHANGE']);
+    expect(notifications.map((item) => item.read)).toEqual([false, true, false, false]);
   });
 
   it('should count unread notifications without a second request', () => {

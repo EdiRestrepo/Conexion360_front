@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../environments/environment';
-import { MasterOperationResult } from '../models/clients-collaborators.model';
+import { CustomerCollaboratorRelation, MasterOperationResult } from '../models/clients-collaborators.model';
 import { ApiClientsCollaboratorsService } from './api-clients-collaborators.service';
 
 describe('ApiClientsCollaboratorsService', () => {
@@ -63,5 +63,45 @@ describe('ApiClientsCollaboratorsService', () => {
     httpMock.expectOne(`${environment.api.baseUrl}/settings/createcustomerdb?clientId=123456789`).flush({});
 
     expect(result).toEqual({ message: '' });
+  });
+
+  it('should list customers as sorted, unique documents', () => {
+    let result: string[] = [];
+
+    service.listCustomers().subscribe((value) => (result = value));
+
+    const request = httpMock.expectOne(`${environment.api.baseUrl}/settings/listcustomersdb`);
+
+    expect(request.request.method).toBe('GET');
+    request.flush([{ identificacion: '900123456' }, { identificacion: '81103574' }, { identificacion: '900123456' }, {}]);
+
+    expect(result).toEqual(['81103574', '900123456']);
+  });
+
+  it('should list collaborators, also when wrapped in dataResponse', () => {
+    let result: string[] = [];
+
+    service.listCollaborators().subscribe((value) => (result = value));
+    httpMock
+      .expectOne(`${environment.api.baseUrl}/settings/listcollaboratorsdb`)
+      .flush({ dataResponse: [{ identificacion: '1234567890' }] });
+
+    expect(result).toEqual(['1234567890']);
+  });
+
+  it('should list the customer - collaborator relations', () => {
+    let result: CustomerCollaboratorRelation[] = [];
+
+    service.listCustomerCollaborators().subscribe((value) => (result = value));
+    httpMock.expectOne(`${environment.api.baseUrl}/settings/listcustomercollaboratordb`).flush([
+      { identificacionCustomer: '900123456', identificacionCollaborator: '1234567890' },
+      { identificacionCustomer: '81103574', identificacionCollaborator: '1234567890' },
+      { identificacionCustomer: '81103574', identificacionCollaborator: null },
+    ]);
+
+    expect(result).toEqual([
+      { customerId: '81103574', collaboratorId: '1234567890' },
+      { customerId: '900123456', collaboratorId: '1234567890' },
+    ]);
   });
 });

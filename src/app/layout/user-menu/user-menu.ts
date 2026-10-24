@@ -14,7 +14,10 @@ import type { SettingsUser, SettingsUserUpdate } from '../../core/models/setting
 import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
 import { getApiErrorMessage, isForbiddenError } from '../../core/utils/api-error';
 import { getUserRoleLabel } from '../../core/utils/display-labels';
-import type { UserDetailDialogData } from '../../features/settings/settings-users/components/user-detail-dialog/user-detail-dialog';
+import type {
+  UserDetailDialogData,
+  UserDetailDialogResult,
+} from '../../features/settings/settings-users/components/user-detail-dialog/user-detail-dialog';
 
 /**
  * Solo el tipo del módulo: `typeof import(...)` no genera dependencia en tiempo
@@ -101,12 +104,10 @@ export class UserMenu {
 
   /**
    * Reutiliza el diálogo de `Gestión de usuarios` para que cualquier usuario
-   * edite su propio celular y correo.
+   * edite su nombre, empresa, celular y correo.
    *
-   * No se consulta `/settings/getuser`: es un endpoint de administración, y
-   * además devuelve menos de lo que ya trae el token (sin `user_metadata` ni
-   * roles), que es justo de donde salían los `—` del formulario. Con la sesión
-   * el diálogo abre sin red y sirve para cualquier rol.
+   * No se consulta `/settings/getuser`: es un endpoint de administración. Con
+   * la sesión el diálogo abre sin red y sirve para cualquier rol.
    */
   protected openProfileDialog(): void {
     const user = this.session()?.user;
@@ -130,15 +131,20 @@ export class UserMenu {
       email: user.email,
       userName: user.nickname || user.email,
       nickname: user.nickname || user.email,
-      phoneNumber: user.phoneNumber ?? '',
+      // El token trae el celular del `user_metadata`, que es el `phone` del DTO.
+      phoneNumber: '',
+      phone: user.phoneNumber ?? '',
       isBlocked: false,
       createdDate: null,
       updatedDate: null,
       fullName: user.name,
       document: user.document ?? '',
       company: user.company ?? '',
-      picture: user.picture ?? null,
+      // Sin `roleId` el PATCH viaja con `null` y conserva el rol: aquí no se edita.
+      roleId: '',
+      roleName: user.role ?? '',
       role: user.role,
+      picture: user.picture ?? null,
       lastLogin: null,
       emailVerified: null,
       acceptedDataPolicy: null,
@@ -170,7 +176,7 @@ export class UserMenu {
     this.profilePending.set(false);
 
     this.dialog
-      .open<InstanceType<typeof UserDetailDialog>, UserDetailDialogData, SettingsUserUpdate | null>(UserDetailDialog, {
+      .open<InstanceType<typeof UserDetailDialog>, UserDetailDialogData, UserDetailDialogResult | null>(UserDetailDialog, {
         data: { user, isSelf: true },
         width: '640px',
         maxWidth: '95vw',
@@ -178,16 +184,17 @@ export class UserMenu {
       })
       .afterClosed()
       .pipe(take(1))
-      .subscribe((changes) => {
-        if (changes) {
-          this.applyProfileUpdate(user, changes);
+      .subscribe((result) => {
+        // En el perfil propio el estado no se muestra: solo puede volver perfil.
+        if (result?.profile) {
+          this.applyProfileUpdate(user, result.profile);
         }
       });
   }
 
   private applyProfileUpdate(user: SettingsUser, changes: SettingsUserUpdate): void {
     this.usersService
-      .update(user, changes)
+      .update(user.userId, changes)
       .pipe(take(1))
       .subscribe({
         next: () => this.snackBar.open('Datos actualizados.', 'Cerrar', { duration: 4000 }),

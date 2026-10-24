@@ -15,3 +15,6 @@ export type MasterActionState = 'idle' | 'pending' | 'success' | 'error';
 export interface MasterActionStatus { state: MasterActionState; message: string | null; }
 export type DocumentForm = { clientId: FormControl<string>; };
 export type LinkForm = { clientId: FormControl<string>; collaborator: FormControl<string>; };
+/** Listados del maestro: qué hay ya parametrizado junto a cada formulario de alta. */
+export type MasterListLoadState = 'loading' | 'empty' | 'error' | 'success';
+export interface MasterListState<T> { state: MasterListLoadState; items: T[]; }

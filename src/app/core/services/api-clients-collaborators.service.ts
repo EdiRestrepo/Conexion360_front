@@ -3,12 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { mapMasterOperationResponse } from '../mappers/clients-collaborators.mapper';
-import { MasterOperationResult } from '../models/clients-collaborators.model';
+import {
+  mapCustomerCollaboratorRelationsResponse,
+  mapIdentifierListResponse,
+  mapMasterOperationResponse,
+} from '../mappers/clients-collaborators.mapper';
+import { CustomerCollaboratorRelation, MasterOperationResult } from '../models/clients-collaborators.model';
 
 /**
- * Maestro de clientes colaboradores: alta de clientes, alta de colaboradores y
- * la asociación entre ambos.
+ * Maestro de clientes colaboradores: alta y listado de clientes, de
+ * colaboradores y de la asociación entre ambos.
  *
  * Los tres son `GET` con los datos en la query aunque escriban en la base: así
  * los expone el backend (`createcustomerdb`, `createcollaboratordb`,
@@ -40,6 +44,22 @@ export class ApiClientsCollaboratorsService {
       'createcustomercollaboratordb',
       new HttpParams().set('clientId', clientId).set('collaborator', collaboratorId),
     );
+  }
+
+  /** Documentos de `connection360write.customers`. */
+  listCustomers(): Observable<string[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/listcustomersdb`).pipe(map(mapIdentifierListResponse));
+  }
+
+  /** Documentos de `connection360write.collaborators`. */
+  listCollaborators(): Observable<string[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/listcollaboratorsdb`).pipe(map(mapIdentifierListResponse));
+  }
+
+  listCustomerCollaborators(): Observable<CustomerCollaboratorRelation[]> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/listcustomercollaboratordb`)
+      .pipe(map(mapCustomerCollaboratorRelationsResponse));
   }
 
   private request(path: string, params: HttpParams): Observable<MasterOperationResult> {

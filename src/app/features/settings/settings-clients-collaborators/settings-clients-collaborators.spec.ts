@@ -4,7 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
-import { MasterOperationResult } from '../../../core/models/clients-collaborators.model';
+import { CustomerCollaboratorRelation, MasterOperationResult } from '../../../core/models/clients-collaborators.model';
 import { ApiClientsCollaboratorsService } from '../../../core/services/api-clients-collaborators.service';
 import { SettingsClientsCollaborators } from './settings-clients-collaborators';
 
@@ -13,11 +13,19 @@ describe('SettingsClientsCollaborators', () => {
   let createCustomerSpy: jasmine.Spy<(clientId: string) => Observable<MasterOperationResult>>;
   let createCollaboratorSpy: jasmine.Spy<(collaboratorId: string) => Observable<MasterOperationResult>>;
   let linkSpy: jasmine.Spy<(clientId: string, collaboratorId: string) => Observable<MasterOperationResult>>;
+  let listCustomersSpy: jasmine.Spy<() => Observable<string[]>>;
+  let listCollaboratorsSpy: jasmine.Spy<() => Observable<string[]>>;
+  let listRelationsSpy: jasmine.Spy<() => Observable<CustomerCollaboratorRelation[]>>;
 
   beforeEach(async () => {
     createCustomerSpy = jasmine.createSpy('createCustomer').and.returnValue(of({ message: '' }));
     createCollaboratorSpy = jasmine.createSpy('createCollaborator').and.returnValue(of({ message: '' }));
     linkSpy = jasmine.createSpy('linkCustomerToCollaborator').and.returnValue(of({ message: '' }));
+    listCustomersSpy = jasmine.createSpy('listCustomers').and.returnValue(of(['81103574', '900123456']));
+    listCollaboratorsSpy = jasmine.createSpy('listCollaborators').and.returnValue(of(['1234567890']));
+    listRelationsSpy = jasmine
+      .createSpy('listCustomerCollaborators')
+      .and.returnValue(of([{ customerId: '81103574', collaboratorId: '1234567890' }]));
 
     await TestBed.configureTestingModule({
       imports: [SettingsClientsCollaborators, NoopAnimationsModule],
@@ -29,6 +37,9 @@ describe('SettingsClientsCollaborators', () => {
             createCustomer: createCustomerSpy,
             createCollaborator: createCollaboratorSpy,
             linkCustomerToCollaborator: linkSpy,
+            listCustomers: listCustomersSpy,
+            listCollaborators: listCollaboratorsSpy,
+            listCustomerCollaborators: listRelationsSpy,
           },
         },
       ],
@@ -144,6 +155,62 @@ describe('SettingsClientsCollaborators', () => {
 
     expect(getText()).toContain('No fue posible completar la operación.');
   }));
+
+  it('should list what is already registered under each form', () => {
+    const chips = getElement().querySelectorAll('.master-chips li');
+    const relationCells = getElement().querySelectorAll('.master-relations td');
+
+    expect(Array.from(chips).map((chip) => chip.textContent?.trim())).toEqual(['81103574', '900123456', '1234567890']);
+    expect(Array.from(relationCells).map((cell) => cell.textContent?.trim())).toEqual(['81103574', '1234567890']);
+  });
+
+  it('should suggest registered documents in the link form', () => {
+    const options = getElement().querySelectorAll('#link-customer-options option');
+
+    expect(getInput(2).getAttribute('list')).toBe('link-customer-options');
+    expect(Array.from(options).map((option) => option.getAttribute('value'))).toEqual(['81103574', '900123456']);
+  });
+
+  it('should reload only the matching list after a successful create', fakeAsync(() => {
+    typeInto(0, '123456789');
+    submit(0);
+
+    expect(listCustomersSpy).toHaveBeenCalledTimes(2);
+    expect(listCollaboratorsSpy).toHaveBeenCalledTimes(1);
+    expect(listRelationsSpy).toHaveBeenCalledTimes(1);
+  }));
+
+  it('should not reload the list when the create fails', fakeAsync(() => {
+    createCollaboratorSpy.and.returnValue(throwError(() => new Error('sin red')));
+    typeInto(1, '1234567890');
+    submit(1);
+
+    expect(listCollaboratorsSpy).toHaveBeenCalledTimes(1);
+  }));
+
+  it('should show the empty and error states of the lists, and retry', fakeAsync(() => {
+    listCustomersSpy.and.returnValue(of([]));
+    listRelationsSpy.and.returnValue(throwError(() => new Error('boom')));
+    fixture = TestBed.createComponent(SettingsClientsCollaborators);
+    fixture.detectChanges();
+
+    expect(getText()).toContain('Todavía no hay clientes registrados.');
+    expect(getText()).toContain('No fue posible cargar las asociaciones.');
+
+    listRelationsSpy.and.returnValue(of([{ customerId: '1', collaboratorId: '2' }]));
+    const retry = Array.from(getElement().querySelectorAll<HTMLButtonElement>('app-master-list button')).find((button) =>
+      button.textContent?.includes('Reintentar'),
+    ) as HTMLButtonElement;
+    retry.click();
+    fixture.detectChanges();
+
+    expect(getText()).not.toContain('No fue posible cargar las asociaciones.');
+    expect(getElement().querySelectorAll('.master-relations tbody tr').length).toBe(1);
+  }));
+
+  function getElement(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
 
   function getInput(index: number): HTMLInputElement {
     return (fixture.nativeElement as HTMLElement).querySelectorAll('input')[index] as HTMLInputElement;

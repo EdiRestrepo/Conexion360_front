@@ -1,4 +1,4 @@
-<section class="settings-subpage">
+﻿<section class="settings-subpage">
   <header class="settings-subpage__header">
     <a class="settings-back" routerLink="/settings" aria-label="Volver a ajustes">
       <mat-icon aria-hidden="true">arrow_back</mat-icon>
@@ -51,11 +51,16 @@
 
                 <span role="cell">{{ user.company || '—' }}</span>
 
-                <span role="cell">{{ user.fullName || '—' }}</span>
+                <span role="cell" class="user-name-cell">
+                  {{ user.fullName || '—' }}
+                  @if (user.isBlocked) {
+                    <span class="status-chip status-chip--issue">Inactivo</span>
+                  }
+                </span>
 
-                <span role="cell">{{ user.role ? getUserRoleLabel(user.role) : '—' }}</span>
+                <span role="cell">{{ user.roleName ? getRoleNameLabel(user.roleName) : '—' }}</span>
 
-                <span role="cell">{{ user.phoneNumber || '—' }}</span>
+                <span role="cell">{{ getPhone(user) || '—' }}</span>
 
                 <span role="cell" class="user-email-cell">
                   <span class="user-email-cell__text">{{ user.email || '—' }}</span>
@@ -78,8 +83,8 @@
                     mat-icon-button
                     type="button"
                     [disabled]="isSelf(user)"
-                    [attr.aria-label]="(user.isBlocked ? 'Desbloquear a ' : 'Bloquear a ') + getDisplayName(user)"
-                    [title]="isSelf(user) ? 'No puedes bloquear tu propia cuenta' : (user.isBlocked ? 'Desbloquear' : 'Bloquear')"
+                    [attr.aria-label]="(user.isBlocked ? 'Activar a ' : 'Inactivar a ') + getDisplayName(user)"
+                    [title]="isSelf(user) ? 'No puedes inactivar tu propia cuenta' : (user.isBlocked ? 'Activar' : 'Inactivar')"
                     (click)="toggleBlocked(user)"
                   >
                     <mat-icon aria-hidden="true">{{ user.isBlocked ? 'lock_open' : 'block' }}</mat-icon>
@@ -114,6 +119,9 @@
                 }
                 <div>
                   <strong>{{ user.fullName || '—' }}</strong>
+                  @if (user.isBlocked) {
+                    <span class="status-chip status-chip--issue">Inactivo</span>
+                  }
                 </div>
                 <button
                   mat-icon-button
@@ -127,13 +135,13 @@
               </header>
               <div class="user-mobile-card__meta">
                 <span>{{ user.document || '—' }} · {{ user.company || '—' }}</span>
-                <span>{{ user.role ? getUserRoleLabel(user.role) : 'Sin rol asignado' }}</span>
-                <span>{{ user.phoneNumber || '—' }}</span>
+                <span>{{ user.roleName ? getRoleNameLabel(user.roleName) : 'Sin rol asignado' }}</span>
+                <span>{{ getPhone(user) || '—' }}</span>
                 <span>{{ user.email || '—' }}</span>
               </div>
               <div class="user-mobile-card__actions">
                 <button mat-stroked-button type="button" [disabled]="isSelf(user)" (click)="toggleBlocked(user)">
-                  {{ user.isBlocked ? 'Desbloquear' : 'Bloquear' }}
+                  {{ user.isBlocked ? 'Activar' : 'Inactivar' }}
                 </button>
                 <button mat-stroked-button type="button" [disabled]="isSelf(user)" (click)="confirmDelete(user)">
                   Eliminar

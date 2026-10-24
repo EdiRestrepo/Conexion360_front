@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+﻿import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -11,28 +11,36 @@ import {
   Observable,
   catchError,
   combineLatest,
+  concat,
+  defer,
   distinctUntilChanged,
   map,
   of,
+  shareReplay,
   startWith,
   switchMap,
   take,
   tap,
+  toArray,
 } from 'rxjs';
 
 import {
+  SettingsRole,
   SettingsUser,
-  SettingsUserUpdate,
   SettingsUsersPage,
   getSettingsUserDisplayName,
-  toSettingsUserUpdate,
+  getSettingsUserPhone,
 } from '../../../core/models/settings-user.model';
 import { ApiSettingsUsersService } from '../../../core/services/api-settings-users.service';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
 import { getApiErrorMessage } from '../../../core/utils/api-error';
-import { getUserRoleLabel } from '../../../core/utils/display-labels';
+import { getRoleNameLabel } from '../../../core/utils/display-labels';
 import { ConfirmDeleteDialog } from './components/confirm-delete-dialog/confirm-delete-dialog';
-import { UserDetailDialog, UserDetailDialogData } from './components/user-detail-dialog/user-detail-dialog';
+import {
+  UserDetailDialog,
+  UserDetailDialogData,
+  UserDetailDialogResult,
+} from './components/user-detail-dialog/user-detail-dialog';
 import type { SettingsUsersFilters, SettingsUsersViewModel } from './models/settings-users-view.model';
 
 const defaultFilters: SettingsUsersFilters = {
@@ -76,8 +84,18 @@ export class SettingsUsers {
   protected readonly actionMessage = signal<string | null>(null);
   protected readonly viewModel$: Observable<SettingsUsersViewModel>;
 
-  protected readonly getUserRoleLabel = getUserRoleLabel;
+  protected readonly getRoleNameLabel = getRoleNameLabel;
   protected readonly getDisplayName = getSettingsUserDisplayName;
+  protected readonly getPhone = getSettingsUserPhone;
+
+  /**
+   * Los roles de Auth0 casi no cambian: se piden al abrir el primer detalle y
+   * se reutilizan. `shareReplay` se reinicia tras un error, así que el
+   * siguiente detalle vuelve a intentarlo.
+   */
+  private readonly roles$: Observable<SettingsRole[]> = defer(() => this.usersService.listRoles()).pipe(
+    shareReplay({ bufferSize: 1, refCount: false }),
+  );
 
   constructor() {
     this.auth0Facade.user$
@@ -113,17 +131,17 @@ export class SettingsUsers {
 
   protected openDetail(user: SettingsUser): void {
     this.dialog
-      .open<UserDetailDialog, UserDetailDialogData, SettingsUserUpdate | null>(UserDetailDialog, {
-        data: { user, isSelf: this.isSelf(user) },
+      .open<UserDetailDialog, UserDetailDialogData, UserDetailDialogResult | null>(UserDetailDialog, {
+        data: { user, isSelf: this.isSelf(user), roles$: this.roles$ },
         width: '640px',
         maxWidth: '95vw',
         autoFocus: false,
       })
       .afterClosed()
       .pipe(take(1))
-      .subscribe((changes) => {
-        if (changes) {
-          this.applyUpdate(user, changes, 'Usuario actualizado.');
+      .subscribe((result) => {
+        if (result) {
+          this.applyDetailResult(user, result);
         }
       });
   }
@@ -133,10 +151,7 @@ export class SettingsUsers {
       return;
     }
 
-    const changes: SettingsUserUpdate = { ...toSettingsUserUpdate(user), isBlocked: !user.isBlocked };
-    const message = changes.isBlocked ? 'Usuario bloqueado.' : 'Usuario desbloqueado.';
-
-    this.applyUpdate(user, changes, message);
+    this.runAction(this.usersService.setStatus(user.userId, user.isBlocked), this.getStatusMessage(user.isBlocked));
   }
 
   protected confirmDelete(user: SettingsUser): void {
@@ -168,19 +183,41 @@ export class SettingsUsers {
     void this.updateQueryParams({ page: page <= 1 ? null : page });
   }
 
-  private applyUpdate(user: SettingsUser, changes: SettingsUserUpdate, successMessage: string): void {
+  /**
+   * Primero el perfil y después el estado, en serie: si el perfil falla no se
+   * llega a bloquear a nadie con datos a medio guardar.
+   */
+  private applyDetailResult(user: SettingsUser, result: UserDetailDialogResult): void {
+    const requests: Observable<void>[] = [];
+
+    if (result.profile) {
+      requests.push(this.usersService.update(user.userId, result.profile));
+    }
+
+    if (result.isActive !== null) {
+      requests.push(this.usersService.setStatus(user.userId, result.isActive));
+    }
+
+    const message =
+      result.profile || result.isActive === null ? 'Usuario actualizado.' : this.getStatusMessage(result.isActive);
+
+    this.runAction(concat(...requests).pipe(toArray()), message);
+  }
+
+  private runAction(request: Observable<unknown>, successMessage: string): void {
     this.actionMessage.set(null);
-    this.usersService
-      .update(user, changes)
-      .pipe(take(1))
-      .subscribe({
-        next: () => {
-          this.actionMessage.set(successMessage);
-          this.refresh$.next();
-        },
-        error: (error: unknown) =>
-          this.actionMessage.set(getApiErrorMessage(error, 'No fue posible guardar los cambios del usuario.')),
-      });
+    request.pipe(take(1)).subscribe({
+      next: () => {
+        this.actionMessage.set(successMessage);
+        this.refresh$.next();
+      },
+      error: (error: unknown) =>
+        this.actionMessage.set(getApiErrorMessage(error, 'No fue posible guardar los cambios del usuario.')),
+    });
+  }
+
+  private getStatusMessage(isActive: boolean): string {
+    return isActive ? 'Usuario activado.' : 'Usuario inactivado.';
   }
 
   private deleteUser(user: SettingsUser): void {

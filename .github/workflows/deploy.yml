@@ -35,11 +35,13 @@ jobs:
 
       - name: Create CI environment file
         run: |
-          APP_URL="${{ vars.APP_URL }}"
+          # Las URL no llevan espacios: se quitan los que se cuelen al pegar la
+          # variable en GitHub (un salto de línea final rompe el `sed` de abajo).
+          APP_URL="$(printf '%s' "${{ vars.APP_URL }}" | tr -d '[:space:]')"
           if [ -z "$APP_URL" ]; then
             APP_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           fi
-          API_BASE_URL="${{ vars.API_BASE_URL }}"
+          API_BASE_URL="$(printf '%s' "${{ vars.API_BASE_URL }}" | tr -d '[:space:]')"
           if [ -z "$API_BASE_URL" ]; then
             API_BASE_URL="/api/v1"
           fi
@@ -87,9 +89,9 @@ jobs:
 
       - name: Create Nginx environment file
         run: |
-          NGINX_API_BASE_URL="${{ vars.NGINX_API_BASE_URL }}"
+          NGINX_API_BASE_URL="$(printf '%s' "${{ vars.NGINX_API_BASE_URL }}" | tr -d '[:space:]')"
           if [ -z "$NGINX_API_BASE_URL" ]; then
-            NGINX_API_BASE_URL="${{ vars.API_BASE_URL }}"
+            NGINX_API_BASE_URL="$(printf '%s' "${{ vars.API_BASE_URL }}" | tr -d '[:space:]')"
           fi
           if [ -z "$NGINX_API_BASE_URL" ]; then
             NGINX_API_BASE_URL="/api/v1"

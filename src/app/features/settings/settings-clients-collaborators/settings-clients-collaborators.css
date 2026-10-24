@@ -143,6 +143,63 @@
   color: var(--color-warning);
 }
 
+/* Lo ya registrado: alto acotado para que una lista larga no estire la tarjeta. */
+.master-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  max-height: 176px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.master-chips li {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.master-relations {
+  max-height: 264px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.master-relations table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.master-relations th,
+.master-relations td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.master-relations th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-muted);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.master-relations tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 @media (max-width: 900px) {
   .master-grid,
   .master-card__fields {

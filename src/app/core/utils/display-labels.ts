@@ -1,5 +1,5 @@
 ﻿import { OperationType, ShipmentIssue, ShipmentStatus, TransportMode } from '../models/shipment.model';
-import { UserRole } from '../models/user.model';
+import { UserRole, toUserRole } from '../models/user.model';
 
 export type ShipmentChipType = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
@@ -102,4 +102,14 @@ export function getShipmentIssueTitle(value: ShipmentIssue): string {
 
 export function getUserRoleLabel(value: UserRole): string {
   return userRoleLabels[value];
+}
+
+/**
+ * Para nombres de rol que llegan como texto de Auth0: los cuatro conocidos se
+ * traducen y uno nuevo se muestra tal cual, en vez de esconderlo.
+ */
+export function getRoleNameLabel(name: string): string {
+  const role = toUserRole(name);
+
+  return role ? getUserRoleLabel(role) : name.trim();
 }

@@ -258,6 +258,11 @@ describe('UserMenu', () => {
     await waitFor(() => !!document.querySelector('.mat-mdc-dialog-title'));
     fixture.detectChanges();
 
+    // Sin cambios el diálogo cierra sin llamar al backend: hay que editar algo.
+    const phone = document.querySelector<HTMLInputElement>('input[type="tel"]') as HTMLInputElement;
+    phone.value = '+573009998877';
+    phone.dispatchEvent(new Event('input'));
+
     const save = Array.from(document.querySelectorAll<HTMLButtonElement>('.mat-mdc-dialog-actions button')).find(
       (button) => button.textContent?.includes('Guardar cambios'),
     );

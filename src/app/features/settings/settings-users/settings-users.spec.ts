@@ -15,13 +15,16 @@ function createUser(overrides: Partial<SettingsUser> = {}): SettingsUser {
     email: 'edisonestival@gmail.com',
     userName: 'Edison Restrepo',
     nickname: 'edison',
-    phoneNumber: '+573175766335',
+    phoneNumber: '',
+    phone: '+573175766335',
     isBlocked: false,
     createdDate: '2026-08-12T09:31:00Z',
     updatedDate: '2026-08-30T08:57:00Z',
     fullName: 'Edison Restrepo',
     document: '8110357412',
     company: 'IAS',
+    roleId: 'rol_admin',
+    roleName: 'ADMIN',
     picture: null,
     role: 'ADMIN',
     lastLogin: '2026-08-30T08:57:00Z',
@@ -44,9 +47,12 @@ describe('SettingsUsers', () => {
       'list',
       'getById',
       'update',
+      'setStatus',
+      'listRoles',
       'delete',
     ]);
     usersService.list.and.returnValue(list);
+    usersService.setStatus.and.returnValue(of(undefined));
 
     const identity: Auth0Identity = { auth0UserId: 'auth0|admin', email: 'edisonestival@gmail.com', roles: ['ADMIN'] };
 
@@ -67,7 +73,13 @@ describe('SettingsUsers', () => {
     await setup(
       of(
         createPage([
-          createUser({ userId: 'auth0|client', fullName: 'Ana Gómez', nickname: 'anagomez', role: 'CLIENT' }),
+          createUser({
+            userId: 'auth0|client',
+            fullName: 'Ana Gómez',
+            nickname: 'anagomez',
+            roleName: 'CLIENT',
+            role: 'CLIENT',
+          }),
         ]),
       ),
     );
@@ -111,7 +123,7 @@ describe('SettingsUsers', () => {
   });
 
   it('renders a dash for fields the backend does not expose yet', async () => {
-    await setup(of(createPage([createUser({ userId: 'auth0|sinrol', role: null, company: '', document: '' })])));
+    await setup(of(createPage([createUser({ userId: 'auth0|sinrol', roleId: '', roleName: '', role: null, company: '', document: '' })])));
 
     const roleCell = (fixture.nativeElement as HTMLElement).querySelectorAll('.users-table__row')[1];
 
@@ -134,6 +146,46 @@ describe('SettingsUsers', () => {
     const component = fixture.componentInstance as unknown as { toggleBlocked: (user: SettingsUser) => void };
     component.toggleBlocked(createUser());
 
+    expect(usersService.setStatus).not.toHaveBeenCalled();
+  });
+
+  it('shows the role name and the phone the backend sends in `phone`', async () => {
+    await setup(of(createPage([createUser({ userId: 'auth0|ope', roleName: 'ANALISTAOPE', role: 'ANALISTAOPE' })])));
+
+    const cells = (fixture.nativeElement as HTMLElement)
+      .querySelectorAll('.users-table__row')[1]
+      .querySelectorAll('[role="cell"]');
+
+    expect(cells[3].textContent?.trim()).toBe('Analista operativo');
+    expect(cells[4].textContent?.trim()).toBe('+573175766335');
+  });
+
+  it('shows an unknown Auth0 role as it comes instead of hiding it', async () => {
+    await setup(of(createPage([createUser({ userId: 'auth0|x', roleName: 'AUDITOR', role: null })])));
+
+    const cells = (fixture.nativeElement as HTMLElement)
+      .querySelectorAll('.users-table__row')[1]
+      .querySelectorAll('[role="cell"]');
+
+    expect(cells[3].textContent?.trim()).toBe('AUDITOR');
+  });
+
+  it('inactivates another user through updateuserstatus', async () => {
+    await setup(of(createPage([createUser({ userId: 'auth0|client' })])));
+
+    const component = fixture.componentInstance as unknown as { toggleBlocked: (user: SettingsUser) => void };
+    component.toggleBlocked(createUser({ userId: 'auth0|client', isBlocked: false }));
+
+    expect(usersService.setStatus).toHaveBeenCalledWith('auth0|client', false);
     expect(usersService.update).not.toHaveBeenCalled();
+  });
+
+  it('reactivates a blocked user', async () => {
+    await setup(of(createPage([createUser({ userId: 'auth0|client', isBlocked: true })])));
+
+    const component = fixture.componentInstance as unknown as { toggleBlocked: (user: SettingsUser) => void };
+    component.toggleBlocked(createUser({ userId: 'auth0|client', isBlocked: true }));
+
+    expect(usersService.setStatus).toHaveBeenCalledWith('auth0|client', true);
   });
 });

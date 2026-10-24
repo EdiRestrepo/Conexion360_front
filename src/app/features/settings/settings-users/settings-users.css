@@ -136,6 +136,7 @@
   font-size: 20px;
 }
 
+.user-name-cell,
 .user-email-cell {
   display: grid;
   gap: 4px;

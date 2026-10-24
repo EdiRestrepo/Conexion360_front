@@ -205,7 +205,8 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 
 - Listado de notificaciones
 - Leídas y no leídas
-- Dos tipos, los que expone el backend: cambio de estado y comentario
+- Tres tipos, los que expone el backend (`NotificationType`): cambio de estado
+  (0), comentario (1) y cambio de otra información del envío (2, `OtherInfo`)
 - Modal de detalle al abrir una notificación, que además la marca como leída
 - Preferencias (en Ajustes, contra `settings/viewnotifications`,
   `settings/createnotifications` y `settings/updatenotifications`)
@@ -230,8 +231,8 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 - Preferencias de notificación
 - Gestión de usuarios
 - Gestión de roles
-- Maestro clientes colaborador (alta de clientes, de colaboradores y
-  asociación entre ambos)
+- Maestro clientes colaborador (alta y listado de clientes, de colaboradores y
+  de la asociación entre ambos)
 
 ## 5. Arquitectura del frontend
 
@@ -901,8 +902,8 @@ real:
 ## 21. Gestión de usuarios y roles desde la app
 
 `Ajustes → Gestión de usuarios` (`/settings/users`) es una pantalla real de
-administración: lista los usuarios de Auth0, permite editarlos, bloquearlos y
-eliminarlos. Solo la ve el rol ADMIN (`roleGuard` en `app.routes.ts`).
+administración: lista los usuarios de Auth0, permite editarlos (incluido el
+rol), activarlos o inactivarlos y eliminarlos. Solo la ve el rol ADMIN (`roleGuard` en `app.routes.ts`).
 
 La pregunta que esta sección dejaba abierta ("¿se gestionan los usuarios dentro
 de Conexion360 o solo desde el dashboard de Auth0?") ya está resuelta a favor de
@@ -916,63 +917,64 @@ intermediario y valida el rol a partir del token.
 ```
 GET    /api/v1/settings/listusers?page&size
 GET    /api/v1/settings/getuser?userId
-PATCH  /api/v1/settings/updateuser/{idClient}   body: Auth0UserDto
+PATCH  /api/v1/settings/updateuser/{userId}        body: Auth0UserDto
+PATCH  /api/v1/settings/updateuserstatus/{userId}  body: { isActive }
+GET    /api/v1/settings/listroles
 DELETE /api/v1/settings/deleteuser/{userId}
 ```
 
 `Auth0UserDto` = `userId`, `email`, `userName`, `phoneNumber`, `createdDate`,
-`updatedDate`, `isBlocked`, `nickname`. El `phoneNumber` respeta el patrón
-`^\+[0-9]{1,15}$` (E.164) — es la única validación de formulario del proyecto.
+`updatedDate`, `isBlocked`, `nickname`, `roleId`, `roleName`, `company`,
+`document`, `fullName`, `phone`. `listroles` devuelve `[{ id, name, description }]`.
 
-La propuesta de contrato que documentaba esta sección (`GET /users/allusers`,
-`POST /users/assignrole`) quedó obsoleta; manda el swagger.
+Lo que no es obvio del contrato:
+
+- **Dos teléfonos.** `phoneNumber` es la raíz de Auth0 (solo existe en
+  conexiones SMS, casi siempre `null`) y `phone` es el celular del registro, en
+  `user_metadata`. La tabla y el diálogo muestran y editan `phone`; si viene
+  vacío caen a `phoneNumber` (`getSettingsUserPhone`). Al guardar, `phoneNumber`
+  se reenvía tal cual (`null` si no hay, porque el swagger exige E.164).
+- **Rol.** Se muestra `roleName`; los cuatro conocidos se traducen y uno nuevo
+  de Auth0 sale tal cual (`getRoleNameLabel`). El diálogo lista los roles de
+  `listroles` (se piden una vez y se comparten, `shareReplay`) y envía `roleId`;
+  según el backend, un `roleId` distinto deja al usuario **solo** con ese rol.
+  Sin rol conocido se envía `roleId: null`, nunca `''`. El admin no puede
+  cambiarse su propio rol, igual que no puede bloquearse.
+- **Estado aparte.** Activar/inactivar va por `updateuserstatus`, no por el
+  `isBlocked` de `updateuser`. El diálogo devuelve `{ profile, isActive }` y la
+  pantalla los aplica en serie (perfil y luego estado); `null` en cada uno
+  significa "sin cambios", y si no cambió nada no se llama al backend.
+- **El documento no se edita**, aunque el DTO lo acepte: es el `idClient` con el
+  que el backend cruza envíos y el maestro de clientes.
 
 ### Archivos
 
 | Archivo | Rol |
 |---|---|
-| `core/services/api-settings-users.service.ts` | Consumo de los cuatro endpoints |
-| `core/mappers/settings-users.mapper.ts` | Lectura tolerante de la respuesta |
+| `core/services/api-settings-users.service.ts` | Consumo de los seis endpoints |
+| `core/mappers/settings-users.mapper.ts` | Lectura tolerante de usuarios y roles |
 | `core/mappers/json-record.util.ts` | Helpers compartidos con `shipments-page.mapper.ts` |
-| `core/models/settings-user.model.ts` | `SettingsUser`, `SettingsUserUpdate` |
+| `core/models/settings-user.model.ts` | `SettingsUser`, `SettingsUserUpdate`, `SettingsRole` |
 | `core/utils/date-format.ts` | `formatDate` / `formatDateTime` |
 | `features/settings/settings-users/` | Pantalla, diálogo de edición y de borrado |
 
-### Brecha pendiente con backend
+El diálogo de edición también lo abre el menú de usuario para el autoservicio
+(`isSelf`, sin `roles$`): ahí el rol es de solo lectura y el estado no aparece.
 
-El DTO **no expone `role`, `document`, `company`, `picture`, `emailVerified` ni
-`lastLogin`**, aunque Auth0 sí los guarda en `user_metadata` y en el claim de
-roles. El mapper ya los lee de forma tolerante (prueba `role`/`rol`,
-`emailVerified`/`email_verified`, un `user_metadata` anidado, etc.), así que esas
-columnas pintan `—` hoy y se llenan solas cuando el backend las agregue, sin
-tocar la tabla. El selector de rol del diálogo está visible pero deshabilitado
-por la misma razón: que el admin vea qué falta en vez de creer que lo guardó.
+### Pendientes con backend
 
-Peticiones abiertas al compañero de backend:
-
-1. **`updateuser/{idClient}`: ¿qué espera el path?** El nombre dice `idClient`
-   (el documento, como en `/home/totals`) pero la simetría con `deleteuser`
-   sugiere el `userId` de Auth0. Hoy el frontend envía el `userId`, aislado en
-   `ApiSettingsUsersService.getUpdatePathId()` para que el cambio sea de una
-   línea. Si es el `userId`, confirmar que el backend tolera el `|`
-   URL-encoded en la ruta.
-2. **Ampliar `Auth0UserDto`** con los seis campos de arriba.
-3. **Filtro y búsqueda en `listusers`** (`ValueFilter` por nombre/email/documento
+1. **Filtro y búsqueda en `listusers`** (`ValueFilter` por nombre/email/documento
    y filtro por rol, en PascalCase como `/myshipments/filterShipments`). Sin eso
    la pantalla va solo con paginación: filtrar en cliente sobre la página
    cargada daría resultados engañosos.
-4. **¿Endpoint para asignar rol?** No está en el swagger. Requiere el scope
-   `create:role_members` en la app M2M.
-5. **Autorización en servidor:** `listusers` no recibe `idClient`, así que se
+2. **Confirmar qué campo de teléfono escribe `updateuser`**: el frontend manda el
+   celular editado en `phone` y deja `phoneNumber` como estaba.
+3. **Autorización en servidor:** `listusers` no recibe `idClient`, así que se
    asume que el backend deriva al llamante del token y valida que sea ADMIN.
    Ocultar la pantalla en el frontend no es protección.
-6. **Semántica de `deleteuser`:** ¿borra solo en Auth0 o también el registro de
+4. **Semántica de `deleteuser`:** ¿borra solo en Auth0 o también el registro de
    cliente? ¿Qué pasa con los envíos asociados a ese `document`? Si deja
-   huérfanos, la acción correcta para la UI es bloquear, no eliminar.
-7. **Higiene de datos:** el registro guarda 13 claves para el mismo teléfono en
-   `user_metadata` (`countryCodeIso` y `country_code_iso`, `internationalFormat`
-   e `international_format`, `nationalNumber`, `number`...). Conviene normalizar
-   a `number` en E.164 + `countryCodeIso`.
+   huérfanos, la acción correcta para la UI es inactivar, no eliminar.
 
 ### Salvaguardas de la pantalla
 
@@ -1053,30 +1055,43 @@ leía `GET /settings/viewmaster` y no tenía forma de guardar nada.
 GET /api/v1/settings/createcustomerdb?clientId
 GET /api/v1/settings/createcollaboratordb?clientId
 GET /api/v1/settings/createcustomercollaboratordb?clientId&collaborator
+GET /api/v1/settings/listcustomersdb              → [{ identificacion }]
+GET /api/v1/settings/listcollaboratorsdb          → [{ identificacion }]
+GET /api/v1/settings/listcustomercollaboratordb   → [{ identificacionCustomer, identificacionCollaborator }]
 ```
 
-Tres avisos sobre ese contrato:
+Avisos sobre ese contrato:
 
-- **Son `GET` aunque escriban en la base.** Así los expone el backend y el SPA
-  los respeta, pero por eso no se disparan nunca solos: siempre tras un clic, y
-  sin cachear. Si alguna vez se pasan a `POST`, el cambio es de una línea por
-  método en el servicio.
+- **Las altas son `GET` aunque escriban en la base.** Así los expone el backend
+  y el SPA los respeta, pero por eso no se disparan nunca solos: siempre tras un
+  clic, y sin cachear. Si alguna vez se pasan a `POST`, el cambio es de una
+  línea por método en el servicio.
 - **El alta de colaborador también llama `clientId` a su parámetro**, no
   `collaboratorId`. El servicio renombra el argumento hacia adentro para que la
   pantalla no herede la confusión.
-- **No hay endpoint de listado.** La pantalla no puede mostrar lo que ya existe
-  ni verificar el resultado: lo único que se le enseña al administrador es el
-  `message` que devuelve el backend (y el de la respuesta de error, que suele
-  explicar el rechazo mejor que cualquier texto propio).
+- El mensaje que se muestra tras un alta es el `message` que devuelve el
+  backend (y el de la respuesta de error, que suele explicar el rechazo mejor
+  que cualquier texto propio).
+
+### Listados
+
+No hay vistas nuevas: cada tarjeta muestra bajo su formulario lo ya
+parametrizado (componente `master-list`, con sus estados de carga, vacío y
+error con reintento). Clientes y colaboradores van como chips; las asociaciones,
+como tabla. Las listas tienen alto máximo y desplazamiento propio para que no
+estiren las tarjetas. Tras un alta exitosa se recarga solo la lista de esa
+tarjeta: es la confirmación visible de que quedó guardado. Los documentos ya
+registrados alimentan además un `datalist` en el formulario de asociación
+(sugerencia, no restricción: el backend decide si el documento existe).
 
 ### Archivos
 
 | Archivo | Rol |
 |---|---|
-| `core/services/api-clients-collaborators.service.ts` | Consumo de los tres endpoints |
-| `core/mappers/clients-collaborators.mapper.ts` | Lee el `message` de la envoltura |
-| `core/models/clients-collaborators.model.ts` | `MasterOperationResult` |
-| `features/settings/settings-clients-collaborators/` | Pantalla con los tres formularios |
+| `core/services/api-clients-collaborators.service.ts` | Consumo de los seis endpoints |
+| `core/mappers/clients-collaborators.mapper.ts` | `message` de las altas; listados ordenados y sin repetidos |
+| `core/models/clients-collaborators.model.ts` | `MasterOperationResult`, `CustomerCollaboratorRelation` |
+| `features/settings/settings-clients-collaborators/` | Pantalla con los tres formularios y sus listados |
 
 ## 24. Validación de entradas y bloqueo de contenido malicioso (HU1)
 

@@ -10,3 +10,9 @@ export interface MasterOperationResult {
   /** Vacío cuando la respuesta no trae mensaje; la pantalla pone el suyo. */
   message: string;
 }
+
+/** Fila de `GET /settings/listcustomercollaboratordb`. */
+export interface CustomerCollaboratorRelation {
+  customerId: string;
+  collaboratorId: string;
+}

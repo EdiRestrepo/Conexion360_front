@@ -19,13 +19,17 @@ export interface SettingsUsersViewModel {
 }
 
 /**
- * Campos que el diálogo permite editar. `userName` y `nickname` siguen siendo
- * parte del `Auth0UserDto` que exige el PATCH, pero ya no se muestran en la
- * tabla ni en el formulario: se reenvían sin cambios desde `UserDetailDialog`.
+ * Campos que el diálogo permite editar. `document` no está: es el `idClient`
+ * con el que el backend cruza envíos y el maestro de clientes, y cambiarlo
+ * dejaría huérfano lo ya asociado. `userName` y `nickname` se reenvían sin
+ * cambios desde `UserDetailDialog`.
  */
 export interface SettingsUserForm {
-  phoneNumber: FormControl<string>;
+  fullName: FormControl<string>;
+  company: FormControl<string>;
+  phone: FormControl<string>;
   email: FormControl<string>;
+  roleId: FormControl<string>;
   /** En positivo a proposito: el checkbox marcado significa "puede entrar". */
   isActive: FormControl<boolean>;
 }

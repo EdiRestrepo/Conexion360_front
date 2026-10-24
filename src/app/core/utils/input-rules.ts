@@ -24,6 +24,17 @@ const documentRule = {
   patternMessage: 'Solo se permiten números, sin puntos, guiones ni espacios.',
 } as const;
 
+/**
+ * Nombre o empresa de un usuario de Auth0. Admite `@` y `_` porque hay cuentas
+ * cuyo nombre es el propio correo; si no, no se podrían volver a guardar.
+ */
+const profileTextRule = {
+  required: false,
+  maxLength: 100,
+  pattern: /^[\p{L}\p{N} .,'&@_-]*$/u,
+  patternMessage: 'Usa solo letras, números, espacios y los signos . , \' & @ _ -',
+} as const;
+
 export const inputRules = {
   document: documentRule,
   /** Buscador por documento (filtro de Reportes): mismo formato, pero vacío es «sin filtro». */
@@ -45,6 +56,8 @@ export const inputRules = {
     required: false,
     maxLength: 254,
   },
+  personName: profileTextRule,
+  companyName: profileTextRule,
   phone: {
     required: false,
     maxLength: 16,

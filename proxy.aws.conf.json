@@ -1,0 +1,9 @@
+{
+  "/api": {
+    "target": "http://connection360-default-alb-1063397223.us-east-1.elb.amazonaws.com",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true,
+    "logLevel": "debug"
+  }
+}

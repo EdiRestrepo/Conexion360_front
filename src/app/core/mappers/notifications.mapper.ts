@@ -6,6 +6,7 @@ type JsonRecord = Record<string, unknown>;
 const notificationTypesByCode: Record<number, NotificationType> = {
   0: 'STATUS_CHANGE',
   1: 'COMMENT',
+  2: 'OTHER_INFO',
 };
 
 /** `notificationStatus`: 0 = no leído, 1 = leído. */

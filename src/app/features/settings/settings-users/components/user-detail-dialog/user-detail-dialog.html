@@ -1,6 +1,6 @@
 ﻿<h2 mat-dialog-title class="user-dialog__title">
   <mat-icon aria-hidden="true">manage_accounts</mat-icon>
-  {{ user.fullName || '—' }}
+  {{ user.fullName || user.email || '—' }}
 </h2>
 
 <mat-dialog-content class="user-dialog__content">
@@ -9,50 +9,113 @@
       <dt>Documento</dt>
       <dd>{{ user.document || '—' }}</dd>
     </div>
+    @if (rolesState().state === 'readonly') {
+      <div>
+        <dt>Rol</dt>
+        <dd>{{ roleLabel || 'Sin rol asignado' }}</dd>
+      </div>
+    }
     <div>
-      <dt>Empresa</dt>
-      <dd>{{ user.company || '—' }}</dd>
+      <dt>Creado</dt>
+      <dd>{{ createdDate }}</dd>
     </div>
     <div>
-      <dt>Nombre completo</dt>
-      <dd>{{ user.fullName || '—' }}</dd>
-    </div>
-    <div>
-      <dt>Rol</dt>
-      <dd>{{ roleLabel || 'Sin rol asignado' }}</dd>
+      <dt>Última actualización</dt>
+      <dd>{{ updatedDate }}</dd>
     </div>
   </dl>
 
   <form class="user-dialog__form" [formGroup]="form" (ngSubmit)="save()">
-    <label>
-      <span>Celular</span>
-      <input
-        type="tel"
-        formControlName="phoneNumber"
-        placeholder="+573175766335"
-        autocomplete="off"
-        [attr.maxlength]="rules.phone.maxLength"
-        [attr.aria-invalid]="!!phoneNumberError"
-        [attr.aria-describedby]="phoneNumberError ? 'phone-error' : null"
-      />
-    </label>
-    @if (phoneNumberError) {
-      <p id="phone-error" class="user-dialog__error" role="alert">{{ phoneNumberError }}</p>
-    }
+    <div class="user-dialog__field">
+      <label>
+        <span>Nombre completo</span>
+        <input
+          type="text"
+          formControlName="fullName"
+          autocomplete="off"
+          [attr.maxlength]="rules.personName.maxLength"
+          [attr.aria-invalid]="!!fullNameError"
+          [attr.aria-describedby]="fullNameError ? 'full-name-error' : null"
+        />
+      </label>
+      @if (fullNameError) {
+        <p id="full-name-error" class="user-dialog__error" role="alert">{{ fullNameError }}</p>
+      }
+    </div>
 
-    <label>
-      <span>Correo</span>
-      <input
-        type="email"
-        formControlName="email"
-        autocomplete="off"
-        [attr.maxlength]="rules.email.maxLength"
-        [attr.aria-invalid]="!!emailError"
-        [attr.aria-describedby]="emailError ? 'email-error' : null"
-      />
-    </label>
-    @if (emailError) {
-      <p id="email-error" class="user-dialog__error" role="alert">{{ emailError }}</p>
+    <div class="user-dialog__field">
+      <label>
+        <span>Empresa</span>
+        <input
+          type="text"
+          formControlName="company"
+          autocomplete="off"
+          [attr.maxlength]="rules.companyName.maxLength"
+          [attr.aria-invalid]="!!companyError"
+          [attr.aria-describedby]="companyError ? 'company-error' : null"
+        />
+      </label>
+      @if (companyError) {
+        <p id="company-error" class="user-dialog__error" role="alert">{{ companyError }}</p>
+      }
+    </div>
+
+    <div class="user-dialog__field">
+      <label>
+        <span>Celular</span>
+        <input
+          type="tel"
+          formControlName="phone"
+          placeholder="+573175766335"
+          autocomplete="off"
+          [attr.maxlength]="rules.phone.maxLength"
+          [attr.aria-invalid]="!!phoneError"
+          [attr.aria-describedby]="phoneError ? 'phone-error' : null"
+        />
+      </label>
+      @if (phoneError) {
+        <p id="phone-error" class="user-dialog__error" role="alert">{{ phoneError }}</p>
+      }
+    </div>
+
+    <div class="user-dialog__field">
+      <label>
+        <span>Correo</span>
+        <input
+          type="email"
+          formControlName="email"
+          autocomplete="off"
+          [attr.maxlength]="rules.email.maxLength"
+          [attr.aria-invalid]="!!emailError"
+          [attr.aria-describedby]="emailError ? 'email-error' : null"
+        />
+      </label>
+      @if (emailError) {
+        <p id="email-error" class="user-dialog__error" role="alert">{{ emailError }}</p>
+      }
+    </div>
+
+    @if (rolesState().state !== 'readonly') {
+      <div class="user-dialog__field">
+        <label>
+          <span>Rol</span>
+          <select formControlName="roleId" aria-describedby="role-hint">
+            @if (!user.roleId) {
+              <option value="">Sin rol asignado</option>
+            }
+            @for (role of roleOptions(); track role.id) {
+              <option [value]="role.id" [attr.title]="role.description || null">{{ getRoleNameLabel(role.name) }}</option>
+            }
+          </select>
+        </label>
+        <p id="role-hint" class="user-dialog__hint user-dialog__hint--flush" [class.user-dialog__error]="rolesState().state === 'error'">
+          @switch (rolesState().state) {
+            @case ('loading') { Cargando los roles de Auth0... }
+            @case ('error') { No fue posible cargar los roles; se conserva el actual. }
+            @default { Al cambiarlo, el usuario queda solo con este rol. }
+          }
+        </p>
+      </div>
     }
 
     <!-- Nadie puede bloquearse a sí mismo, así que en el propio perfil el

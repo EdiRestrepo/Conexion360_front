@@ -1,5 +1,5 @@
-import { SettingsUser, SettingsUsersPage } from '../models/settings-user.model';
-import { UserRole } from '../models/user.model';
+import { SettingsRole, SettingsUser, SettingsUsersPage } from '../models/settings-user.model';
+import { toUserRole } from '../models/user.model';
 import {
   JsonRecord,
   asRecord,
@@ -9,8 +9,6 @@ import {
   readOptionalBoolean,
   readString,
 } from './json-record.util';
-
-const validRoles: readonly UserRole[] = ['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
 
 export function mapSettingsUsersPageResponse(response: unknown, page: number, pageSize: number): SettingsUsersPage {
   const root = asRecord(response);
@@ -38,6 +36,25 @@ export function mapSettingsUserResponse(response: unknown): SettingsUser {
   return toSettingsUser(Array.isArray(payload) ? payload[0] ?? {} : payload);
 }
 
+/** `GET /settings/listroles`: array plano, envuelto o no en `dataResponse`. */
+export function mapSettingsRolesResponse(response: unknown): SettingsRole[] {
+  const root = asRecord(response);
+  const payload = Array.isArray(response) ? response : (getValue(root, ['dataResponse', 'DataResponse']) ?? []);
+  const items = Array.isArray(payload) ? flattenNestedArrays(payload) : [];
+
+  return items
+    .map((item) => {
+      const record = asRecord(item);
+
+      return {
+        id: readString(record, ['id', 'roleId']),
+        name: readString(record, ['name', 'roleName']),
+        description: readString(record, ['description']),
+      };
+    })
+    .filter((role) => Boolean(role.id && role.name));
+}
+
 /**
  * El listado puede llegar como array plano, envuelto bajo alguna clave
  * (`users`, `items`, `data`), o —como hace hoy `listusers`— dentro de otro
@@ -63,13 +80,15 @@ function toSettingsUser(value: unknown): SettingsUser {
     ...asRecord(getValue(record, ['appMetadata', 'app_metadata'])),
   };
   const email = readString(record, ['email', 'correo']);
+  const roleName = readRoleName(record, metadata);
 
   return {
     userId: readString(record, ['userId', 'user_id', 'auth0UserId', 'sub', 'id']) || email,
     email,
     userName: readString(record, ['userName', 'user_name', 'name']),
     nickname: readString(record, ['nickname', 'nickName']),
-    phoneNumber: readPhoneNumber(record, metadata),
+    phoneNumber: readString(record, ['phoneNumber', 'phone_number']),
+    phone: readPhone(record, metadata),
     isBlocked: readOptionalBoolean(record, ['isBlocked', 'blocked']) ?? false,
     createdDate: readDateTime(record, ['createdDate', 'created_at', 'createdAt']),
     updatedDate: readDateTime(record, ['updatedDate', 'updated_at', 'updatedAt']),
@@ -78,7 +97,9 @@ function toSettingsUser(value: unknown): SettingsUser {
     document: readString(record, ['document', 'documento', 'idClient']) || readString(metadata, ['document', 'documento']),
     company: readString(record, ['company', 'empresa']) || readString(metadata, ['company', 'empresa']),
     picture: readString(record, ['picture', 'avatar']) || null,
-    role: readRole(record, metadata),
+    roleId: readString(record, ['roleId', 'role_id']),
+    roleName,
+    role: toUserRole(roleName),
     lastLogin: readDateTime(record, ['lastLogin', 'last_login']),
     emailVerified: readOptionalBoolean(record, ['emailVerified', 'email_verified']) ?? null,
     acceptedDataPolicy:
@@ -89,12 +110,12 @@ function toSettingsUser(value: unknown): SettingsUser {
 }
 
 /**
- * `Auth0UserDto.phoneNumber` ya viene en E.164. Si en su lugar llega el objeto
+ * `Auth0UserDto.phone` ya llega como texto. Si en su lugar viniera el objeto
  * `phone` del `user_metadata` (que guarda 13 variantes de lo mismo), se toma
  * una sola de sus claves.
  */
-function readPhoneNumber(record: JsonRecord, metadata: JsonRecord): string {
-  const direct = readString(record, ['phoneNumber', 'phone_number']);
+function readPhone(record: JsonRecord, metadata: JsonRecord): string {
+  const direct = readString(record, ['phone', 'celular']);
 
   if (direct) {
     return direct;
@@ -105,12 +126,10 @@ function readPhoneNumber(record: JsonRecord, metadata: JsonRecord): string {
   return readString(phone, ['number', 'internationalNumber', 'international_number']);
 }
 
-/** Rol desconocido → `null`, mismo criterio defensivo que `Auth0FacadeService.mapRoles`. */
-function readRole(record: JsonRecord, metadata: JsonRecord): UserRole | null {
-  const candidate = readString(record, ['role', 'rol']) || readString(metadata, ['role', 'rol']) || firstRole(record);
-  const normalized = candidate.trim().toUpperCase();
-
-  return validRoles.includes(normalized as UserRole) ? (normalized as UserRole) : null;
+function readRoleName(record: JsonRecord, metadata: JsonRecord): string {
+  return (
+    readString(record, ['roleName', 'role', 'rol']) || readString(metadata, ['role', 'rol']) || firstRole(record)
+  );
 }
 
 function firstRole(record: JsonRecord): string {

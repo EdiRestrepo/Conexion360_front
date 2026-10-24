@@ -3,8 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { mapSettingsUserResponse, mapSettingsUsersPageResponse } from '../mappers/settings-users.mapper';
-import { SettingsUser, SettingsUserUpdate, SettingsUsersPage } from '../models/settings-user.model';
+import {
+  mapSettingsRolesResponse,
+  mapSettingsUserResponse,
+  mapSettingsUsersPageResponse,
+} from '../mappers/settings-users.mapper';
+import { SettingsRole, SettingsUser, SettingsUserUpdate, SettingsUsersPage } from '../models/settings-user.model';
 
 /**
  * Usuarios de Auth0 vía el controlador `Settings` del backend.
@@ -34,12 +38,10 @@ export class ApiSettingsUsersService {
   }
 
   /**
-   * Hoy no lo usa nadie. Se comprobó contra el backend que `getuser` devuelve
-   * exactamente los mismos ocho campos que ya trae cada elemento de `listusers`
-   * (sin `user_metadata` ni roles), así que reconsultar al abrir el detalle solo
-   * añadiría un spinner; y el menú de usuario tampoco puede llamarlo, porque
-   * `/settings` es admin-only y el autoservicio debe servir a cualquier rol.
-   * Se mantiene porque el endpoint existe y será útil si el backend lo enriquece.
+   * Hoy no lo usa nadie: `listusers` ya trae por cada usuario los mismos campos,
+   * así que reconsultar al abrir el detalle solo añadiría un spinner; y el menú
+   * de usuario tampoco puede llamarlo, porque `/settings` es admin-only y el
+   * autoservicio debe servir a cualquier rol.
    */
   getById(userId: string): Observable<SettingsUser> {
     const params = new HttpParams().set('userId', userId);
@@ -49,10 +51,17 @@ export class ApiSettingsUsersService {
       .pipe(map((response) => mapSettingsUserResponse(response)));
   }
 
-  update(user: SettingsUser, changes: SettingsUserUpdate): Observable<void> {
-    const pathId = encodeURIComponent(this.getUpdatePathId(user));
+  update(userId: string, changes: SettingsUserUpdate): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/updateuser/${encodeURIComponent(userId)}`, changes);
+  }
 
-    return this.http.patch<void>(`${this.baseUrl}/updateuser/${pathId}`, changes);
+  /** Inactivar equivale a bloquear en Auth0: el usuario deja de poder iniciar sesión. */
+  setStatus(userId: string, isActive: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/updateuserstatus/${encodeURIComponent(userId)}`, { isActive });
+  }
+
+  listRoles(): Observable<SettingsRole[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/listroles`).pipe(map((response) => mapSettingsRolesResponse(response)));
   }
 
   // El `|` de `auth0|...` se codifica explícitamente: aunque el navegador lo
@@ -60,15 +69,5 @@ export class ApiSettingsUsersService {
   // depender de esa normalización rompería fuera del navegador (SSR, tests).
   delete(userId: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/deleteuser/${encodeURIComponent(userId)}`);
-  }
-
-  /**
-   * El path de `updateuser` se llama `{idClient}` pero `deleteuser` usa
-   * `{userId}`. Pendiente de confirmar con backend si espera el `userId` de
-   * Auth0 (`auth0|...`) o el documento del cliente. Se concentra aquí para que
-   * el cambio sea de una línea.
-   */
-  private getUpdatePathId(user: SettingsUser): string {
-    return user.userId;
   }
 }

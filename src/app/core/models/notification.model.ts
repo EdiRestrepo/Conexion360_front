@@ -1,9 +1,11 @@
 /**
- * Espeja el enum `notificationType` de `GET /notifications/allnotifications`
- * (0 = cambio de estado, 1 = comentario). Si el backend agrega valores, hay que
- * ampliar este tipo y las tablas de `core/utils/notification-labels.ts`.
+ * Espeja el enum `NotificationType` del backend en
+ * `GET /notifications/allnotifications` (0 = `ChangeState`, 1 = `Comment`,
+ * 2 = `OtherInfo`, cambio en la información general del envío). Si el backend
+ * agrega valores, hay que ampliar este tipo y las tablas de
+ * `core/utils/notification-labels.ts`.
  */
-export type NotificationType = 'STATUS_CHANGE' | 'COMMENT';
+export type NotificationType = 'STATUS_CHANGE' | 'COMMENT' | 'OTHER_INFO';
 
 export interface Notification {
   id: string;

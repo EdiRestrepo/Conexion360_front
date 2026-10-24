@@ -5,7 +5,7 @@
     </a>
     <div>
       <h2>Maestro clientes colaborador</h2>
-      <p>Da de alta clientes y colaboradores, y asócialos entre sí.</p>
+      <p>Da de alta clientes y colaboradores, asócialos entre sí y consulta lo ya registrado.</p>
     </div>
   </header>
 
@@ -46,6 +46,21 @@
           </button>
         }
       </form>
+      <app-master-list
+        heading="Clientes registrados"
+        headingId="customers-list-title"
+        [state]="customers().state"
+        [count]="customers().items.length"
+        emptyMessage="Todavía no hay clientes registrados."
+        errorMessage="No fue posible cargar los clientes."
+        (retry)="reloadCustomers()"
+      >
+        <ul class="master-chips" aria-labelledby="customers-list-title">
+          @for (id of customers().items; track id) {
+            <li>{{ id }}</li>
+          }
+        </ul>
+      </app-master-list>
     </article>
 
     <article class="surface-card master-card" aria-labelledby="create-collaborator-title">
@@ -84,6 +99,21 @@
           </button>
         }
       </form>
+      <app-master-list
+        heading="Colaboradores registrados"
+        headingId="collaborators-list-title"
+        [state]="collaborators().state"
+        [count]="collaborators().items.length"
+        emptyMessage="Todavía no hay colaboradores registrados."
+        errorMessage="No fue posible cargar los colaboradores."
+        (retry)="reloadCollaborators()"
+      >
+        <ul class="master-chips" aria-labelledby="collaborators-list-title">
+          @for (id of collaborators().items; track id) {
+            <li>{{ id }}</li>
+          }
+        </ul>
+      </app-master-list>
     </article>
 
     <article class="surface-card master-card master-card--wide" aria-labelledby="link-title">
@@ -101,6 +131,7 @@
               formControlName="clientId"
               inputmode="numeric"
               autocomplete="off"
+              list="link-customer-options"
               [attr.maxlength]="documentRule.maxLength"
               [attr.aria-invalid]="!!fieldError(linkForm.controls.clientId)"
               [attr.aria-describedby]="fieldError(linkForm.controls.clientId) ? 'link-client-error' : null"
@@ -116,6 +147,7 @@
               formControlName="collaborator"
               inputmode="numeric"
               autocomplete="off"
+              list="link-collaborator-options"
               [attr.maxlength]="documentRule.maxLength"
               [attr.aria-invalid]="!!fieldError(linkForm.controls.collaborator)"
               [attr.aria-describedby]="fieldError(linkForm.controls.collaborator) ? 'link-collaborator-error' : null"
@@ -125,6 +157,19 @@
             }
           </label>
         </div>
+
+        <!-- Sugerencias con lo ya registrado: se puede escribir igual un documento
+             que no esté, y el backend dirá si no existe. -->
+        <datalist id="link-customer-options">
+          @for (id of customers().items; track id) {
+            <option [value]="id"></option>
+          }
+        </datalist>
+        <datalist id="link-collaborator-options">
+          @for (id of collaborators().items; track id) {
+            <option [value]="id"></option>
+          }
+        </datalist>
 
         @if (linkStatus(); as status) {
           @if (status.message) {
@@ -139,6 +184,34 @@
           </button>
         }
       </form>
+      <app-master-list
+        heading="Asociaciones registradas"
+        headingId="relations-list-title"
+        [state]="relations().state"
+        [count]="relations().items.length"
+        emptyMessage="Todavía no hay clientes asociados a colaboradores."
+        errorMessage="No fue posible cargar las asociaciones."
+        (retry)="reloadRelations()"
+      >
+        <div class="master-relations">
+          <table aria-labelledby="relations-list-title">
+            <thead>
+              <tr>
+                <th scope="col">Documento del cliente</th>
+                <th scope="col">Documento del colaborador</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (relation of relations().items; track relation.customerId + '-' + relation.collaboratorId) {
+                <tr>
+                  <td>{{ relation.customerId }}</td>
+                  <td>{{ relation.collaboratorId }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </app-master-list>
     </article>
   </div>
 </section>
