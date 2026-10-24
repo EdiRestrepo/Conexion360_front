@@ -1,6 +1,6 @@
 ﻿import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, retry, throwError, timer } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -9,6 +9,10 @@ import {
   mapSettingsUsersPageResponse,
 } from '../mappers/settings-users.mapper';
 import { SettingsRole, SettingsUser, SettingsUserUpdate, SettingsUsersPage } from '../models/settings-user.model';
+import { isRateLimitError } from '../utils/api-error';
+
+/** Esperas antes de cada reintento cuando Auth0 limita: su ventana es de segundos. */
+const rateLimitRetryDelaysMs = [1500, 3000];
 
 /**
  * Usuarios de Auth0 vía el controlador `Settings` del backend.
@@ -34,7 +38,17 @@ export class ApiSettingsUsersService {
 
     return this.http
       .get<unknown>(`${this.baseUrl}/listusers`, { params })
-      .pipe(map((response) => mapSettingsUsersPageResponse(response, safePage, safePageSize)));
+      .pipe(
+        // `listusers` consulta a Auth0 el rol de cada usuario, así que es el
+        // primero en topar el límite de la Management API. Solo ese error se
+        // reintenta: los demás no se arreglan esperando.
+        retry({
+          count: rateLimitRetryDelaysMs.length,
+          delay: (error: unknown, attempt: number) =>
+            isRateLimitError(error) ? timer(rateLimitRetryDelaysMs[attempt - 1]) : throwError(() => error),
+        }),
+        map((response) => mapSettingsUsersPageResponse(response, safePage, safePageSize)),
+      );
   }
 
   /**

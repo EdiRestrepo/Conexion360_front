@@ -944,6 +944,14 @@ Lo que no es obvio del contrato:
   `isBlocked` de `updateuser`. El diálogo devuelve `{ profile, isActive }` y la
   pantalla los aplica en serie (perfil y luego estado); `null` en cada uno
   significa "sin cambios", y si no cambió nada no se llama al backend.
+- **Editar no relee `listusers`.** Esa consulta pide a Auth0 el rol de cada
+  usuario y, lanzada justo después del PATCH, topaba el límite de la Management
+  API: el backend devolvía 500 «Global limit has been reached» aunque el cambio
+  sí se hubiera guardado. Tras editar o activar/inactivar, la fila se actualiza
+  en la página cargada con lo confirmado (`userPatches$`); eliminar sí relee.
+  `list()` reintenta dos veces (1,5 s y 3 s) solo ante ese error
+  (`isRateLimitError`, que lo reconoce por 429 o por el texto, porque el backend
+  lo entrega como 500).
 - **El documento no se edita**, aunque el DTO lo acepte: es el `idClient` con el
   que el backend cruza envíos y el maestro de clientes.
 
@@ -972,7 +980,11 @@ El diálogo de edición también lo abre el menú de usuario para el autoservici
 3. **Autorización en servidor:** `listusers` no recibe `idClient`, así que se
    asume que el backend deriva al llamante del token y valida que sea ADMIN.
    Ocultar la pantalla en el frontend no es protección.
-4. **Semántica de `deleteuser`:** ¿borra solo en Auth0 o también el registro de
+4. **Límite de la Management API:** traducir el `RateLimitApiException` de
+   Auth0 a `429` con `Retry-After` en vez de 500, y no pedir el rol usuario por
+   usuario en `listusers` (p. ej. `GET /roles/{id}/users` por cada rol, o
+   cachear el rol), que es lo que multiplica las llamadas.
+5. **Semántica de `deleteuser`:** ¿borra solo en Auth0 o también el registro de
    cliente? ¿Qué pasa con los envíos asociados a ese `document`? Si deja
    huérfanos, la acción correcta para la UI es inactivar, no eliminar.
 

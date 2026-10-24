@@ -9,6 +9,7 @@ import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/r
 import {
   BehaviorSubject,
   Observable,
+  Subject,
   catchError,
   combineLatest,
   concat,
@@ -16,6 +17,7 @@ import {
   distinctUntilChanged,
   map,
   of,
+  scan,
   shareReplay,
   startWith,
   switchMap,
@@ -27,13 +29,15 @@ import {
 import {
   SettingsRole,
   SettingsUser,
+  SettingsUserUpdate,
   SettingsUsersPage,
   getSettingsUserDisplayName,
   getSettingsUserPhone,
 } from '../../../core/models/settings-user.model';
 import { ApiSettingsUsersService } from '../../../core/services/api-settings-users.service';
 import { Auth0FacadeService } from '../../../core/services/auth0-facade.service';
-import { getApiErrorMessage } from '../../../core/utils/api-error';
+import { toUserRole } from '../../../core/models/user.model';
+import { getApiErrorMessage, isRateLimitError } from '../../../core/utils/api-error';
 import { getRoleNameLabel } from '../../../core/utils/display-labels';
 import { ConfirmDeleteDialog } from './components/confirm-delete-dialog/confirm-delete-dialog';
 import {
@@ -75,8 +79,17 @@ export class SettingsUsers {
   private readonly usersService = inject(ApiSettingsUsersService);
   private readonly auth0Facade = inject(Auth0FacadeService);
 
-  /** Fuerza una relectura del listado tras editar, bloquear o eliminar. */
+  /** Fuerza una relectura del listado: tras eliminar y al pulsar "Reintentar". */
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
+
+  /**
+   * Cambios ya confirmados por el backend que se aplican sobre la página
+   * cargada. Editar no relee `listusers`: esa consulta pide a Auth0 el rol de
+   * cada usuario y, justo después de las llamadas del PATCH, topaba el límite
+   * de la Management API ("Global limit has been reached") aunque el cambio sí
+   * se hubiera guardado. Una página nueva descarta los cambios acumulados.
+   */
+  private readonly userPatches$ = new Subject<UserPatch>();
   private readonly currentAuth0UserId = signal<string | null>(null);
 
   protected readonly pageSizeControl = new FormControl<number>(defaultFilters.pageSize, { nonNullable: true });
@@ -114,9 +127,15 @@ export class SettingsUsers {
               ...initialViewModel,
               state: 'error',
               filters,
-              message: getApiErrorMessage(error, 'No fue posible cargar los usuarios.'),
+              message: this.getListErrorMessage(error),
             } satisfies SettingsUsersViewModel),
           ),
+        ),
+      ),
+      switchMap((viewModel) =>
+        this.userPatches$.pipe(
+          scan((current, patch) => applyUserPatch(current, patch), viewModel),
+          startWith(viewModel),
         ),
       ),
     );
@@ -151,7 +170,10 @@ export class SettingsUsers {
       return;
     }
 
-    this.runAction(this.usersService.setStatus(user.userId, user.isBlocked), this.getStatusMessage(user.isBlocked));
+    this.runAction(this.usersService.setStatus(user.userId, user.isBlocked), this.getStatusMessage(user.isBlocked), {
+      userId: user.userId,
+      changes: { isBlocked: !user.isBlocked },
+    });
   }
 
   protected confirmDelete(user: SettingsUser): void {
@@ -201,19 +223,33 @@ export class SettingsUsers {
     const message =
       result.profile || result.isActive === null ? 'Usuario actualizado.' : this.getStatusMessage(result.isActive);
 
-    this.runAction(concat(...requests).pipe(toArray()), message);
+    this.runAction(concat(...requests).pipe(toArray()), message, {
+      userId: user.userId,
+      changes: {
+        ...(result.profile ? toUserChanges(result.profile) : {}),
+        ...(result.isActive !== null ? { isBlocked: !result.isActive } : {}),
+      },
+    });
   }
 
-  private runAction(request: Observable<unknown>, successMessage: string): void {
+  private runAction(request: Observable<unknown>, successMessage: string, patch: UserPatch): void {
     this.actionMessage.set(null);
     request.pipe(take(1)).subscribe({
       next: () => {
         this.actionMessage.set(successMessage);
-        this.refresh$.next();
+        this.userPatches$.next(patch);
       },
       error: (error: unknown) =>
         this.actionMessage.set(getApiErrorMessage(error, 'No fue posible guardar los cambios del usuario.')),
     });
+  }
+
+  private getListErrorMessage(error: unknown): string {
+    if (isRateLimitError(error)) {
+      return 'Auth0 está limitando las consultas en este momento. Espera unos segundos y pulsa «Reintentar».';
+    }
+
+    return getApiErrorMessage(error, 'No fue posible cargar los usuarios.');
   }
 
   private getStatusMessage(isActive: boolean): string {
@@ -292,4 +328,29 @@ export class SettingsUsers {
 
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
   }
+}
+
+interface UserPatch {
+  userId: string;
+  changes: Partial<SettingsUser>;
+}
+
+/** Solo los campos que el diálogo edita: el resto de la fila queda como vino. */
+function toUserChanges(update: SettingsUserUpdate): Partial<SettingsUser> {
+  return {
+    fullName: update.fullName,
+    company: update.company,
+    phone: update.phone,
+    email: update.email,
+    roleId: update.roleId ?? '',
+    roleName: update.roleName,
+    role: toUserRole(update.roleName),
+  };
+}
+
+function applyUserPatch(viewModel: SettingsUsersViewModel, patch: UserPatch): SettingsUsersViewModel {
+  return {
+    ...viewModel,
+    users: viewModel.users.map((user) => (user.userId === patch.userId ? { ...user, ...patch.changes } : user)),
+  };
 }

@@ -17,6 +17,19 @@ export function isForbiddenError(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === 403;
 }
 
+/**
+ * Límite de peticiones de la Management API de Auth0. El backend no lo traduce a
+ * 429: llega como 500 con el texto de Auth0 en `error` ("Global limit has been
+ * reached"), así que también se reconoce por el mensaje.
+ */
+export function isRateLimitError(error: unknown): boolean {
+  if (!(error instanceof HttpErrorResponse)) {
+    return false;
+  }
+
+  return error.status === 429 || /limit has been reached|too many requests|rate limit/i.test(readErrorDetail(error.error));
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof HttpErrorResponse)) {
     return fallback;

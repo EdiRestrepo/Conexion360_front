@@ -1,3 +1,4 @@
+﻿import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -187,5 +188,31 @@ describe('SettingsUsers', () => {
     component.toggleBlocked(createUser({ userId: 'auth0|client', isBlocked: true }));
 
     expect(usersService.setStatus).toHaveBeenCalledWith('auth0|client', true);
+  });
+
+  // Releer `listusers` justo después del PATCH topaba el límite de Auth0.
+  it('updates the row in place after a status change without reloading the list', async () => {
+    await setup(of(createPage([createUser({ userId: 'auth0|client', fullName: 'Ana Gómez' })])));
+
+    const component = fixture.componentInstance as unknown as { toggleBlocked: (user: SettingsUser) => void };
+    component.toggleBlocked(createUser({ userId: 'auth0|client', fullName: 'Ana Gómez' }));
+    fixture.detectChanges();
+
+    const row = (fixture.nativeElement as HTMLElement).querySelectorAll('.users-table__row')[1];
+
+    expect(usersService.list).toHaveBeenCalledTimes(1);
+    expect(row.textContent).toContain('Inactivo');
+    expect(row.textContent).toContain('Ana Gómez');
+  });
+
+  it('explains the Auth0 rate limit instead of showing the raw error', async () => {
+    await setup(
+      throwError(
+        () =>
+          new HttpErrorResponse({ status: 500, error: { error: 'Global limit has been reached', message: 'Solicitud procesada' } }),
+      ),
+    );
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Auth0 está limitando las consultas');
   });
 });
