@@ -248,7 +248,7 @@ describe('ShipmentDetail', () => {
     const progress = fixture.nativeElement.querySelector('[role="progressbar"]') as HTMLElement;
     const currentStage = fixture.nativeElement.querySelector('.tracking-stages__item--current') as HTMLElement;
 
-    expect(progress.getAttribute('aria-valuenow')).toBe('50');
+    expect(progress.getAttribute('aria-valuenow')).toBe('60');
     expect(currentStage.textContent).toContain('En tránsito');
     expect(currentStage.textContent).toContain('Ahora');
     expect(currentStage.querySelector('.tracking-stages__badge mat-icon')?.textContent?.trim()).toBe('flight');

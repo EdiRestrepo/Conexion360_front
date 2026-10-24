@@ -51,7 +51,7 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
     }
 
     const shipment = this.shipmentData();
-    const key = `${shipment.id}-${this.getTrackingProgress(shipment)}`;
+    const key = `${shipment.id}-${this.getTrackingStageIndex(shipment)}`;
 
     if (this.map && this.mapKey === key) {
       this.map.invalidateSize();
@@ -70,8 +70,10 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
   }
 
   protected getTrackingProgress(shipment: Shipment): number {
+    // Cada etapa aporta lo mismo y cuenta desde que empieza: 'Pendiente' ya incluye
+    // trabajo administrativo, así que arranca en 20 % y no en 0 %.
     const stageIndex = this.getTrackingStageIndex(shipment);
-    return Math.round((stageIndex / (trackingStageDefinitions.length - 1)) * 100);
+    return Math.round(((stageIndex + 1) / trackingStageDefinitions.length) * 100);
   }
 
   protected getTrackingStages(shipment: Shipment): TrackingStage[] {
@@ -118,7 +120,7 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
 
       const originPoint = L.latLng(origin.latitude, origin.longitude);
       const destinationPoint = L.latLng(destination.latitude, destination.longitude);
-      const current = this.getCurrentCoordinates(origin, destination, this.getTrackingProgress(shipment));
+      const current = this.getCurrentCoordinates(origin, destination, this.getRouteRatio(shipment));
       const currentPoint = L.latLng(current.latitude, current.longitude);
       const route = [originPoint, currentPoint, destinationPoint];
 
@@ -156,8 +158,13 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
     }
   }
 
-  private getCurrentCoordinates(origin: Coordinates, destination: Coordinates, progress: number): Coordinates {
-    const ratio = Math.min(Math.max(progress / 100, 0), 1);
+  // La posición en el mapa no sigue al porcentaje: 'Pendiente' está en el origen
+  // y 'Entregado' en el destino, aunque el progreso del primero sea 20 %.
+  private getRouteRatio(shipment: Shipment): number {
+    return this.getTrackingStageIndex(shipment) / (trackingStageDefinitions.length - 1);
+  }
+
+  private getCurrentCoordinates(origin: Coordinates, destination: Coordinates, ratio: number): Coordinates {
     return {
       latitude: origin.latitude + (destination.latitude - origin.latitude) * ratio,
       longitude: origin.longitude + (destination.longitude - origin.longitude) * ratio,

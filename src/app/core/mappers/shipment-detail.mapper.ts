@@ -273,7 +273,7 @@ function toProgress(status: ShipmentStatus): number {
     return 100;
   }
 
-  return Math.round((shipmentStatusOrder[status] / 4) * 100);
+  return Math.round(((shipmentStatusOrder[status] + 1) / 5) * 100);
 }
 
 function toShipmentStatus(value: string): ShipmentStatus {

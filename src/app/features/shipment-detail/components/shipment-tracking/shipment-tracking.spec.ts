@@ -45,7 +45,7 @@ describe('ShipmentTracking', () => {
 
     expect(current.textContent).toContain('En tránsito');
     expect(current.textContent).toContain('Ahora');
-    expect(progress.getAttribute('aria-valuenow')).toBe('50');
+    expect(progress.getAttribute('aria-valuenow')).toBe('60');
     expect(endpoints.textContent).toContain('Ciudad de México, México');
     expect(endpoints.textContent).toContain('Bogotá, Colombia');
   });
@@ -75,7 +75,15 @@ describe('ShipmentTracking', () => {
 
     expect(current.textContent).toContain('Aduana origen');
     expect(current.textContent).not.toContain('En tránsito');
-    expect(progress.getAttribute('aria-valuenow')).toBe('25');
+    expect(progress.getAttribute('aria-valuenow')).toBe('40');
+  });
+
+  it('should count the pending stage as the first 20 percent of progress', () => {
+    render(createShipment({ status: 'PENDING', events: [] }));
+
+    const progress = fixture.nativeElement.querySelector('[role="progressbar"]') as HTMLElement;
+
+    expect(progress.getAttribute('aria-valuenow')).toBe('20');
   });
 
   it('should place a shipment with an issue on the furthest stage of its change log', () => {
