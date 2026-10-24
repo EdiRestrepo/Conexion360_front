@@ -116,7 +116,7 @@ describe('History', () => {
 
     expect(headers[0].textContent?.trim()).toBe('');
     expect(headers[0].getAttribute('aria-label')).toBe('Modalidad');
-    expect(headers[1].textContent?.trim()).toBe('Documento');
+    expect(headers[1].textContent?.trim()).toBe('N° de Guía');
   }));
 
   it('should debounce search and keep query params', fakeAsync(() => {

@@ -178,7 +178,6 @@
 }
 
 .shipments-table__row > :last-child {
-  justify-self: center;
   text-align: center;
 }
 
