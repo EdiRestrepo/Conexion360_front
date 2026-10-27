@@ -12,6 +12,7 @@ import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data
 import { AuthSession } from '../../core/models/auth-session.model';
 import type { SettingsUser, SettingsUserUpdate } from '../../core/models/settings-user.model';
 import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
+import { PwaInstallService } from '../../core/services/pwa-install.service';
 import { getApiErrorMessage, isForbiddenError } from '../../core/utils/api-error';
 import { getUserRoleLabel } from '../../core/utils/display-labels';
 import type {
@@ -44,7 +45,9 @@ export class UserMenu {
   private readonly usersService = inject(ApiSettingsUsersService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly pwaInstall = inject(PwaInstallService);
 
+  protected readonly canInstall = this.pwaInstall.canInstall;
   protected readonly unreadCount$ = this.notificationService.getUnreadCount();
 
   protected readonly displayName = computed(() => {
@@ -78,6 +81,17 @@ export class UserMenu {
 
   protected onLogout(): void {
     this.logout.emit();
+  }
+
+  /** En iOS no hay diálogo del navegador: se explica cómo hacerlo a mano. */
+  protected async installApp(): Promise<void> {
+    if ((await this.pwaInstall.install()) === 'manual') {
+      this.snackBar.open(
+        'En Safari, toca Compartir y luego «Agregar a pantalla de inicio».',
+        'Entendido',
+        { duration: 12000 },
+      );
+    }
   }
 
   /**

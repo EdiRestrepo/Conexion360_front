@@ -25,6 +25,13 @@ server {
     try_files $uri $uri/ /index.html;
   }
 
+  # Archivos del service worker y del manifiesto: sin estos, la regla de un año
+  # de abajo dejaría a los usuarios en la versión vieja después de un despliegue.
+  location ~ ^/(?:ngsw-worker\.js|ngsw\.json|safety-worker\.js|worker-basic\.min\.js|manifest\.webmanifest|index\.html)$ {
+    add_header Cache-Control "no-cache";
+    try_files $uri =404;
+  }
+
   location ~* \.(?:js|css|png|jpg|jpeg|gif|ico|svg|webp|woff2?)$ {
     expires 1y;
     add_header Cache-Control "public, immutable";

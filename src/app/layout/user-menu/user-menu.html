@@ -60,6 +60,13 @@
     <span>Actualizar datos personales</span>
   </button>
 
+  @if (canInstall()) {
+    <button mat-menu-item type="button" (click)="installApp()">
+      <mat-icon aria-hidden="true">install_mobile</mat-icon>
+      <span>Instalar aplicación</span>
+    </button>
+  }
+
   <button mat-menu-item type="button" (click)="onLogout()">
     <mat-icon aria-hidden="true">logout</mat-icon>
     <span>Cerrar sesión</span>

@@ -1,4 +1,5 @@
 ﻿import { HttpErrorResponse } from '@angular/common/http';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -7,12 +8,15 @@ import { Observable, of, throwError } from 'rxjs';
 import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSession } from '../../core/models/auth-session.model';
 import { ApiSettingsUsersService } from '../../core/services/api-settings-users.service';
+import { PwaInstallOutcome, PwaInstallService } from '../../core/services/pwa-install.service';
 import { UserMenu } from './user-menu';
 
 describe('UserMenu', () => {
   let fixture: ComponentFixture<UserMenu>;
   let getUnreadCountSpy: jasmine.Spy<() => Observable<number>>;
   let usersService: jasmine.SpyObj<ApiSettingsUsersService>;
+  let canInstall: WritableSignal<boolean>;
+  let installSpy: jasmine.Spy<() => Promise<PwaInstallOutcome>>;
 
   beforeEach(async () => {
     getUnreadCountSpy = jasmine.createSpy('getUnreadCount').and.returnValue(of(3));
@@ -23,12 +27,16 @@ describe('UserMenu', () => {
       'delete',
     ]);
 
+    canInstall = signal(false);
+    installSpy = jasmine.createSpy('install').and.resolveTo('accepted');
+
     await TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, UserMenu],
       providers: [
         provideRouter([]),
         { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: getUnreadCountSpy } },
         { provide: ApiSettingsUsersService, useValue: usersService },
+        { provide: PwaInstallService, useValue: { canInstall, install: installSpy } },
       ],
     }).compileComponents();
   });
@@ -273,6 +281,42 @@ describe('UserMenu', () => {
 
     expect(snackMessage).toContain('todavía no tiene permiso');
     expect((fixture.nativeElement as HTMLElement).querySelector('.user-menu__loader')).toBeNull();
+  });
+
+  it('hides the install option when the browser cannot install the app', () => {
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+
+    expect(document.body.textContent).not.toContain('Instalar aplicación');
+  });
+
+  it('launches the browser install prompt from the menu', () => {
+    canInstall.set(true);
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+    clickMenuItem('Instalar aplicación');
+
+    expect(installSpy).toHaveBeenCalled();
+  });
+
+  it('explains the manual install steps when there is no browser prompt (iOS)', async () => {
+    canInstall.set(true);
+    installSpy.and.resolveTo('manual');
+    fixture = TestBed.createComponent(UserMenu);
+    fixture.componentRef.setInput('session', createSession('CLIENT'));
+    fixture.detectChanges();
+
+    openMenu(fixture);
+    clickMenuItem('Instalar aplicación');
+    await waitFor(() => !!document.querySelector('.mat-mdc-snack-bar-label'));
+
+    expect(document.querySelector('.mat-mdc-snack-bar-label')?.textContent).toContain('Agregar a pantalla de inicio');
   });
 });
 

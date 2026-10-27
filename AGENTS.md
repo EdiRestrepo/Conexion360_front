@@ -1145,3 +1145,45 @@ protección: una petición enviada directo a la API se salta todo esto.
 - Límites vigentes: documento 5–15 dígitos (sin NIT con dígito de
   verificación), buscadores 50 caracteres (letras con tilde, dígitos, espacio y
   `- . / ,`), correo 254, teléfono E.164 de 16.
+
+## 25. Aplicación instalable (PWA)
+
+La app se puede instalar en el celular y en el escritorio (Chrome, Edge,
+Android; en iOS desde Safari → Compartir → «Agregar a pantalla de inicio»).
+Usa el service worker oficial de Angular (`@angular/service-worker`), activo
+solo en el build de producción.
+
+### Archivos
+
+| Archivo | Rol |
+|---|---|
+| `public/manifest.webmanifest` | Nombre, colores de la paleta, íconos, modo `standalone` |
+| `public/icons/` | Íconos generados desde `src/assets/logo.png` (192, 512, maskable, Apple) |
+| `ngsw-config.json` | Qué guarda en caché el service worker |
+| `core/services/pwa-update.service.ts` | Detecta versión nueva o caché rota; el aviso lo muestra `App` |
+| `core/services/pwa-install.service.ts` | Captura `beforeinstallprompt`; la opción vive en el menú de usuario |
+
+### Decisiones que no se deben deshacer
+
+- **Sin `dataGroups`.** Solo se cachea el shell (HTML, JS, CSS, íconos). Las
+  respuestas del backend son datos empresariales que cambian y nunca se sirven
+  desde caché: sin red, cada pantalla cae en su estado de error con
+  «Reintentar». El WebSocket de SignalR no pasa por el service worker.
+- **Aviso de actualización, no recarga automática.** El usuario puede estar a
+  mitad de un formulario. Sin el aviso se quedaría en la versión vieja hasta
+  cerrar todas las ventanas.
+- **`PwaInstallService` se instancia en `App`**: `beforeinstallprompt` llega una
+  sola vez al cargar; si se esperara al menú, ya habría pasado.
+- **La sesión no cambia.** La app instalada usa el mismo `sessionStorage`
+  (`browser-session.ts`): cerrar la ventana de la app equivale a cerrar el
+  navegador y pide login otra vez.
+- **nginx (`Dockerfile`) sirve `ngsw-worker.js`, `ngsw.json`, el manifiesto e
+  `index.html` con `no-cache`.** La regla de un año para `.js` no debe
+  alcanzarlos. Quien despliegue el paquete `conexion360-nginx-dist` con otra
+  configuración de nginx debe replicar esa excepción.
+
+### Pendiente con backend
+
+Notificaciones con la app cerrada (Web Push): requiere claves VAPID, guardar
+las suscripciones y enviar desde el backend. Hoy las notificaciones llegan solo
+por SignalR, con la app abierta.
