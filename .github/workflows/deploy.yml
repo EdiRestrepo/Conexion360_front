@@ -23,6 +23,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # SonarCloud necesita el historial completo para calcular el "new code".
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -70,7 +73,16 @@ jobs:
           sed -i "s|__API_BASE_URL__|$API_BASE_URL|g" src/environments/environment.ts
 
       - name: Run unit tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless
+        run: npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+
+      # Config en `sonar-project.properties`. Exige tener apagado el Automatic
+      # Analysis del proyecto en SonarCloud. `continue-on-error`: una caída de
+      # SonarCloud no debe bloquear el despliegue.
+      - name: SonarCloud scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # `/` y no `/<repo>/`: el sitio se sirve desde la raíz del dominio propio
       # (`public/CNAME`). Con la ruta del repositorio, el HTML buscaría el JS y
