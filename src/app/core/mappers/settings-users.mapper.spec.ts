@@ -38,7 +38,7 @@ describe('mapSettingsUsersPageResponse', () => {
   it('unwraps the array nested inside dataResponse', () => {
     const result = mapSettingsUsersPageResponse(listUsersResponse, 1, 10);
 
-    expect(result.items.length).toBe(2);
+    expect(result.items).toHaveSize(2);
     expect(result.items[0].userId).toBe('auth0|6a7d2c9d789142a48d96ec53');
     expect(result.items[0].email).toBe('edisonestival@gmail.com');
     expect(result.items[1].isBlocked).toBeTrue();
@@ -71,7 +71,7 @@ describe('mapSettingsUsersPageResponse', () => {
   it('also accepts a flat array, in case the backend stops nesting it', () => {
     const flat = { dataResponse: listUsersResponse.dataResponse[0], meta: listUsersResponse.meta };
 
-    expect(mapSettingsUsersPageResponse(flat, 1, 10).items.length).toBe(2);
+    expect(mapSettingsUsersPageResponse(flat, 1, 10).items).toHaveSize(2);
   });
 
   it('returns an empty page for an unexpected shape', () => {
@@ -142,7 +142,7 @@ describe('mapSettingsRolesResponse', () => {
   });
 
   it('also reads it wrapped in dataResponse', () => {
-    expect(mapSettingsRolesResponse({ dataResponse: roles }).length).toBe(2);
+    expect(mapSettingsRolesResponse({ dataResponse: roles })).toHaveSize(2);
   });
 
   it('drops roles without id or name', () => {

@@ -1,13 +1,13 @@
 ﻿export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALISTAOPE' | 'ANALISTASAC';
 
 /** Roles internos de TCC: operan sobre varios clientes, a diferencia de `CLIENT`. */
-const knownRoles: readonly UserRole[] = ['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
+const knownRoles: ReadonlySet<string> = new Set<UserRole>(['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC']);
 
 /** Nombre de rol de Auth0 → `UserRole`; uno desconocido (o vacío) da `null`. */
 export function toUserRole(value: string): UserRole | null {
   const normalized = value.trim().toUpperCase();
 
-  return knownRoles.includes(normalized as UserRole) ? (normalized as UserRole) : null;
+  return knownRoles.has(normalized) ? (normalized as UserRole) : null;
 }
 
 export const internalRoles: readonly UserRole[] = ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];

@@ -46,7 +46,7 @@ describe('ApiHistoryService', () => {
       expect(result.summary.total).toBe(107);
       expect(result.summary.air).toBe(52);
       expect(result.summary.sea).toBe(55);
-      expect(result.items.length).toBe(1);
+      expect(result.items).toHaveSize(1);
       expect(result.items[0].id).toBe('2');
       expect(result.items[0].documentNumber).toBe('AWB-F1T2TALA');
       expect(result.items[0].transportMode).toBe('AIR');

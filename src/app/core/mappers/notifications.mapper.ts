@@ -40,7 +40,7 @@ export function mapRealtimeNotification(payload: unknown): Notification {
   // backend puede mandar `SendAsync(metodo, objeto)` o `SendAsync(metodo, a, b, c)`.
   const args = Array.isArray(payload) ? payload : [payload];
   const objects = args.filter((item): item is JsonRecord => isRecord(item));
-  const texts = args.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  const firstText = args.find((item): item is string => typeof item === 'string' && item.trim().length > 0);
 
   // El envoltorio es el objeto que trae `data`; la fila puede venir dentro de
   // él, o el objeto puede ser la fila misma.
@@ -52,7 +52,7 @@ export function mapRealtimeNotification(payload: unknown): Notification {
   const description =
     readString(row, ['message', 'mensaje', 'description']) ||
     readString(root, ['message', 'mensaje', 'description']) ||
-    texts[0] ||
+    firstText ||
     '';
   const timestamp = readString(root, ['timestamp']) || readString(row, ['notificationDate']);
 

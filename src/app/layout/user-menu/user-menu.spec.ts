@@ -252,7 +252,7 @@ describe('UserMenu', () => {
     await waitFor(() => !!document.querySelector('.mat-mdc-dialog-title'));
     fixture.detectChanges();
 
-    expect(document.querySelectorAll('.mat-mdc-dialog-container').length).toBe(1);
+    expect(document.querySelectorAll('.mat-mdc-dialog-container')).toHaveSize(1);
   });
 
   it('explains a 403 on save instead of dumping the raw error', async () => {

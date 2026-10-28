@@ -217,7 +217,7 @@
           <div class="history-pagination__meta">
             <label>
               <span>Filas por página</span>
-              <select [formControl]="pageSizeControl" aria-label="Resultados por página">
+              <select [formControl]="pageSizeControl" aria-label="Filas por página">
                 @for (size of pageSizeOptions; track size) {
                   <option [value]="size">{{ size }}</option>
                 }

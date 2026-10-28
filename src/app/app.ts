@@ -10,7 +10,6 @@ import { PwaUpdateService } from './core/services/pwa-update.service';
   selector: 'app-root',
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.css',
 })
 export class App {
   protected readonly title = 'Conexión360';

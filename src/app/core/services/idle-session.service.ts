@@ -187,7 +187,12 @@ export class IdleSessionService {
     }
 
     const idleMs = now - last;
-    const nextPhase: IdlePhase = idleMs >= idleTimeoutMs ? 'expired' : idleMs >= warningStartMs ? 'warning' : 'active';
+    let nextPhase: IdlePhase = 'active';
+    if (idleMs >= idleTimeoutMs) {
+      nextPhase = 'expired';
+    } else if (idleMs >= warningStartMs) {
+      nextPhase = 'warning';
+    }
     const remainingSeconds = Math.max(0, Math.ceil((idleTimeoutMs - idleMs) / 1000));
 
     this.emit(nextPhase, remainingSeconds);

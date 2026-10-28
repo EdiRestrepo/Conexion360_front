@@ -15,7 +15,7 @@ const documentClaim = 'https://conexion360.space/document';
 const companyClaim = 'https://conexion360.space/company';
 const fullNameClaim = 'https://conexion360.space/fullName';
 const pictureClaim = 'https://conexion360.space/picture';
-const validRoles: readonly UserRole[] = ['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
+const validRoles: ReadonlySet<string> = new Set<UserRole>(['CLIENT', 'ADMIN', 'ANALISTAOPE', 'ANALISTASAC']);
 const appUrl = environment.appUrl || window.location.origin;
 type Auth0Record = Record<string, unknown>;
 
@@ -178,7 +178,7 @@ export class Auth0FacadeService {
     }
 
     return candidate.filter((role): role is UserRole =>
-      typeof role === 'string' && validRoles.includes(role as UserRole),
+      typeof role === 'string' && validRoles.has(role),
     );
   }
 

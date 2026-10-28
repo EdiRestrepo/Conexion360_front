@@ -17,7 +17,7 @@ describe('ShipmentTracking', () => {
     const stages = Array.from(fixture.nativeElement.querySelectorAll('.tracking-stages__item')) as HTMLElement[];
     const icons = stages.map((stage) => stage.querySelector('.tracking-stages__badge mat-icon')?.textContent?.trim());
 
-    expect(stages.length).toBe(5);
+    expect(stages).toHaveSize(5);
     expect(stages.map((stage) => stage.querySelector('.tracking-stages__label')?.textContent?.trim())).toEqual([
       'Pendiente',
       'Aduana origen',
@@ -55,7 +55,7 @@ describe('ShipmentTracking', () => {
 
     const completed = fixture.nativeElement.querySelectorAll('.tracking-stages__item--completed');
 
-    expect(completed.length).toBe(5);
+    expect(completed).toHaveSize(5);
     expect(fixture.nativeElement.querySelector('.tracking-stages__item--current')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('100%');
   });

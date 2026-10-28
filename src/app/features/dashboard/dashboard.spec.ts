@@ -93,7 +93,7 @@ describe('Dashboard', () => {
 
     const progressbars = fixture.nativeElement.querySelectorAll('[role="progressbar"]') as NodeListOf<HTMLElement>;
 
-    expect(progressbars.length).toBe(4);
+    expect(progressbars).toHaveSize(4);
     expect(progressbars[0].getAttribute('aria-valuenow')).toBe('50');
     expect(progressbars[1].getAttribute('aria-valuenow')).toBe('50');
     expect(progressbars[2].getAttribute('aria-valuenow')).toBe('40');
@@ -127,7 +127,7 @@ describe('Dashboard', () => {
     };
 
     expect(service.getRecent).toHaveBeenCalledWith();
-    expect(recentItems.length).toBe(10);
+    expect(recentItems).toHaveSize(10);
     expect(recentItems[0].getAttribute('href')).toContain('/shipments/shipment-001');
     expect(getText()).toContain('AWB-001');
   }));
@@ -150,7 +150,7 @@ describe('Dashboard', () => {
 
       const clients = fixture.nativeElement.querySelectorAll('.recent-item__client') as NodeListOf<HTMLElement>;
 
-      expect(clients.length).toBe(10);
+      expect(clients).toHaveSize(10);
       expect(clients[0].textContent?.trim()).toBe('Postobon');
     }));
   }
@@ -247,7 +247,7 @@ describe('Dashboard', () => {
 
     const resultItems = fixture.nativeElement.querySelectorAll('.dashboard-search-result') as NodeListOf<HTMLElement>;
 
-    expect(resultItems.length).toBe(2);
+    expect(resultItems).toHaveSize(2);
     expect(getText()).toContain('AWB-001');
     expect(getText()).toContain('AWB-002');
   }));

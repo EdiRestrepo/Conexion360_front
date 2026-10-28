@@ -34,7 +34,7 @@ const trackingStageDefinitions = [
 export class ShipmentTracking implements AfterViewChecked, OnDestroy {
   @ViewChild('trackingMap') private readonly trackingMapElement?: ElementRef<HTMLElement>;
 
-  readonly shipmentData = input.required<Shipment>({ alias: 'shipment' });
+  readonly shipment = input.required<Shipment>();
 
   private map: L.Map | null = null;
   private mapKey = '';
@@ -50,7 +50,7 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
       return;
     }
 
-    const shipment = this.shipmentData();
+    const shipment = this.shipment();
     const key = `${shipment.id}-${this.getTrackingStageIndex(shipment)}`;
 
     if (this.map && this.mapKey === key) {
@@ -82,8 +82,16 @@ export class ShipmentTracking implements AfterViewChecked, OnDestroy {
     return trackingStageDefinitions.map((stage, index) => ({
       label: stage.label,
       icon: stage.icon || getTransportModeIcon(shipment.transportMode),
-      state: shipment.status === 'DELIVERED' || index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'pending',
+      state: this.getStageState(shipment, index, currentIndex),
     }));
+  }
+
+  private getStageState(shipment: Shipment, index: number, currentIndex: number): TrackingStage['state'] {
+    if (shipment.status === 'DELIVERED' || index < currentIndex) {
+      return 'completed';
+    }
+
+    return index === currentIndex ? 'current' : 'pending';
   }
 
   protected hasTrackingCoordinates(shipment: Shipment): boolean {

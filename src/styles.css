@@ -169,11 +169,15 @@ textarea {
 }
 
 .copy-button {
-  width: 26px !important;
-  height: 26px !important;
-  padding: 0 !important;
   flex: 0 0 26px;
-  color: var(--color-text-muted) !important;
+}
+
+/* Se califica con la clase de Material para ganarle a `.mat-mdc-icon-button`. */
+.mat-mdc-icon-button.copy-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--color-text-muted);
 }
 
 .copy-button mat-icon {
@@ -182,9 +186,9 @@ textarea {
   font-size: 15px;
 }
 
-.copy-button:hover,
-.copy-button:focus-visible {
-  color: var(--color-secondary) !important;
+.mat-mdc-icon-button.copy-button:hover,
+.mat-mdc-icon-button.copy-button:focus-visible {
+  color: var(--color-secondary);
 }
 
 .app-icon {
@@ -202,15 +206,16 @@ textarea {
   font-weight: 700;
 }
 
-.mat-mdc-unelevated-button,
-.mat-mdc-raised-button,
-.mat-mdc-outlined-button,
-.mat-mdc-button,
-.mat-mdc-stroked-button,
-.mat-mdc-flat-button {
-  font-family: var(--font-family-base) !important;
-  font-size: var(--font-size-button) !important;
-  font-weight: 700 !important;
+/* `.mat-mdc-button-base` sube la especificidad sobre la tipografía propia de Material. */
+.mat-mdc-button-base.mat-mdc-unelevated-button,
+.mat-mdc-button-base.mat-mdc-raised-button,
+.mat-mdc-button-base.mat-mdc-outlined-button,
+.mat-mdc-button-base.mat-mdc-button,
+.mat-mdc-button-base.mat-mdc-stroked-button,
+.mat-mdc-button-base.mat-mdc-flat-button {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-button);
+  font-weight: 700;
 }
 
 /*

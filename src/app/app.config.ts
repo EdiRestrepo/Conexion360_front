@@ -5,7 +5,6 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { authHttpInterceptorFn, provideAuth0 } from '@auth0/auth0-angular';
@@ -52,7 +51,6 @@ export const appConfig: ApplicationConfig = {
       cacheLocation: 'localstorage',
       useRefreshTokens: true,
     }),
-    provideAnimationsAsync(),
     // Solo guarda en caché el shell de la aplicación (ver `ngsw-config.json`):
     // sin `dataGroups`, las llamadas al backend y el WebSocket de SignalR van
     // siempre a la red. Se registra cuando la app queda estable para no

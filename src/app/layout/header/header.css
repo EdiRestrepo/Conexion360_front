@@ -10,7 +10,10 @@
 
 .header__menu-button {
   display: none;
-  color: var(--color-primary) !important;
+}
+
+.header__menu-button.mat-mdc-icon-button {
+  color: var(--color-primary);
 }
 
 .header__title {

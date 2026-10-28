@@ -45,18 +45,19 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     return `${fallback} No hubo respuesta del servidor. Revisa tu conexión a internet e intenta de nuevo.`;
   }
 
-  if (unavailableStatuses.includes(error.status)) {
+  if (unavailableStatuses.has(error.status)) {
     return `${fallback} El servidor no está disponible en este momento. Intenta de nuevo en unos minutos.`;
   }
 
-  return `${fallback} (HTTP ${error.status}${error.statusText ? ` ${error.statusText}` : ''})`;
+  const statusText = error.statusText ? ` ${error.statusText}` : '';
+  return `${fallback} (HTTP ${error.status}${statusText})`;
 }
 
 /**
  * 502/503/504 los genera el proxy (nginx, balanceador) cuando el backend está
  * caído o no responde: no traen un motivo del backend que mostrar.
  */
-const unavailableStatuses = [502, 503, 504];
+const unavailableStatuses = new Set([502, 503, 504]);
 
 function readErrorDetail(body: unknown): string {
   if (typeof body === 'string') {

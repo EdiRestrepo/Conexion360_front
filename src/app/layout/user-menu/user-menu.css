@@ -8,7 +8,10 @@
 .user-menu__trigger {
   position: relative;
   flex: 0 0 auto;
-  padding: 0 !important;
+}
+
+.user-menu__trigger.mat-mdc-icon-button {
+  padding: 0;
 }
 
 /* Anillo sobre el avatar mientras se prepara «Actualizar datos personales». Se
@@ -86,7 +89,10 @@
 
 .user-menu__bell {
   position: relative;
-  color: var(--color-primary) !important;
+}
+
+.user-menu__bell.mat-mdc-icon-button {
+  color: var(--color-primary);
 }
 
 .user-menu__badge {

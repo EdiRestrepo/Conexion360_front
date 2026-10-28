@@ -60,7 +60,7 @@ describe('MobileNavigation', () => {
   it('should emit close when a navigation link is clicked', () => {
     const closeSpy = jasmine.createSpy('close');
     fixture.componentRef.setInput('open', true);
-    fixture.componentInstance.close.subscribe(closeSpy);
+    fixture.componentInstance.closed.subscribe(closeSpy);
     fixture.detectChanges();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.mobile-nav__link');

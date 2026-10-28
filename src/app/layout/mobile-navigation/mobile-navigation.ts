@@ -17,13 +17,13 @@ import { UserMenu } from '../user-menu/user-menu';
 export class MobileNavigation {
   readonly open = input(false);
   readonly session = input<AuthSession | null>(null);
-  readonly close = output<void>();
+  readonly closed = output<void>();
   readonly logout = output<void>();
 
   protected readonly navItems = layoutNavItems;
 
   protected closeNavigation(): void {
-    this.close.emit();
+    this.closed.emit();
   }
 
   protected onLogout(): void {

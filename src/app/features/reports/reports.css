@@ -91,9 +91,9 @@
   color: var(--color-primary);
 }
 
-.export-button {
-  border-color: var(--color-border) !important;
-  color: var(--color-text) !important;
+.export-button.mat-mdc-outlined-button {
+  border-color: var(--color-border);
+  color: var(--color-text);
 }
 
 .reports-grid {

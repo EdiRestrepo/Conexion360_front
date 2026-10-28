@@ -58,7 +58,7 @@ interface DetailRequest {
 type DetailData = Pick<DetailViewModel, 'state' | 'shipment' | 'message'>;
 
 const defaultTab: DetailTab = 'summary';
-const tabIds: DetailTab[] = ['summary', 'tracking', 'dates', 'container', 'financial', 'history'];
+const tabIds: ReadonlySet<string> = new Set<DetailTab>(['summary', 'tracking', 'dates', 'container', 'financial', 'history']);
 
 @Component({
   selector: 'app-shipment-detail',
@@ -298,7 +298,7 @@ export class ShipmentDetail {
 
   private getTabFromParams(params: ParamMap): DetailTab {
     const tab = params.get('tab');
-    return tabIds.includes(tab as DetailTab) ? (tab as DetailTab) : defaultTab;
+    return tab !== null && tabIds.has(tab) ? (tab as DetailTab) : defaultTab;
   }
 
   private getListQueryParams(params: ParamMap): Params {

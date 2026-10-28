@@ -77,7 +77,7 @@ describe('Reports', () => {
 
     const charts = fixture.nativeElement.querySelectorAll('.chart-card__canvas[role="img"]') as NodeListOf<HTMLElement>;
 
-    expect(charts.length).toBe(3);
+    expect(charts).toHaveSize(3);
     expect(charts[0].getAttribute('aria-label')).toContain('Importaciones: 15');
     expect(charts[1].getAttribute('aria-label')).toContain('Aéreos: 12');
     expect(charts[2].getAttribute('aria-label')).toContain('Enka');
@@ -107,7 +107,7 @@ describe('Reports', () => {
     render();
 
     expect(getText()).not.toContain('Top clientes por cantidad de envíos');
-    expect(fixture.nativeElement.querySelectorAll('.chart-card__canvas[role="img"] canvas').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.chart-card__canvas[role="img"] canvas')).toHaveSize(2);
     expect(getText()).toContain('Rutas más frecuentes');
   }));
 

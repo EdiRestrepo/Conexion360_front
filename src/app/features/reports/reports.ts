@@ -49,7 +49,7 @@ import {
   getTransportModeIcon,
   getTransportModeLabel,
 } from '../../core/utils/display-labels';
-import type { ChartKind, ChartValue, MetricCard, ReportChart, ReportsState, ReportsViewModel, StatusBreakdownItem } from './models/reports-view.model';
+import type { ChartKind, ReportChart, ReportsViewModel, StatusBreakdownItem } from './models/reports-view.model';
 
 const initialViewModel: ReportsViewModel = {
   state: 'loading',
@@ -76,7 +76,7 @@ const chartPurple = '#8B5CF6';
  * analista lo decide el backend (`ClientAccessResolver`); cuando `GET
  * /reports/home` empiece a devolver `topClients`, debe filtrarlo también por rol.
  */
-const internalRoles: UserRole[] = ['ADMIN', 'ANALISTAOPE', 'ANALISTASAC'];
+const internalRoles = new Set<UserRole>(['ADMIN', 'ANALISTAOPE', 'ANALISTASAC']);
 const statusRowPalette = [
   'status-row--gray',
   'status-row--blue',
@@ -293,7 +293,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
   private isInternalRole(): boolean {
     const role = this.authSession.currentSession()?.user.role ?? null;
 
-    return role !== null && internalRoles.includes(role);
+    return role !== null && internalRoles.has(role);
   }
 
   private createCharts(metrics: ReportMetrics): ReportChart[] {

@@ -70,7 +70,7 @@ export interface SettingsUserUpdate {
 }
 
 /** Contrato del `phoneNumber` en el swagger (E.164). */
-export const phoneNumberPattern = /^\+[0-9]{1,15}$/;
+export const phoneNumberPattern = /^\+\d{1,15}$/;
 
 export function toSettingsUserUpdate(user: SettingsUser): SettingsUserUpdate {
   return {

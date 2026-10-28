@@ -155,7 +155,7 @@
           <div class="users-pagination__meta">
             <label>
               <span>Filas por página</span>
-              <select [formControl]="pageSizeControl" aria-label="Usuarios por página">
+              <select [formControl]="pageSizeControl" aria-label="Filas por página">
                 @for (size of pageSizeOptions; track size) {
                   <option [value]="size">{{ size }}</option>
                 }

@@ -20,7 +20,7 @@ const documentRule = {
   required: true,
   minLength: 5,
   maxLength: 15,
-  pattern: /^[0-9]+$/,
+  pattern: /^\d+$/,
   patternMessage: 'Solo se permiten números, sin puntos, guiones ni espacios.',
 } as const;
 

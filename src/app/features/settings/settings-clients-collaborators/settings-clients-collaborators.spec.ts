@@ -205,7 +205,7 @@ describe('SettingsClientsCollaborators', () => {
     fixture.detectChanges();
 
     expect(getText()).not.toContain('No fue posible cargar las asociaciones.');
-    expect(getElement().querySelectorAll('.master-relations tbody tr').length).toBe(1);
+    expect(getElement().querySelectorAll('.master-relations tbody tr')).toHaveSize(1);
   }));
 
   function getElement(): HTMLElement {

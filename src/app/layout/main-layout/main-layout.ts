@@ -20,6 +20,12 @@ import { Sidebar } from '../sidebar/sidebar';
 
 type NavigationOrigin = 'dashboard' | 'history' | 'shipments';
 
+/** Rótulos cortos de la navegación inferior; las demás rutas usan el de la barra lateral. */
+const bottomNavLabels: Partial<Record<string, string>> = {
+  '/shipments': 'Envíos',
+  '/notifications': 'Alertas',
+};
+
 @Component({
   selector: 'app-main-layout',
   imports: [AsyncPipe, Header, MatIconModule, MobileNavigation, RouterLink, RouterLinkActive, RouterOutlet, Sidebar],
@@ -47,7 +53,7 @@ export class MainLayout {
     .filter((item) => item.route !== '/settings')
     .map((item) => ({
       ...item,
-      label: item.route === '/shipments' ? 'Env\u00edos' : item.route === '/notifications' ? 'Alertas' : item.label,
+      label: bottomNavLabels[item.route] ?? item.label,
     }));
 
   constructor() {

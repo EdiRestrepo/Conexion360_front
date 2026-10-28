@@ -221,9 +221,10 @@ export class History {
     const start = (page - 1) * result.pageSize;
     const isEmpty = result.items.length === 0;
     const state = isEmpty ? 'empty' : 'success';
-    const emptyReason: HistoryEmptyReason | undefined = isEmpty
-      ? (this.hasActiveFilters(filters) ? 'no-matches' : 'no-data')
-      : undefined;
+    let emptyReason: HistoryEmptyReason | undefined;
+    if (isEmpty) {
+      emptyReason = this.hasActiveFilters(filters) ? 'no-matches' : 'no-data';
+    }
 
     return {
       state,

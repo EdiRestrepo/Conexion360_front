@@ -83,7 +83,7 @@ describe('ShipmentList', () => {
     const labels = ['envíos', 'exportaciones', 'importaciones', 'aéreos', 'marítimos'];
     const numbers = ['5', '1', '4', '3', '2'];
 
-    expect(pills.length).toBe(5);
+    expect(pills).toHaveSize(5);
     expect(getText()).not.toContain('con novedad');
     pills.forEach((pill, index) => {
       expect(pill.querySelector('strong')?.textContent?.trim()).toBe(numbers[index]);
@@ -161,14 +161,14 @@ describe('ShipmentList', () => {
     component = fixture.componentInstance as unknown as ShipmentListTestComponent;
     render();
 
-    expect(getTableRows().length).toBe(10);
+    expect(getTableRows()).toHaveSize(10);
     expect(getText()).toContain('1-10 de 12');
 
     clickButton('Página siguiente');
     tick();
     fixture.detectChanges();
 
-    expect(getTableRows().length).toBe(2);
+    expect(getTableRows()).toHaveSize(2);
     expect(getText()).toContain('11-12 de 12');
   }));
 
@@ -297,7 +297,7 @@ describe('ShipmentList', () => {
     render();
 
     expect(getColumnHeaders()).not.toContain('Cliente');
-    expect(getColumnHeaders().length).toBe(getTableRows()[0].querySelectorAll('[role="cell"]').length);
+    expect(getColumnHeaders()).toHaveSize(getTableRows()[0].querySelectorAll('[role="cell"]').length);
     expect(getText()).not.toContain('Enka');
     expect(fixture.nativeElement.querySelector('.shipments-table--no-client')).not.toBeNull();
   }));

@@ -62,7 +62,7 @@ describe('ApiNotificationsService', () => {
 
     request.flush({ dataResponse: [createBackendNotification()] });
 
-    expect(notifications.length).toBe(1);
+    expect(notifications).toHaveSize(1);
     expect(notifications[0]).toEqual({
       id: '1',
       type: 'STATUS_CHANGE',
@@ -108,7 +108,7 @@ describe('ApiNotificationsService', () => {
       ],
     });
 
-    expect(listed.length).toBe(3);
+    expect(listed).toHaveSize(3);
     expect(unreadCount).toBe(2);
     httpMock.expectNone(() => true);
   });
@@ -216,7 +216,7 @@ describe('ApiNotificationsService', () => {
       },
     ]);
 
-    expect(listed.length).toBe(2);
+    expect(listed).toHaveSize(2);
     expect(listed[0].title).toBe('Cambio de estado a pendiente.');
     expect(listed[0].shipmentDocument).toBe('HBL-5U6HC36K');
     expect(listed[0].read).toBeFalse();
@@ -239,7 +239,7 @@ describe('ApiNotificationsService', () => {
       },
     ]);
 
-    expect(listed.length).toBe(1);
+    expect(listed).toHaveSize(1);
     expect(listed[0].description).toBe('Se presenta una novedad documental que retrasa el proceso.');
     expect(listed[0].read).toBeFalse();
     httpMock.expectNone(() => true);
@@ -264,7 +264,7 @@ describe('ApiNotificationsService', () => {
     notificationReceived$.next(push);
     notificationReceived$.next(push);
 
-    expect(listed.length).toBe(3);
+    expect(listed).toHaveSize(3);
     expect(new Set(listed.map((item) => item.id)).size).toBe(3);
     httpMock.expectNone(() => true);
   });
@@ -282,7 +282,7 @@ describe('ApiNotificationsService', () => {
       '2026-08-24T01:05:00.000Z',
     ]);
 
-    expect(listed.length).toBe(1);
+    expect(listed).toHaveSize(1);
     expect(listed[0].title).toBe('Cambio de estado a pendiente.');
     expect(listed[0].shipmentDocument).toBe('HBL-5U6HC36K');
     expect(listed[0].read).toBeFalse();
@@ -296,7 +296,7 @@ describe('ApiNotificationsService', () => {
 
     notificationReceived$.next([{ algoInesperado: 42 }]);
 
-    expect(listed.length).toBe(1);
+    expect(listed).toHaveSize(1);
     expect(listed[0].description).toContain('algoInesperado');
   });
 
@@ -346,7 +346,7 @@ describe('ApiNotificationsService', () => {
     service.getAll().subscribe((value) => (notifications = value));
     expectRequest().flush({ dataResponse: [createBackendNotification()] });
 
-    expect(notifications.length).toBe(1);
+    expect(notifications).toHaveSize(1);
   });
 
   function expectRequest() {

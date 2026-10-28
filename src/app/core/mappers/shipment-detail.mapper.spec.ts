@@ -65,7 +65,7 @@ describe('mapShipmentDetailResponse', () => {
   it('should map the change log keeping the previous state only when present', () => {
     const events = mapShipmentDetailResponse(createResponse())?.events ?? [];
 
-    expect(events.length).toBe(2);
+    expect(events).toHaveSize(2);
     expect(events[0].user).toBe('ANALISTASAC');
     expect(events[0].description).toBe('Creación del envio');
     expect(events[0].status).toBe('PENDING');

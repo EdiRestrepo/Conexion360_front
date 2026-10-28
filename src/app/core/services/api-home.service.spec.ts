@@ -90,7 +90,7 @@ describe('ApiHomeService', () => {
 
   it('should expose recent shipments mapped to the frontend model', () => {
     service.getRecent(1).subscribe((shipments) => {
-      expect(shipments.length).toBe(1);
+      expect(shipments).toHaveSize(1);
       expect(shipments[0].documentNumber).toBe('HBL-010');
       expect(shipments[0].operationType).toBe('EXPO');
       expect(shipments[0].transportMode).toBe('SEA');
@@ -119,7 +119,7 @@ describe('ApiHomeService', () => {
 
   it('should expose all recent shipments when no limit is provided', () => {
     service.getRecent().subscribe((shipments) => {
-      expect(shipments.length).toBe(2);
+      expect(shipments).toHaveSize(2);
       expect(shipments[0].documentNumber).toBe('AWB-010');
       expect(shipments[0].clientName).toBe('Postobon');
       expect(shipments[1].documentNumber).toBe('HBL-011');
@@ -158,7 +158,7 @@ describe('ApiHomeService', () => {
 
   it('should not create fallback shipment documents when backend omits document data', () => {
     service.getRecent().subscribe((shipments) => {
-      expect(shipments.length).toBe(1);
+      expect(shipments).toHaveSize(1);
       expect(shipments[0].id).toBe('201');
       expect(shipments[0].documentNumber).toBe('');
     });

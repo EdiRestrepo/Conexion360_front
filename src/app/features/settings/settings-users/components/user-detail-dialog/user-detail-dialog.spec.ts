@@ -125,7 +125,7 @@ describe('UserDetailDialog', () => {
 
     const select = getInput('select') as unknown as HTMLSelectElement;
 
-    expect(select.options.length).toBe(1);
+    expect(select.options).toHaveSize(1);
     expect(getText()).toContain('Cargando los roles de Auth0');
   });
 
@@ -133,7 +133,7 @@ describe('UserDetailDialog', () => {
     await render({ roles$: throwError(() => new Error('boom')) });
 
     expect(getText()).toContain('No fue posible cargar los roles');
-    expect((getInput('select') as unknown as HTMLSelectElement).options.length).toBe(1);
+    expect((getInput('select') as unknown as HTMLSelectElement).options).toHaveSize(1);
   });
 
   it('shows the role read-only on the own profile', async () => {

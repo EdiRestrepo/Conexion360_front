@@ -14,7 +14,7 @@ describe('recent-searches', () => {
   it('should keep at most the configured number of searches', () => {
     saveRecentSearches(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']);
 
-    expect(readRecentSearches().length).toBe(MAX_RECENT_SEARCHES);
+    expect(readRecentSearches()).toHaveSize(MAX_RECENT_SEARCHES);
   });
 
   it('should return an empty list after clearing', () => {

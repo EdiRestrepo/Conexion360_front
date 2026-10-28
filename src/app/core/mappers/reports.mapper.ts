@@ -75,7 +75,8 @@ export function mapReportsResponse(response: unknown): ReportMetrics {
  */
 function toTopClients(payload: JsonRecord, data: unknown): { client: string; total: number }[] {
   const explicit = readArray(payload, ['topClients', 'frequentClients']);
-  const items = explicit.length > 0 ? explicit : Array.isArray(data) ? data : [data];
+  const fromData = Array.isArray(data) ? data : [data];
+  const items = explicit.length > 0 ? explicit : fromData;
 
   return items
     .map((item) => toTopClient(item))
