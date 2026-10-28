@@ -135,7 +135,7 @@ jobs:
         run: npx ng build --configuration production --base-href "/" --output-path dist/nginx-package
 
       - name: Upload Nginx distribution artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conexion360-nginx-dist
           path: dist/nginx-package/browser
