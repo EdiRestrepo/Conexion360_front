@@ -75,7 +75,7 @@ describe('Reports', () => {
   it('should render accessible textual summaries for charts', fakeAsync(() => {
     render();
 
-    const charts = fixture.nativeElement.querySelectorAll('canvas[role="img"]') as NodeListOf<HTMLCanvasElement>;
+    const charts = fixture.nativeElement.querySelectorAll('.chart-card__canvas[role="img"]') as NodeListOf<HTMLElement>;
 
     expect(charts.length).toBe(3);
     expect(charts[0].getAttribute('aria-label')).toContain('Importaciones: 15');
@@ -107,7 +107,7 @@ describe('Reports', () => {
     render();
 
     expect(getText()).not.toContain('Top clientes por cantidad de envíos');
-    expect(fixture.nativeElement.querySelectorAll('canvas[role="img"]').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.chart-card__canvas[role="img"] canvas').length).toBe(2);
     expect(getText()).toContain('Rutas más frecuentes');
   }));
 

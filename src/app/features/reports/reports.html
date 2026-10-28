@@ -126,8 +126,8 @@
             </h2>
             @if (chart.kind === 'doughnut') {
               <div class="chart-card__body">
-                <div class="chart-card__canvas chart-card__canvas--compact">
-                  <canvas #chartCanvas [attr.aria-label]="chart.summary" role="img"></canvas>
+                <div class="chart-card__canvas chart-card__canvas--compact" [attr.aria-label]="chart.summary" role="img">
+                  <canvas #chartCanvas></canvas>
                 </div>
                 <ul class="chart-legend" [attr.aria-label]="'Valores de ' + chart.title">
                   @for (value of chart.values; track value.label; let idx = $index) {
@@ -143,8 +143,8 @@
                 </ul>
               </div>
             } @else {
-              <div class="chart-card__canvas">
-                <canvas #chartCanvas [attr.aria-label]="chart.summary" role="img"></canvas>
+              <div class="chart-card__canvas" [attr.aria-label]="chart.summary" role="img">
+                <canvas #chartCanvas></canvas>
               </div>
             }
           </article>

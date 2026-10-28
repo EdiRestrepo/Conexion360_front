@@ -204,7 +204,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
       ...metrics.topClients.map((client) => ['cliente', client.client, client.total.toString()]),
       ...metrics.topRoutes.map((route) => ['ruta', route.route, route.total.toString()]),
     ];
-    const csv = rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csv = rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = globalThis.URL.createObjectURL(blob);
     const link = globalThis.document.createElement('a');

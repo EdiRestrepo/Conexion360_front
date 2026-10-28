@@ -111,9 +111,11 @@
           <section class="surface-card detail-section detail-section--half" aria-label="Fechas logísticas">
             <div class="dates-table" role="table" aria-label="Línea de tiempo logística">
               <div class="dates-table__row dates-table__row--head" role="row">
-                <h2 class="dates-table__title" role="columnheader">
-                  <mat-icon aria-hidden="true">schedule</mat-icon> Línea de tiempo logística
-                </h2>
+                <div role="columnheader">
+                  <h2 class="dates-table__title">
+                    <mat-icon aria-hidden="true">schedule</mat-icon> Línea de tiempo logística
+                  </h2>
+                </div>
                 <span role="columnheader">Fecha</span>
               </div>
               @for (row of getLogisticDateRows(shipment); track row.label) {
