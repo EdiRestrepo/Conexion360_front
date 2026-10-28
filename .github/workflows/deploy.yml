@@ -79,7 +79,7 @@ jobs:
       # Analysis del proyecto en SonarCloud. `continue-on-error`: una caída de
       # SonarCloud no debe bloquear el despliegue.
       - name: SonarCloud scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v7
         continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
