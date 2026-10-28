@@ -122,24 +122,29 @@
 }
 
 .shipments-table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  /* Suma de los mínimos de las columnas + huecos + padding: por debajo, la tabla desplaza. */
+  min-width: 1662px;
+}
+
+.shipments-table--no-client {
+  min-width: 1500px;
 }
 
 .shipments-table__row {
   display: grid;
   grid-template-columns:
     66px
-    178px
-    170px
-    108px
-    100px
-    150px
-    210px
-    110px
-    110px
-    110px
-    110px
+    minmax(178px, 1fr)
+    minmax(170px, 1fr)
+    minmax(108px, 1fr)
+    minmax(100px, 1fr)
+    minmax(150px, 1fr)
+    minmax(210px, 1fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
     72px;
   gap: 12px;
   align-items: center;
@@ -153,15 +158,15 @@
 .shipments-table--no-client .shipments-table__row {
   grid-template-columns:
     66px
-    178px
-    170px
-    108px
-    100px
-    210px
-    110px
-    110px
-    110px
-    110px
+    minmax(178px, 1fr)
+    minmax(170px, 1fr)
+    minmax(108px, 1fr)
+    minmax(100px, 1fr)
+    minmax(210px, 1fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
+    minmax(110px, 1fr)
     72px;
 }
 
