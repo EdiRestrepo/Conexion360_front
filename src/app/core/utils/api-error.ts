@@ -42,15 +42,27 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   }
 
   if (error.status === 0) {
-    return `${fallback} No hubo respuesta del servidor: revisa que el backend esté arriba.`;
+    return `${fallback} No hubo respuesta del servidor. Revisa tu conexión a internet e intenta de nuevo.`;
+  }
+
+  if (unavailableStatuses.includes(error.status)) {
+    return `${fallback} El servidor no está disponible en este momento. Intenta de nuevo en unos minutos.`;
   }
 
   return `${fallback} (HTTP ${error.status}${error.statusText ? ` ${error.statusText}` : ''})`;
 }
 
+/**
+ * 502/503/504 los genera el proxy (nginx, balanceador) cuando el backend está
+ * caído o no responde: no traen un motivo del backend que mostrar.
+ */
+const unavailableStatuses = [502, 503, 504];
+
 function readErrorDetail(body: unknown): string {
   if (typeof body === 'string') {
-    return body.trim();
+    // Una página de error HTML del proxy no es un motivo legible: pintarla
+    // vuelca el marcado en pantalla. Se ignora y se cae al código HTTP.
+    return isHtml(body) ? '' : body.trim();
   }
 
   if (typeof body !== 'object' || body === null) {
@@ -71,4 +83,8 @@ function readErrorDetail(body: unknown): string {
   }
 
   return '';
+}
+
+function isHtml(text: string): boolean {
+  return /<\s*(!doctype|html|head|body)\b/i.test(text);
 }

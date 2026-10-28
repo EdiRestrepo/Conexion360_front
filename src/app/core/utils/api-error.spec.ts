@@ -34,6 +34,19 @@ describe('getApiErrorMessage', () => {
     expect(getApiErrorMessage(error, fallback)).toContain('No hubo respuesta del servidor');
   });
 
+  it('ignores an HTML error page from the proxy and explains the outage', () => {
+    const error = new HttpErrorResponse({
+      status: 503,
+      statusText: 'Service Temporarily Unavailable',
+      error: '<html><head><title>503 Service Temporarily Unavailable</title></head><body></body></html>',
+    });
+
+    const message = getApiErrorMessage(error, fallback);
+
+    expect(message).not.toContain('<');
+    expect(message).toBe(`${fallback} El servidor no está disponible en este momento. Intenta de nuevo en unos minutos.`);
+  });
+
   it('returns the plain fallback for non-HTTP errors', () => {
     expect(getApiErrorMessage(new Error('boom'), fallback)).toBe(fallback);
   });

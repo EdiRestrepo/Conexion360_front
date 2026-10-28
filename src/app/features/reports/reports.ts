@@ -127,7 +127,7 @@ export class Reports implements AfterViewChecked, OnDestroy {
             // la respuesta cuando un analista consulta un cliente que no es suyo.
             message: getApiErrorMessage(
               error,
-              clientId ? `No fue posible consultar el reporte del cliente ${clientId}.` : 'No fue posible cargar los reportes. Intenta nuevamente.',
+              clientId ? `No fue posible consultar el reporte del cliente ${clientId}.` : 'No fue posible cargar los reportes.',
             ),
           } satisfies ReportsViewModel),
         ),

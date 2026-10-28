@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Avisa de dependencias npm vulnerables o desactualizadas con un PR, que
+  # pasa por los mismos controles de deploy.yml antes de mezclarse.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Angular se actualiza en bloque: versiones mezcladas no compilan.
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "@schematics/angular"
+    # Los saltos de versión mayor de Angular se hacen a mano con `ng update`.
+    ignore:
+      - dependency-name: "@angular/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@angular-devkit/*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
