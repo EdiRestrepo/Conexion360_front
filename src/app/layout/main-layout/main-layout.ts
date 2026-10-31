@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, take } from 'rxjs';
 
+import { NOTIFICATION_DATA_SOURCE } from '../../core/contracts/notification-data-source';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { IdlePhase, IdleSessionService } from '../../core/services/idle-session.service';
 import { Header } from '../header/header';
@@ -46,6 +47,7 @@ export class MainLayout {
   protected readonly session = this.authSession.currentSession;
   protected readonly isLoading$ = this.authSession.isLoading$;
   protected readonly authError$ = this.authSession.authError$;
+  protected readonly unreadCount$ = inject(NOTIFICATION_DATA_SOURCE).getUnreadCount();
   protected readonly mobileNavigationOpen = signal(false);
   protected readonly sidebarCollapsed = signal(false);
   protected readonly detailOrigin = signal<NavigationOrigin | null>(null);

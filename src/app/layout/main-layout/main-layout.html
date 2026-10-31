@@ -39,15 +39,22 @@
   />
 
   <nav class="shell__bottom-nav" aria-label="Navegación rápida">
+    @let unreadCount = (unreadCount$ | async) ?? 0;
     @for (item of bottomNavItems; track item.route) {
+      @let showBadge = item.route === '/notifications' && unreadCount > 0;
       <a
         class="shell__bottom-link"
         [routerLink]="item.route"
         routerLinkActive="shell__bottom-link--active"
         [routerLinkActiveOptions]="{ exact: item.exact }"
-        [attr.aria-label]="item.label"
+        [attr.aria-label]="showBadge ? item.label + ', ' + unreadCount + ' sin leer' : item.label"
       >
-        <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+        <span class="shell__bottom-icon">
+          <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+          @if (showBadge) {
+            <span class="shell__bottom-badge" aria-hidden="true">{{ unreadCount }}</span>
+          }
+        </span>
         <span>{{ item.label }}</span>
       </a>
     }

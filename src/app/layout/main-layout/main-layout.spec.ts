@@ -31,8 +31,10 @@ describe('MainLayout', () => {
   let idlePhase$: Subject<IdlePhase>;
   let keepAliveSpy: jasmine.Spy;
   let idleStopSpy: jasmine.Spy;
+  let unreadCount$: Subject<number>;
 
   beforeEach(async () => {
+    unreadCount$ = new Subject<number>();
     logoutSpy = jasmine.createSpy('logout').and.returnValue(of(undefined));
     idlePhase$ = new Subject<IdlePhase>();
     keepAliveSpy = jasmine.createSpy('keepAlive');
@@ -59,7 +61,7 @@ describe('MainLayout', () => {
             logout: logoutSpy,
           },
         },
-        { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => of(0) } },
+        { provide: NOTIFICATION_DATA_SOURCE, useValue: { getUnreadCount: () => unreadCount$.asObservable() } },
         {
           provide: ApiSettingsUsersService,
           useValue: jasmine.createSpyObj<ApiSettingsUsersService>('ApiSettingsUsersService', [
@@ -101,6 +103,24 @@ describe('MainLayout', () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.mobile-nav')).toBeNull();
   }));
+
+  it('should show the unread badge on the bottom navigation alerts link', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.shell__bottom-badge')).toBeNull();
+
+    unreadCount$.next(2);
+    fixture.detectChanges();
+
+    const alertsLink = host.querySelector<HTMLAnchorElement>('.shell__bottom-link[href="/notifications"]');
+    expect(alertsLink?.querySelector('.shell__bottom-badge')?.textContent?.trim()).toBe('2');
+    expect(alertsLink?.getAttribute('aria-label')).toBe('Alertas, 2 sin leer');
+    expect(host.querySelectorAll('.shell__bottom-badge')).toHaveSize(1);
+
+    unreadCount$.next(0);
+    fixture.detectChanges();
+
+    expect(host.querySelector('.shell__bottom-badge')).toBeNull();
+  });
 
   it('should delegate logout to the session service', () => {
     const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.user-menu__trigger');

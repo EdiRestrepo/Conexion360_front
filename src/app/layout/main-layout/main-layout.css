@@ -136,6 +136,29 @@
     font-size: 22px;
   }
 
+  .shell__bottom-icon {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .shell__bottom-badge {
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    display: inline-grid;
+    min-width: 18px;
+    height: 18px;
+    place-items: center;
+    padding: 0 4px;
+    border: 2px solid var(--color-surface);
+    border-radius: 999px;
+    background: var(--color-alert);
+    color: var(--color-on-primary);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
   .shell__bottom-link--active {
     color: var(--color-secondary);
   }
