@@ -1,11 +1,12 @@
 /**
  * Espeja el enum `NotificationType` del backend en
  * `GET /notifications/allnotifications` (0 = `ChangeState`, 1 = `Comment`,
- * 2 = `OtherInfo`, cambio en la información general del envío). Si el backend
- * agrega valores, hay que ampliar este tipo y las tablas de
+ * 2 = `OtherInfo`, cambio en la información general del envío, 3 = `Alert`,
+ * alerta del sistema como un fallo del ETL; solo la ve el rol ADMIN). Si el
+ * backend agrega valores, hay que ampliar este tipo y las tablas de
  * `core/utils/notification-labels.ts`.
  */
-export type NotificationType = 'STATUS_CHANGE' | 'COMMENT' | 'OTHER_INFO';
+export type NotificationType = 'STATUS_CHANGE' | 'COMMENT' | 'OTHER_INFO' | 'ALERT';
 
 export interface Notification {
   id: string;

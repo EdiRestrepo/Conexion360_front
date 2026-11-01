@@ -133,6 +133,15 @@
   color: var(--color-secondary);
 }
 
+.notification-card--alert.notification-card--unread {
+  border-left-color: var(--color-alert);
+}
+
+.notification-card--alert .notification-card__icon {
+  background: var(--color-alert-soft);
+  color: var(--color-alert);
+}
+
 .notification-card__body {
   display: grid;
   gap: 6px;

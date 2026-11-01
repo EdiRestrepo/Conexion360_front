@@ -7,6 +7,7 @@ const notificationTypesByCode: Record<number, NotificationType> = {
   0: 'STATUS_CHANGE',
   1: 'COMMENT',
   2: 'OTHER_INFO',
+  3: 'ALERT',
 };
 
 /** `notificationStatus`: 0 = no leído, 1 = leído. */

@@ -33,6 +33,12 @@ export class ApiNotificationsService implements NotificationDataSource {
    * respuesta ya en vuelo traería el estado anterior.
    */
   private readonly locallyRead = new Set<string>();
+  /**
+   * Las alertas del sistema (`notificationType` 3) son solo para ADMIN. Se
+   * fija al leer la identidad en `load()`, que es también quien conecta el Hub,
+   * así que ya tiene valor cuando llega el primer aviso en tiempo real.
+   */
+  private canSeeAlerts = false;
   private request$: Observable<Notification[]> | null = null;
 
   constructor() {
@@ -58,6 +64,10 @@ export class ApiNotificationsService implements NotificationDataSource {
    */
   private onRealtimeNotification(payload: unknown): void {
     const notification = mapRealtimeNotification(payload);
+
+    if (!this.isVisible(notification)) {
+      return;
+    }
 
     this.notifications$.next([notification, ...this.notifications$.value]);
   }
@@ -113,7 +123,10 @@ export class ApiNotificationsService implements NotificationDataSource {
    */
   private load(): Observable<Notification[]> {
     this.request$ ??= this.getIdentity().pipe(
-      tap((identity) => void this.hub.connect(identity.document ?? '')),
+      tap((identity) => {
+        this.canSeeAlerts = identity.roles.includes('ADMIN');
+        void this.hub.connect(identity.document ?? '');
+      }),
       switchMap((identity) => this.fetch(identity)),
       tap((notifications) => this.notifications$.next(notifications)),
       catchError((error: unknown) => {
@@ -129,7 +142,15 @@ export class ApiNotificationsService implements NotificationDataSource {
   private fetch(identity: Auth0Identity): Observable<Notification[]> {
     return this.http
       .get<unknown>(this.notificationsUrl, { params: new HttpParams().set('idClient', identity.document ?? '') })
-      .pipe(map((response) => this.applyLocalReads(mapNotificationsResponse(response))));
+      .pipe(map((response) => this.applyLocalReads(mapNotificationsResponse(response).filter((item) => this.isVisible(item)))));
+  }
+
+  /**
+   * Oculta las alertas del sistema a quien no es ADMIN. Es solo la capa visual:
+   * el backend debe dejar de enviarlas a esos roles (AGENTS.md §10).
+   */
+  private isVisible(notification: Notification): boolean {
+    return notification.type !== 'ALERT' || this.canSeeAlerts;
   }
 
   private applyLocalReads(notifications: Notification[]): Notification[] {

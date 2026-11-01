@@ -14,8 +14,11 @@ describe('ApiNotificationsService', () => {
   let httpMock: HttpTestingController;
   let notificationReceived$: Subject<unknown>;
   let connectSpy: jasmine.Spy<(idClient: string) => Promise<void>>;
+  /** Roles de la identidad simulada; un test puede cambiarlos antes de `getAll()`. */
+  let roles: string[];
 
   beforeEach(() => {
+    roles = ['CLIENT'];
     notificationReceived$ = new Subject<unknown>();
     connectSpy = jasmine.createSpy('connect').and.resolveTo();
 
@@ -31,7 +34,7 @@ describe('ApiNotificationsService', () => {
               auth0UserId: 'auth0|123',
               email: 'edison@example.com',
               document: '8110357412',
-              roles: ['CLIENT'],
+              roles,
             }),
           },
         },
@@ -91,6 +94,48 @@ describe('ApiNotificationsService', () => {
 
     expect(notifications.map((item) => item.type)).toEqual(['STATUS_CHANGE', 'COMMENT', 'OTHER_INFO', 'STATUS_CHANGE']);
     expect(notifications.map((item) => item.read)).toEqual([false, true, false, false]);
+  });
+
+  it('should show system alerts to ADMIN', () => {
+    roles.splice(0, roles.length, 'ADMIN');
+    let notifications: Notification[] = [];
+
+    service.getAll().subscribe((value) => (notifications = value));
+    expectRequest().flush({
+      dataResponse: [
+        { ...createBackendNotification(), idNotification: 1, notificationType: 3, documentNumber: '' },
+        { ...createBackendNotification(), idNotification: 2, notificationType: 1 },
+      ],
+    });
+
+    expect(notifications.map((item) => item.type)).toEqual(['ALERT', 'COMMENT']);
+    expect(notifications[0].shipmentDocument).toBe('');
+  });
+
+  it('should hide system alerts from roles other than ADMIN, also when pushed by the hub', () => {
+    roles.splice(0, roles.length, 'ANALISTAOPE');
+    let notifications: Notification[] = [];
+    let unreadCount = -1;
+
+    service.getAll().subscribe((value) => (notifications = value));
+    service.getUnreadCount().subscribe((value) => (unreadCount = value));
+    expectRequest().flush({
+      dataResponse: [
+        { ...createBackendNotification(), idNotification: 1, notificationType: 3, notificationStatus: 0 },
+        { ...createBackendNotification(), idNotification: 2, notificationType: 1, notificationStatus: 0 },
+      ],
+    });
+
+    notificationReceived$.next([
+      {
+        message: 'Alerta en proceso de ETL',
+        data: { ...createBackendNotification(), idNotification: 9, notificationType: 3, notificationStatus: 0 },
+        timestamp: '2026-10-31T17:32:08.000Z',
+      },
+    ]);
+
+    expect(notifications.map((item) => item.id)).toEqual(['2']);
+    expect(unreadCount).toBe(1);
   });
 
   it('should count unread notifications without a second request', () => {

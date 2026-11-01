@@ -205,8 +205,12 @@ Bitácora de cambios del envío (`historyShipments.detailsHistoryShipments`):
 
 - Listado de notificaciones
 - Leídas y no leídas
-- Tres tipos, los que expone el backend (`NotificationType`): cambio de estado
-  (0), comentario (1) y cambio de otra información del envío (2, `OtherInfo`)
+- Cuatro tipos, los que expone el backend (`NotificationType`): cambio de estado
+  (0), comentario (1), cambio de otra información del envío (2, `OtherInfo`) y
+  alerta del sistema (3, `Alert`, p. ej. un fallo del ETL; puede venir sin
+  `documentNumber`). Las alertas solo las ve el rol ADMIN:
+  `ApiNotificationsService` las descarta para los demás roles, tanto en la
+  consulta como en los avisos del Hub, así que tampoco cuentan en el badge
 - Modal de detalle al abrir una notificación, que además la marca como leída
 - Preferencias (en Ajustes, contra `settings/viewnotifications`,
   `settings/createnotifications` y `settings/updatenotifications`)

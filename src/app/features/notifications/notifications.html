@@ -61,6 +61,8 @@
             type="button"
             class="notification-card"
             [class.notification-card--unread]="!notification.read"
+
+            [class.notification-card--alert]="notification.type === 'ALERT'"
             [attr.aria-label]="'Ver detalle de ' + notification.title"
             (click)="openDetail(notification)"
           >
