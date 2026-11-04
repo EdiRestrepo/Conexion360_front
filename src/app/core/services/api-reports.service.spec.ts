@@ -1,5 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
@@ -51,7 +54,9 @@ describe('ApiReportsService', () => {
       expect(metrics.totalDelayUsd).toBe(8802);
     });
 
-    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`);
+    const request = httpMock.expectOne(
+      (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+    );
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('idClient')).toBe('890903474');
@@ -63,15 +68,26 @@ describe('ApiReportsService', () => {
 
   it('should send the queried client as idQueryClient', () => {
     service.getReportMetrics(' 900123456 ').subscribe((metrics) => {
-      expect(metrics.client).toEqual({ nit: '900123456', name: 'Enka de Colombia' });
+      expect(metrics.client).toEqual({
+        nit: '900123456',
+        name: 'Enka de Colombia',
+      });
     });
 
-    const request = httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`);
+    const request = httpMock.expectOne(
+      (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+    );
 
     expect(request.request.params.get('idClient')).toBe('890903474');
     expect(request.request.params.get('idQueryClient')).toBe('900123456');
 
-    request.flush({ dataResponse: { ...createDataResponse(), clientNit: '900123456', clientName: 'Enka de Colombia' } });
+    request.flush({
+      dataResponse: {
+        ...createDataResponse(),
+        clientNit: '900123456',
+        clientName: 'Enka de Colombia',
+      },
+    });
   });
 
   it('should group totals by operation, mode and status', () => {
@@ -93,7 +109,9 @@ describe('ApiReportsService', () => {
     });
 
     httpMock
-      .expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`)
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
       .flush({ dataResponse: createDataResponse() });
   });
 
@@ -105,15 +123,90 @@ describe('ApiReportsService', () => {
       ]);
     });
 
-    httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`).flush({
-      dataResponse: {
-        ...createDataResponse(),
-        frequentRoutes: [
-          { origin: 'Colombia', destination: 'Brasil', totalRoute: 14 },
-          { origin: 'Chile', destination: 'Colombia', totalRoute: 21 },
-        ],
-      },
+    httpMock
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
+      .flush({
+        dataResponse: {
+          ...createDataResponse(),
+          frequentRoutes: [
+            { origin: 'Colombia', destination: 'Brasil', totalRoute: 14 },
+            { origin: 'Chile', destination: 'Colombia', totalRoute: 21 },
+          ],
+        },
+      });
+  });
+
+  it('should add up the totals of every client in dataResponse', () => {
+    service.getReportMetrics().subscribe((metrics) => {
+      expect(metrics.totalShipments).toBe(168);
+      expect(metrics.totalDelivered).toBe(52);
+      expect(metrics.totalWithIssue).toBe(36);
+      expect(metrics.totalBilledUsd).toBeCloseTo(691149.62, 2);
+      expect(metrics.totalAdvancesUsd).toBeCloseTo(582998.27, 2);
+      expect(metrics.totalDelayUsd).toBe(12965);
+      expect(metrics.byOperationType).toEqual({ IMPO: 114, EXPO: 142 });
+      expect(metrics.byStatus.IN_TRANSIT).toBe(42);
+      expect(metrics.client).toBeNull();
     });
+
+    httpMock
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
+      .flush({
+        dataResponse: [
+          { ...createDataResponse(), clientNit: '1', clientName: 'Enka' },
+          {
+            ...createDataResponse(),
+            clientNit: '2',
+            clientName: 'Zenú',
+            totalClientRecords: 40,
+            totalInvoiced: 100,
+            totalAdvancePayment: 259445.77999999997,
+            totalDelays: 4163,
+          },
+        ],
+      });
+  });
+
+  it('should merge the routes of every client and keep the five most frequent', () => {
+    service.getReportMetrics().subscribe((metrics) => {
+      expect(metrics.topRoutes).toEqual([
+        { route: 'Colombia → Brasil', total: 26 },
+        { route: 'España → Colombia', total: 11 },
+        { route: 'Colombia → México', total: 9 },
+        { route: 'Perú → Colombia', total: 8 },
+        { route: 'Colombia → China', total: 7 },
+      ]);
+    });
+
+    httpMock
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
+      .flush({
+        dataResponse: [
+          {
+            ...createDataResponse(),
+            frequentRoutes: [
+              { origin: 'Colombia', destination: 'Brasil', totalRoute: 14 },
+              { origin: 'Colombia', destination: 'México', totalRoute: 9 },
+              { origin: 'Chile', destination: 'Colombia', totalRoute: 2 },
+            ],
+          },
+          {
+            ...createDataResponse(),
+            frequentRoutes: [
+              { origin: 'Colombia', destination: 'Brasil', totalRoute: 12 },
+              { origin: 'España', destination: 'Colombia', totalRoute: 11 },
+              { origin: 'Perú', destination: 'Colombia', totalRoute: 8 },
+              { origin: 'Colombia', destination: 'China', totalRoute: 7 },
+            ],
+          },
+        ],
+      });
   });
 
   it('should build the client ranking from the clients in dataResponse when topClients is missing', () => {
@@ -124,12 +217,24 @@ describe('ApiReportsService', () => {
       ]);
     });
 
-    httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`).flush({
-      dataResponse: [
-        { ...createDataResponse(), clientName: 'Postobon', totalClientRecords: 40 },
-        { ...createDataResponse(), clientName: 'Enka', totalClientRecords: 128 },
-      ],
-    });
+    httpMock
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
+      .flush({
+        dataResponse: [
+          {
+            ...createDataResponse(),
+            clientName: 'Postobon',
+            totalClientRecords: 40,
+          },
+          {
+            ...createDataResponse(),
+            clientName: 'Enka',
+            totalClientRecords: 128,
+          },
+        ],
+      });
   });
 
   it('should leave the client ranking empty when no client name comes back', () => {
@@ -138,7 +243,9 @@ describe('ApiReportsService', () => {
     });
 
     httpMock
-      .expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`)
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
       .flush({ dataResponse: { ...createDataResponse(), clientName: '' } });
   });
 
@@ -147,9 +254,16 @@ describe('ApiReportsService', () => {
       expect(metrics.topClients).toEqual([{ client: 'Postobon', total: 9 }]);
     });
 
-    httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`).flush({
-      dataResponse: { ...createDataResponse(), topClients: [{ client: 'Postobon', total: 9 }] },
-    });
+    httpMock
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
+      .flush({
+        dataResponse: {
+          ...createDataResponse(),
+          topClients: [{ client: 'Postobon', total: 9 }],
+        },
+      });
   });
 
   it('should return zeroed metrics when the payload is empty', () => {
@@ -159,7 +273,11 @@ describe('ApiReportsService', () => {
       expect(metrics.topRoutes).toEqual([]);
     });
 
-    httpMock.expectOne((item) => item.url === `${environment.api.baseUrl}/reports/home`).flush({ dataResponse: null });
+    httpMock
+      .expectOne(
+        (item) => item.url === `${environment.api.baseUrl}/reports/home`,
+      )
+      .flush({ dataResponse: null });
   });
 
   function createDataResponse(): Record<string, unknown> {
@@ -178,7 +296,9 @@ describe('ApiReportsService', () => {
       totalExports: 71,
       totalAirShipments: 65,
       totalOceanShipments: 63,
-      frequentRoutes: [{ origin: 'Colombia', destination: 'Brasil', totalRoute: 14 }],
+      frequentRoutes: [
+        { origin: 'Colombia', destination: 'Brasil', totalRoute: 14 },
+      ],
     };
   }
 });

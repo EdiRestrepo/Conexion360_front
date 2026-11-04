@@ -394,10 +394,12 @@ algo sigue mockeado):
   menor. Con un solo cliente sale una sola barra. Antes se rellenaba con un
   ranking fijo (`mockTopClients`) que en pantalla parecía real; se eliminó a
   propósito: no volver a inventar ese ranking.
-  Los **totales** del reporte, en cambio, salen solo del primer elemento de
-  `dataResponse` (`firstPayloadItem`). Si el backend devuelve un elemento por
-  cliente (analista con varios clientes asignados), los totales de los demás se
-  descartan: pendiente confirmar el contrato con backend.
+  `dataResponse` trae **un elemento por cliente** (uno solo para CLIENT o al
+  filtrar por documento; varios para ADMIN y analistas). El mapper **suma** los
+  totales de todos (envíos, estados, operación, modalidad, facturado, anticipos y
+  demoras, redondeando la moneda a centavos), combina las `frequentRoutes` de
+  todos por ruta y deja las **cinco** más frecuentes. `client` solo se llena
+  cuando la respuesta trae un único cliente.
   El ranking **no se muestra al rol `CLIENT`** (ni a una sesión sin rol): la
   tarjeta lista otros clientes por nombre. `Reports.createViewModel()` vacía
   `topClients` en un único punto (rol no interno o reporte filtrado por cliente),
